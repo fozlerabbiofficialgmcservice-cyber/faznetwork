@@ -4,7 +4,6 @@ const { RouterOSClient } = require('node-routeros');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// সব ফরম্যাট (JSON, Form Data, Plain Text) সাপোর্ট করার জন্য
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.text({ type: '*/*' }));
@@ -13,26 +12,26 @@ app.get('/', (req, res) => {
     res.send('FAZ Network User Manager Server is Running!');
 });
 
-// User Manager-এ ইউজার ও প্রোফাইল তৈরি ফাংশন
+// MikroTik User Manager v7 API
 async function createUserManagerUser(username, password, profileName, commentText) {
     const client = new RouterOSClient({
         host: '103.54.37.182',
         port: 1102,
         user: 'smsbot',
-        password: '66778' // মাইক্রোটিকে আপনার smsbot ইউজারের আসল পাসওয়ার্ড দিন
+        password: 'YourPasswordHere' // পাসওয়ার্ড পরিবর্তন করে নিন
     });
 
     try {
         await client.connect();
 
-        // ১. User Manager-এ নতুন ইউজার তৈরি
+        // ১. User Manager-এ ইউজার তৈরি
         await client.write('/user-manager/user/add', [
             `=name=${username}`,
             `=password=${password}`,
             `=comment=${commentText}`
         ]);
 
-        // ২. ইউজারের ওপর প্রোফাইল অ্যাসাইন করা
+        // ২. ইউজারের ওপর প্যাকেজ/প্রোফাইল অ্যাসাইন করা
         await client.write('/user-manager/user-profile/add', [
             `=user=${username}`,
             `=profile=${profileName}`
@@ -46,25 +45,10 @@ async function createUserManagerUser(username, password, profileName, commentTex
     }
 }
 
-// MacroDroid থেকে ডাটা রিসিভ করার এন্ডপয়েন্ট
 app.all('/forward', async (req, res) => {
-    // বডি অথবা কুয়েরি প্যারামিটার যেকোনো এক জায়গা থেকে ডাটা নেওয়া
-    const body = req.body || {};
-    const query = req.query || {};
-
-    let rawMessage = body.message || query.message || '';
-    let sender = body.sender || query.sender || '';
-
-    // যদি পুরো বডি সরাসরি টেক্সট স্ট্রিং হিসেবে আসে
-    if (typeof req.body === 'string' && !rawMessage) {
-        try {
-            const parsed = JSON.parse(req.body);
-            rawMessage = parsed.message || '';
-            sender = parsed.sender || '';
-        } catch (e) {
-            rawMessage = req.body;
-        }
-    }
+    // বডি অথবা URL কুয়েরি প্যারামিটার যেখান থেকেই আসুক ডেটা ধরবে
+    const rawMessage = (req.query.message || req.body?.message || (typeof req.body === 'string' ? req.body : '') || '').toString();
+    const sender = (req.query.sender || req.body?.sender || '').toString();
 
     console.log('--- Incoming Request ---');
     console.log('Raw Message:', rawMessage);
@@ -74,7 +58,7 @@ app.all('/forward', async (req, res) => {
     const amountMatch = rawMessage.match(/(?:Tk|BDT)\s*([\d,.]+)/i);
     const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : 0;
 
-    // ২. গ্রাহকের ১১ ডিজিটের নম্বর বের করা (from 01XXXXXXXXX বা টেক্সটে থাকা 01XXXXXXXXX)
+    // ২. গ্রাহকের মোবাইল নম্বর বের করা
     const phoneMatch = rawMessage.match(/(?:from|sender)\s*(?:01|\+?8801)(\d{9})/i) || rawMessage.match(/(01[3-9]\d{8})/);
     const customerNumber = phoneMatch ? ('01' + (phoneMatch[1] || phoneMatch[0].slice(-9))) : (sender ? sender.replace(/[^0-9]/g, '') : null);
 
@@ -84,7 +68,7 @@ app.all('/forward', async (req, res) => {
 
     console.log(`Parsed Data -> Amount: ${amount}, Phone: ${customerNumber}, TrxID: ${trxId}`);
 
-    // ৪. আপনার User Manager প্রোফাইল অনুযায়ী প্যাকেজ
+    // ৪. User Manager প্যাকেজ নির্ধারণ
     let profile = null;
     if (amount === 10) profile = 'Profile - 1Hour';
     else if (amount === 15) profile = 'Profile - 12Hour';
@@ -104,7 +88,7 @@ app.all('/forward', async (req, res) => {
         console.log(`[SKIPPED] Missing valid phone or matching package for amount ${amount}`);
     }
 
-    res.status(200).send('OK');
+    res.status(200).send('Processed');
 });
 
 app.listen(PORT, () => {
