@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for faznetwork on 2026-10-01T18:38:45Z
+# fly.toml app configuration file generated for faznetwork on 2026-10-01T19:08:55Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
 app = 'faznetwork'
-primary_region = 'sin'
+primary_region = 'ams'
 
 [build]
 
