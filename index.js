@@ -16,7 +16,7 @@ async function createHotspotUser(username, password, profileName) {
         host: '103.54.37.182',
         port: 1102,
         user: 'smsbot',
-        password: 'YourBotPassword123'
+        password: '66778'
     });
 
     try {
