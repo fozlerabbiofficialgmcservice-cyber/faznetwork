@@ -1,0 +1,15 @@
+app = "faznetwork"
+primary_region = "ams"
+
+[http]
+internal_port = 8080
+force_https = true
+
+[metrics]
+port = 9091
+path = "/metrics"
+
+[vm]
+cpu_kind = "shared"
+cpus = 1
+memory_mb = 256
