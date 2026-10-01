@@ -6,13 +6,13 @@ const PORT = process.env.PORT || 8080;
 
 app.use(express.json());
 
-// MikroTik-এ ইউজার তৈরির ফাংশন
+// MikroTik-এ হটস্পট ইউজার তৈরি করার ফাংশন
 async function createHotspotUser(username, password, profileName) {
     const client = new RouterOSClient({
-        host: 'YOUR_MIKROTIK_VPN_IP', // আপনার VPN বা পাবলিক আইপি/DDNS
-        user: 'smsbot',               // ধাপ ২ এ তৈরি করা ইউজার
-        password: 'YourBotPassword123', // ধাপ ২ এ দেওয়া পাসওয়ার্ড
-        port: 8728
+        host: '103.54.37.182',     // আপনার দেওয়া ভিপিএন রিয়েল আইপি
+        port: 1102,               // আপনার দেওয়া পোর্ট
+        user: 'smsbot',           // মাইক্রোটিকে তৈরি করা API ইউজারনেম
+        password: 'YourBotPassword123' // মাইক্রোটিকে তৈরি করা পাসওয়ার্ড
     });
 
     try {
@@ -20,37 +20,37 @@ async function createHotspotUser(username, password, profileName) {
         await client.write('/ip/hotspot/user/add', [
             `=name=${username}`,
             `=password=${password}`,
-            `=profile=${profileName}` // আপনার হটস্পট প্রোফাইলের নাম (যেমন: 1day, 30days)
+            `=profile=${profileName}`
         ]);
-        console.log(`Hotspot user created: ${username}`);
+        console.log(`Hotspot user created: ${username} (Profile: ${profileName})`);
     } catch (err) {
-        console.error('MikroTik Error:', err);
+        console.error('MikroTik API Error:', err);
     } finally {
         client.close();
     }
 }
 
 app.post('/forward', async (req, res) => {
-    console.log('Received data:', req.body);
+    console.log('Received SMS Data:', req.body);
 
     const message = req.body.message || '';
     const sender = req.body.sender || '';
 
-    // বিকাশ/নগদ এসএমএস থেকে টাকার পরিমাণ বের করা (উদাহরণ: Tk 10.00 বা 10Tk)
+    // এসএমএস থেকে টাকার পরিমাণ বের করা
     const amountMatch = message.match(/(?:Tk|BDT)\s*([\d,.]+)/i);
     const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : 0;
 
-    // টাকার পরিমাণ অনুযায়ী হটস্পট প্রোফাইল নির্ধারণ
+    // টাকা অনুযায়ী আপনার MikroTik হটস্পট প্রোফাইলের নাম দিন
     let profile = 'default';
     if (amount >= 10 && amount < 50) {
-        profile = '1day';
+        profile = '1day';    // MikroTik-এর হটস্পট প্রোফাইল নাম
     } else if (amount >= 50) {
-        profile = '30days';
+        profile = '30days';  // MikroTik-এর হটস্পট প্রোফাইল নাম
     }
 
-    // ইউজারনেম হিসেবে গ্রাহকের ফোন নম্বর ও পিন তৈরি
-    const username = sender.replace(/[^0-9]/g, ''); // গ্রাহকের নম্বর
-    const password = Math.floor(1000 + Math.random() * 9000).toString(); // ৪ ডিজিট পিন
+    // প্রেরকের ফোন নম্বর থেকে ইউজারনেম তৈরি
+    const username = sender.replace(/[^0-9]/g, '');
+    const password = Math.floor(1000 + Math.random() * 9000).toString(); // ৪ ডিজিট র‍্যান্ডম পিন
 
     if (username) {
         await createHotspotUser(username, password, profile);
