@@ -5,7 +5,9 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(express.json());
-
+app.get('/', (req, res) => {
+    res.send('Server is running smoothly!');
+});
 // MikroTik-এ হটস্পট ইউজার তৈরি করার ফাংশন
 async function createHotspotUser(username, password, profileName) {
     const client = new RouterOSClient({
