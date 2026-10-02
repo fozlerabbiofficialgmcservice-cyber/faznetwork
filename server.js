@@ -20,7 +20,6 @@ const MIKROTIK_CONFIG = {
     timeout: 10
 };
 
-// টাকার পরিমাণের সাথে মিল রেখে প্রোফাইল নির্ধারণ
 const PRICE_PROFILE_MAP = {
     '10': 'Profile - 1Hour',
     '15': 'Profile - 12Hour',
@@ -41,7 +40,6 @@ async function assignUserProfile(username, profileName) {
     try {
         await conn.connect();
 
-        // ১. ইউজার বিদ্যমান কিনা চেক করা, না থাকলে তৈরি করা
         const existingUsers = await conn.write('/user-manager/user/print', [
             `?name=${username}`
         ]);
@@ -62,14 +60,12 @@ async function assignUserProfile(username, profileName) {
             console.log(`[USER MANAGER] User ${username} enabled.`);
         }
 
-        // ২. ইউজারের ওপর প্রোফাইল/প্যাকেজ অ্যাসাইন করা
         await conn.write('/user-manager/user-profile/add', [
             `=user=${username}`,
             `=profile=${profileName}`
         ]);
         console.log(`[USER MANAGER] Profile '${profileName}' assigned to ${username}`);
 
-        // ৩. পুরনো কোনো আটকে থাকা সেশন থাকলে ডিসকানেক্ট করা
         try {
             const activeSessions = await conn.write('/user-manager/session/print', [
                 `?user=${username}`
@@ -134,23 +130,19 @@ app.post('/forward', async (req, res) => {
         let trxId = null;
         let amount = null;
 
-        // ট্রানজেকশন আইডি বের করা
         const trxMatch = text.match(/(?:TrxID|TxnID|Trx)\s*[:]?\s*([A-Za-z0-9]+)/i);
         if (trxMatch) trxId = trxMatch[1];
 
-        // টাকার পরিমাণ বের করা (যেমন: Tk 150.00 বা Tk 150)
         const amountMatch = text.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
         if (amountMatch) {
             amount = Math.round(parseFloat(amountMatch[1])).toString();
         }
 
-        // রেফারেন্স থেকে ইউজার আইডি খোঁজা
         const refMatch = text.match(/Ref\s*[:]?\s*([A-Za-z0-9_.-]+)/i);
         if (refMatch && refMatch[1].trim() !== '0') {
             detectedUser = refMatch[1].trim();
         }
 
-        // মেসেজে রেফারেন্স না থাকলে পেন্ডিং লিস্ট থেকে নেওয়া
         if (!detectedUser && pendingOrders.size > 0) {
             const lastEntry = Array.from(pendingOrders.values()).pop();
             detectedUser = lastEntry.username;
@@ -163,7 +155,6 @@ app.post('/forward', async (req, res) => {
             });
         }
 
-        // প্রোফাইল নির্ধারণ (টাকা অনুযায়ী, অথবা ডিফল্ট)
         let selectedProfile = 'Profile - 30Day';
         if (amount && PRICE_PROFILE_MAP[amount]) {
             selectedProfile = PRICE_PROFILE_MAP[amount];
