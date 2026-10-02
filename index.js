@@ -8,6 +8,14 @@ app.use(express.text({ type: '*/*' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// সার্ভার ক্র্যাশ হওয়া পুরোপুরি ঠেকানোর জন্য
+process.on('uncaughtException', (err) => {
+    console.error('[UNCAUGHT EXCEPTION]:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[UNHANDLED REJECTION]:', reason);
+});
+
 app.get('/', (req, res) => {
     res.send('FAZ Network User Manager Server is Running!');
 });
@@ -24,12 +32,8 @@ async function createUserManagerUser(username, password, profileName, commentTex
     try {
         await api.connect();
 
-        // ১. চেক করা ইউজার আগে থেকে আছে কিনা
-        const existingUsers = await api.write('/user-manager/user/print', [
-            `?name=${username}`
-        ]);
-
-        if (!existingUsers || existingUsers.length === 0) {
+        // ১. সরাসরি ইউজার যোগ করার চেষ্টা
+        try {
             await api.write('/user-manager/user/add', [
                 `=name=${username}`,
                 `=password=${password}`,
@@ -37,17 +41,18 @@ async function createUserManagerUser(username, password, profileName, commentTex
                 '=group=Hotspot',
                 '=disabled=no'
             ]);
-            console.log(`[USER ADDED] ${username}`);
-        } else {
+            console.log(`[USER CREATED]: ${username}`);
+        } catch (addErr) {
+            // যদি ইউজার আগে থেকেই থাকে, তাহলে আপডেট করবে
+            console.log(`[USER ALREADY EXISTS, UPDATING]: ${username}`);
             await api.write('/user-manager/user/set', [
-                `=.id=${existingUsers[0]['.id']}`,
+                `=numbers=${username}`,
                 `=password=${password}`,
                 `=comment=${commentText}`
             ]);
-            console.log(`[USER UPDATED] ${username}`);
         }
 
-        // ২. প্রোফাইল যুক্ত করা
+        // ২. ইউজারের সাথে প্রোফাইল যুক্ত করা
         await api.write('/user-manager/user-profile/add', [
             `=user=${username}`,
             `=profile=${profileName}`
@@ -56,7 +61,7 @@ async function createUserManagerUser(username, password, profileName, commentTex
         console.log(`[SUCCESS] Profile '${profileName}' assigned to: ${username}`);
 
     } catch (err) {
-        console.error('[ERROR DETAILS]:', err);
+        console.error('[ROUTER ACTION ERROR]:', err.message || err);
     } finally {
         try {
             await api.close();
@@ -87,7 +92,7 @@ app.all('/forward', async (req, res) => {
     const amountMatch = rawMessage.match(/(?:Tk|BDT)\s*([\d,.]+)/i);
     const amount = amountMatch ? Math.round(parseFloat(amountMatch[1].replace(',', ''))) : 0;
 
-    // ২. গ্রাহকের ১১ ডিজিটের নম্বর বের করা
+    // ২. গ্রাহকের ফোন নম্বর বের করা
     const phoneMatch = rawMessage.match(/(01[3-9]\d{8})/);
     let customerNumber = null;
     if (phoneMatch) {
@@ -103,7 +108,7 @@ app.all('/forward', async (req, res) => {
     const trxMatch = rawMessage.match(/TrxID[:\s]+([A-Z0-9]+)/i);
     const trxId = trxMatch ? trxMatch[1] : 'Manual';
 
-    // ৪. সঠিক প্রোফাইল নির্ধারণ
+    // ৪. প্রোফাইল ম্যাপিং
     let profile = null;
     if (amount === 10) profile = 'Profile-1Hour';
     else if (amount === 15) profile = 'Profile-12Hour';
@@ -127,6 +132,6 @@ app.all('/forward', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
 });
