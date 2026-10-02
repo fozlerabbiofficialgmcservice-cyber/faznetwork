@@ -4,7 +4,6 @@ const { RouterOSAPI } = require('node-routeros');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// CORS এনাবল করা যাতে যে-কোনো ডোমেইন/হোস্টিং থেকে রিকোয়েস্ট আসতে পারে
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -17,10 +16,8 @@ app.use(express.text({ type: '*/*' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// সাময়িক পেমেন্ট লগ জমা রাখার জন্য (SMS থেকে আসা ভেরিফিকেশন ডাটা)
 const pendingPayments = new Map();
 
-// সার্ভার ক্র্যাশ হওয়া ঠেকানোর হ্যান্ডলার
 process.on('uncaughtException', (err) => {
     console.error('[UNCAUGHT EXCEPTION]:', err);
 });
@@ -32,7 +29,6 @@ app.get('/', (req, res) => {
     res.send('FAZ Network User Manager Server is Running!');
 });
 
-// MikroTik User Manager-এ ইউজার তৈরি বা আপডেট করার ফাংশন
 async function createUserManagerUser(username, password, profileName, commentText) {
     const api = new RouterOSAPI({
         host: '103.54.37.182',
@@ -45,7 +41,6 @@ async function createUserManagerUser(username, password, profileName, commentTex
     try {
         await api.connect();
 
-        // ১. সরাসরি ইউজার যোগ করার চেষ্টা
         try {
             await api.write('/user-manager/user/add', [
                 `=name=${username}`,
@@ -64,7 +59,6 @@ async function createUserManagerUser(username, password, profileName, commentTex
             ]);
         }
 
-        // ২. ইউজারের সাথে প্রোফাইল যুক্ত করা
         await api.write('/user-manager/user-profile/add', [
             `=user=${username}`,
             `=profile=${profileName}`
@@ -82,7 +76,6 @@ async function createUserManagerUser(username, password, profileName, commentTex
     }
 }
 
-// টাকার পরিমাণ অনুযায়ী প্রোফাইল নির্ণয়
 function getProfileByAmount(amount) {
     if (amount === 10) return 'Profile-1Hour';
     if (amount === 15) return 'Profile-12Hour';
@@ -96,7 +89,6 @@ function getProfileByAmount(amount) {
     return null;
 }
 
-// ১. ইনকামিং SMS রিসিভ করার এন্ডপয়েন্ট (SMS Forwarder অ্যাপ থেকে কল হবে)
 app.all('/forward', async (req, res) => {
     let rawMessage = '';
     
@@ -135,7 +127,6 @@ app.all('/forward', async (req, res) => {
     const profile = getProfileByAmount(amount);
 
     if (trxId) {
-        // TrxID মেমোরিতে সেভ রাখা হচ্ছে (ওয়েবসাইট থেকে ভেরিফাই করার জন্য)
         pendingPayments.set(trxId.toUpperCase(), {
             phone: customerNumber,
             amount: amount,
@@ -144,7 +135,6 @@ app.all('/forward', async (req, res) => {
         });
     }
 
-    // এসএমএসে নম্বর ও প্রোফাইল সরাসরি পাওয়া গেলে রাউটারে অটো একটিভ
     if (customerNumber && profile) {
         const comment = `Auto SMS Trx: ${trxId || 'N/A'}, Tk: ${amount}`;
         await createUserManagerUser(customerNumber, customerNumber, profile, comment);
@@ -154,7 +144,6 @@ app.all('/forward', async (req, res) => {
     return res.status(200).send('Logged for manual or signup verification');
 });
 
-// ২. ওয়েবসাইট ফরম থেকে ইউজার সাইন আপ হ্যান্ডলার
 app.post('/api/signup', async (req, res) => {
     const { username, password, trxId, phone } = req.body;
     const targetUser = username || phone;
@@ -163,7 +152,6 @@ app.post('/api/signup', async (req, res) => {
         return res.status(400).json({ success: false, message: 'ইউজারনেম ও পাসওয়ার্ড দেওয়া বাধ্যতামূলক।' });
     }
 
-    // যদি TrxID দিয়ে ভেরিফাই করতে চান
     if (trxId) {
         const cleanTrx = trxId.trim().toUpperCase();
         const payment = pendingPayments.get(cleanTrx);
@@ -179,14 +167,13 @@ app.post('/api/signup', async (req, res) => {
         const created = await createUserManagerUser(targetUser, password, payment.profile, comment);
 
         if (created) {
-            pendingPayments.delete(cleanTrx); // ব্যবহারের পর রিমুভ
+            pendingPayments.delete(cleanTrx);
             return res.json({ success: true, message: 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!' });
         } else {
             return res.status(500).json({ success: false, message: 'রাউটারে অ্যাকাউন্ট তৈরি করতে ব্যর্থ হয়েছে।' });
         }
     }
 
-    // ট্রানজেকশন আইডি ছাড়া সাধারণ রেজিস্ট্রেশন (যদি ট্রায়াল/ডিফল্ট প্রোফাইল চান)
     const defaultProfile = 'Profile-1Hour';
     const comment = `Web Free/Direct Signup`;
     const created = await createUserManagerUser(targetUser, password, defaultProfile, comment);
@@ -194,7 +181,7 @@ app.post('/api/signup', async (req, res) => {
     if (created) {
         return res.json({ success: true, message: 'অ্যাকাউন্ট তৈরি হয়েছে!' });
     } else {
-        return res.status(500).json({ success: false, message: 'অ্যাকাউন্ট তৈরিতে সমস্যা হয়েছে।' });
+        return res.status(500).json({ success: false, message: 'অ্যাকাউন্টে তৈরিতে সমস্যা হয়েছে।' });
     }
 });
 
