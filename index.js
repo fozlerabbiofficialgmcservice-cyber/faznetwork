@@ -14,7 +14,7 @@ app.get('/', (req, res) => {
 
 async function createUserManagerUser(username, password, profileName, commentText) {
     const api = new RouterOSAPI({
-        host: '103.54.37.182',
+        host: '103.54.37.182:1102',
         port: 1102,
         user: 'smsbot',
         password: '66778'
