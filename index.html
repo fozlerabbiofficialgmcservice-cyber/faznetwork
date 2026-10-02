@@ -1,315 +1,109 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>FAZ NETWORK - প্যাকেজ রেজিস্ট্রেশন ও ভেরিফিকেশন</title>
-  <style>
-    :root {
-      --bg-dark: #070d12;
-      --card-bg: rgba(11, 20, 26, 0.96);
-      --card-border: rgba(52, 211, 153, 0.2);
-      --accent-mint: #34d399;
-      --accent-teal: #059669;
-      --accent-soft: #6ee7b7;
-      --input-bg: rgba(255, 255, 255, 0.04);
-      --text-white: #f8fafc;
-      --text-muted: #94a3b8;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body {
-      background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 85% 85%, rgba(20, 184, 166, 0.1) 0%, transparent 50%),
-        linear-gradient(180deg, #050a0e 0%, #0a141b 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px 14px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      color: var(--text-white);
-    }
-
-    .cool-container {
-      width: 100%;
-      max-width: 430px;
-      border-radius: 26px;
-      padding: 2px;
-      background: linear-gradient(120deg, #059669, #34d399, #0d9488, #10b981);
-    }
-
-    .wrapper {
-      width: 100%;
-      background: var(--card-bg);
-      border-radius: 24px;
-      padding: 26px 20px;
-    }
-
-    .bismillah {
-      text-align: center;
-      font-size: 19px;
-      color: var(--accent-soft);
-      font-weight: 700;
-      margin-bottom: 12px;
-    }
-
-    .header { text-align: center; margin-bottom: 16px; }
-    .brand-title {
-      font-size: 26px;
-      font-weight: 900;
-      letter-spacing: 1.4px;
-      color: #ffffff;
-      margin-bottom: 6px;
-    }
-    .brand-tagline {
-      display: inline-block;
-      background: rgba(52, 211, 153, 0.08);
-      border: 1px solid rgba(52, 211, 153, 0.25);
-      color: var(--accent-mint);
-      font-size: 12px;
-      padding: 4px 14px;
-      border-radius: 999px;
-    }
-
-    .selected-plan-banner {
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid var(--accent-mint);
-      border-radius: 12px;
-      padding: 10px;
-      margin: 14px 0;
-      font-size: 13px;
-      text-align: center;
-      color: #f8fafc;
-      font-weight: 700;
-    }
-
-    .pricing-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      border-radius: 13px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(0, 0, 0, 0.25);
-      margin-bottom: 16px;
-    }
-    .pricing-table th, .pricing-table td {
-      padding: 8px;
-      text-align: center;
-      font-size: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .pricing-table th { background: rgba(255, 255, 255, 0.04); color: #cbd5e1; }
-    .pricing-table tr { cursor: pointer; }
-    .pricing-table tr.active { background: rgba(52, 211, 153, 0.2); }
-    .code-badge {
-      background: rgba(52, 211, 153, 0.1);
-      color: #6ee7b7;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 11px;
-    }
-    .price-badge { color: #34d399; font-weight: bold; }
-
-    .pay-card {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 12px;
-      margin-bottom: 16px;
-    }
-    .pay-card h4 { font-size: 13px; text-align: center; margin-bottom: 8px; }
-    .number-box {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1.5px solid rgba(52, 211, 153, 0.35);
-      padding: 8px 12px;
-      border-radius: 10px;
-      margin-bottom: 8px;
-    }
-    .number-display { font-size: 16px; font-weight: bold; letter-spacing: 1px; }
-    .btn-copy {
-      background: rgba(52, 211, 153, 0.15);
-      border: 1px solid var(--accent-mint);
-      color: var(--accent-mint);
-      font-size: 12px;
-      padding: 5px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .pay-rules { font-size: 11.5px; color: #94a3b8; line-height: 1.5; }
-
-    .field { margin-bottom: 12px; }
-    .field label { display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 5px; }
-    .field input {
-      width: 100%;
-      background: var(--input-bg);
-      border: 1.5px solid rgba(255, 255, 255, 0.1);
-      color: #ffffff;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 14px;
-      outline: none;
-    }
-    .field input:focus { border-color: var(--accent-mint); }
-
-    .btn-submit {
-      width: 100%;
-      background: linear-gradient(135deg, #10b981 0%, #047857 100%);
-      color: #ffffff;
-      border: none;
-      padding: 13px;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 5px;
-    }
-    .btn-submit:disabled { background: #334155; color: #94a3b8; cursor: not-allowed; }
-
-    .msg-box {
-      margin-top: 12px;
-      padding: 10px;
-      border-radius: 8px;
-      font-size: 13px;
-      text-align: center;
-      display: none;
-    }
-    .msg-box.error { display: block; background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
-    .msg-box.success { display: block; background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAZ NETWORK - সেলফ রিচার্জ ও লগইন পোর্টাল</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: #fff; width: 100%; max-width: 420px; border-radius: 12px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h2 { margin: 0; color: #1a73e8; font-size: 24px; }
+        .header p { margin: 5px 0 0; color: #666; font-size: 14px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; outline: none; transition: 0.2s; }
+        input:focus, select:focus { border-color: #1a73e8; }
+        .btn { width: 100%; padding: 13px; background: #e2136e; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn:hover { background: #c20f5d; }
+        .instruction { background: #fff4e5; border-left: 4px solid #ff9800; padding: 12px; border-radius: 4px; margin-top: 15px; font-size: 13px; color: #663c00; }
+        .alert { display: none; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; text-align: center; }
+        .alert-success { background: #e6f4ea; color: #137333; }
+        .alert-error { background: #fce8e6; color: #c5221f; }
+    </style>
 </head>
 <body>
 
-<div class="cool-container">
-  <div class="wrapper">
-    <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+<div class="card">
     <div class="header">
-      <div class="brand-title">FAZ NETWORK</div>
-      <div class="brand-tagline">⚡ ইনস্ট্যান্ট প্যাকেজ রিচার্জ ও সাইন-আপ</div>
+        <h2>FAZ NETWORK</h2>
+        <p>ইন্টারনেট বিল পরিশোধ ও অটো অ্যাক্টিভেশন</p>
     </div>
 
-    <div class="selected-plan-banner" id="planBanner">
-      নির্বাচিত প্যাকেজ: <strong>১ দিন (২০ টাকা)</strong>
-    </div>
+    <div id="alertBox" class="alert"></div>
 
-    <table class="pricing-table" id="pricingTable">
-      <thead>
-        <tr><th>মেয়াদ</th><th>প্রোফাইল</th><th>মূল্য</th></tr>
-      </thead>
-      <tbody>
-        <tr data-amount="10" data-name="১ ঘণ্টা (১০ টাকা)"><td>১ ঘণ্টা</td><td><span class="code-badge">1Hour</span></td><td class="price-badge">১০/-</td></tr>
-        <tr data-amount="15" data-name="১২ ঘণ্টা (১৫ টাকা)"><td>১২ ঘণ্টা</td><td><span class="code-badge">12Hour</span></td><td class="price-badge">১৫/-</td></tr>
-        <tr data-amount="20" data-name="১ দিন (২০ টাকা)" class="active"><td>১ দিন (২৪ ঘণ্টা)</td><td><span class="code-badge">1Day</span></td><td class="price-badge">২০/-</td></tr>
-        <tr data-amount="40" data-name="৩ দিন (৪০ টাকা)"><td>৩ দিন</td><td><span class="code-badge">3Day</span></td><td class="price-badge">৪০/-</td></tr>
-        <tr data-amount="60" data-name="৭ দিন (৬০ টাকা)"><td>৭ দিন</td><td><span class="code-badge">7Day</span></td><td class="price-badge">৬০/-</td></tr>
-        <tr data-amount="90" data-name="১৫ দিন (৯০ টাকা)"><td>১৫ দিন</td><td><span class="code-badge">15Day</span></td><td class="price-badge">৯০/-</td></tr>
-        <tr data-amount="150" data-name="৩০ দিন (১৫০ টাকা)"><td>৩০ দিন</td><td><span class="code-badge">30Day</span></td><td class="price-badge">১৫০/-</td></tr>
-        <tr data-amount="200" data-name="১০০ জিবি (২০০ টাকা)"><td>১০০ জিবি</td><td><span class="code-badge">100GB</span></td><td class="price-badge">২০০/-</td></tr>
-        <tr data-amount="350" data-name="৩০০ জিবি (৩৫০ টাকা)"><td>৩০০ জিবি</td><td><span class="code-badge">300GB</span></td><td class="price-badge">৩৫০/-</td></tr>
-      </tbody>
-    </table>
+    <form id="rechargeForm">
+        <div class="form-group">
+            <label for="username">ইউজার আইডি / ইউজারনেম</label>
+            <input type="text" id="username" placeholder="আপনার ইউজার আইডি দিন" required>
+        </div>
 
-    <div class="pay-card">
-      <h4>বিকাশ / নগদ পার্সোনাল সেন্ড মানি</h4>
-      <div class="number-box">
-        <span class="number-display" id="bkashNum">01339932887</span>
-        <button type="button" class="btn-copy" onclick="copyNumber()">কপি করুন</button>
-      </div>
-      <div class="pay-rules">
-        ১. প্যাকেজ অনুযায়ী সঠিক টাকা Send Money করুন।<br>
-        ২. ফিরতি SMS থেকে TrxID কপি করে নিচে দিন।
-      </div>
-    </div>
+        <div class="form-group">
+            <label for="group">কানেকশন ধরণ (গ্রুপ)</label>
+            <select id="group">
+                <option value="pppoe">PPPoE ব্রডব্যান্ড</option>
+                <option value="hotspot">হটস্পট (Wi-Fi)</option>
+            </select>
+        </div>
 
-    <form id="verifyForm">
-      <div class="field">
-        <label>মোবাইল নম্বর</label>
-        <input type="tel" id="userInput" placeholder="017xxxxxxxx" required />
-      </div>
-      <div class="field">
-        <label>পাসওয়ার্ড</label>
-        <input type="password" id="passInput" placeholder="লগইনের জন্য পাসওয়ার্ড দিন" required />
-      </div>
-      <div class="field">
-        <label>বিকাশ / নগদ TrxID</label>
-        <input type="text" id="trxInput" placeholder="যেমন: BLA678D3K" required style="text-transform: uppercase;" />
-      </div>
-      <button type="submit" class="btn-submit" id="submitBtn">অ্যাকাউন্ট ভেরিফাই ও সক্রিয় করুন</button>
+        <div class="form-group">
+            <label for="phone">বিকাশ মোবাইল নাম্বার</label>
+            <input type="tel" id="phone" placeholder="যে নাম্বার থেকে টাকা পাঠাবেন" required>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn">রিচার্জ কনফার্ম করুন</button>
     </form>
 
-    <div id="statusBox" class="msg-box"></div>
-  </div>
+    <div class="instruction">
+        <strong>পেমেন্ট নিয়ম:</strong>
+        <p style="margin: 5px 0 0;">বিকাশে Send Money করার সময় <strong>Reference (রেফারেন্স)</strong> ঘরে আপনার সঠিক <strong>ইউজার আইডি</strong> লিখবেন। টাকা আসা মাত্রই রাউটারে ইন্টারনেট চালু হয়ে যাবে।</p>
+    </div>
 </div>
 
 <script>
-  // টেবিল থেকে প্যাকেজ সিলেক্ট করা
-  const rows = document.querySelectorAll("#pricingTable tbody tr");
-  const banner = document.getElementById("planBanner");
+    const form = document.getElementById('rechargeForm');
+    const alertBox = document.getElementById('alertBox');
+    const submitBtn = document.getElementById('submitBtn');
 
-  rows.forEach(row => {
-    row.addEventListener("click", () => {
-      rows.forEach(r => r.classList.remove("active"));
-      row.classList.add("active");
-      const name = row.getAttribute("data-name");
-      const amount = row.getAttribute("data-amount");
-      banner.innerHTML = `নির্বাচিত প্যাকেজ: <strong>${name}</strong> (পাঠাবেন <strong>${amount}৳</strong>)`;
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'অপেক্ষা করুন...';
+
+        const payload = {
+            username: document.getElementById('username').value.trim(),
+            group: document.getElementById('group').value,
+            phone: document.getElementById('phone').value.trim()
+        };
+
+        try {
+            const res = await fetch('/api/request-recharge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            alertBox.style.display = 'block';
+
+            if (data.success) {
+                alertBox.className = 'alert alert-success';
+                alertBox.innerText = data.message;
+                form.reset();
+            } else {
+                alertBox.className = 'alert alert-error';
+                alertBox.innerText = data.message || 'কোনো সমস্যা হয়েছে!';
+            }
+        } catch (err) {
+            alertBox.style.display = 'block';
+            alertBox.className = 'alert alert-error';
+            alertBox.innerText = 'সার্ভার রেসপন্স করছে না।';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'রিচার্জ কনফার্ম করুন';
+        }
     });
-  });
-
-  function copyNumber() {
-    const num = "01339932887";
-    navigator.clipboard.writeText(num).then(() => {
-      alert("নম্বর কপি হয়েছে: " + num);
-    });
-  }
-
-  // ফর্ম সাবমিট ও ব্যাকএন্ডে রিকোয়েস্ট পাঠানো
-  document.getElementById('verifyForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('submitBtn');
-    const msg = document.getElementById('statusBox');
-
-    const username = document.getElementById('userInput').value.trim();
-    const password = document.getElementById('passInput').value.trim();
-    const trxId = document.getElementById('trxInput').value.trim();
-
-    btn.disabled = true;
-    btn.innerText = 'ভেরিফাই করা হচ্ছে, অপেক্ষা করুন...';
-    msg.className = 'msg-box';
-    msg.style.display = 'none';
-
-    try {
-      const response = await fetch('/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, trxId })
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        msg.className = 'msg-box success';
-        msg.innerText = data.message + ' এখন হটস্পট লগইন পেজে গিয়ে লগইন করুন।';
-        document.getElementById('verifyForm').reset();
-      } else {
-        msg.className = 'msg-box error';
-        msg.innerText = data.message || 'ভেরিফিকেশন সম্পন্ন হয়নি!';
-      }
-    } catch (err) {
-      msg.className = 'msg-box error';
-      msg.innerText = 'সার্ভারে সংযোগ করা যাচ্ছে না। পুনরায় চেষ্টা করুন।';
-    } finally {
-      btn.disabled = false;
-      btn.innerText = 'অ্যাকাউন্ট ভেরিফাই ও সক্রিয় করুন';
-    }
-  });
 </script>
 
 </body>
