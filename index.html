@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FAZ NETWORK - প্যাকেজ রেজিস্ট্রেশন ও ভেরিফিকেশন</title>
+    <style>
+        :root {
+            --bg-dark: #070d12;
+            --card-bg: rgba(11, 20, 26, 0.96);
+            --card-border: rgba(52, 211, 153, 0.2);
+            --accent-mint: #34d399;
+            --accent-teal: #059669;
+            --accent-soft: #6ee7b7;
+            --input-bg: rgba(255, 255, 255, 0.04);
+            --text-white: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 85% 85%, rgba(20, 184, 166, 0.1) 0%, transparent 50%),
+                linear-gradient(120deg, #050a0e 0%, #030608 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            color: var(--text-white);
+        }
+
+        .cool-container {
+            width: 100%;
+            max-width: 430px;
+            border-radius: 26px;
+            padding: 2px;
+            background: linear-gradient(135deg, #059669, #34d399, #0d9488, #10b981);
+        }
+
+        .wrapper {
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 26px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .bismillah {
+            text-align: center;
+            font-size: 19px;
+            color: var(--accent-soft);
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .header { text-align: center; margin-bottom: 16px; }
+
+        .brand-title {
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: 1.4px;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .brand-tagline {
+            display: inline-block;
+            background: rgba(52, 211, 153, 0.08);
+            border: 1px solid var(--card-border);
+            color: var(--accent-mint);
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .selected-plan-banner {
+            background: rgba(5, 150, 105, 0.15);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: var(--accent-mint);
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .pricing-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 13px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 16px;
+        }
+
+        .pricing-table th, .pricing-table td {
+            padding: 8px;
+            text-align: center;
+            font-size: 11px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .pricing-table th { background: rgba(255, 255, 255, 0.04); color: #cbd5e1; font-weight: 600; }
+        .pricing-table tr { cursor: pointer; transition: background 0.2s; }
+        .pricing-table tr:hover { background: rgba(52, 211, 153, 0.05); }
+        .pricing-table tr.active { background: rgba(52, 211, 153, 0.1); }
+
+        .code-badge {
+            background: rgba(52, 211, 153, 0.1);
+            color: var(--accent-mint);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .pay-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .pay-card h4 { font-size: 13px; text-align: center; margin-bottom: 8px; color: var(--text-muted); }
+
+        .number-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1.5px solid rgba(52, 211, 153, 0.35);
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .number-display { font-size: 16px; font-weight: bold; letter-spacing: 1px; color: #ffffff; }
+
+        .btn-copy {
+            background: rgba(52, 211, 153, 0.15);
+            border: 1px solid var(--accent-mint);
+            color: var(--accent-mint);
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover { background: var(--accent-mint); color: var(--bg-dark); font-weight: bold; }
+
+        .pay-rules { font-size: 11px; color: var(--text-muted); line-height: 1.4; padding-left: 15px; }
+        .pay-rules li { margin-bottom: 4px; }
+
+        .form-group { margin-bottom: 12px; }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--input-bg);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .form-group input:focus { border-color: var(--accent-mint); }
+
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 5px;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn-submit:active { transform: scale(0.98); }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .msg-box {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+        }
+
+        .msg-box.error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.5); color: #fca5a5; }
+        .msg-box.success { background: rgba(5, 150, 105, 0.15); border: 1px solid rgba(52, 211, 153, 0.5); color: #34d399; }
+    </style>
+</head>
+<body>
+
+    <div class="cool-container">
+        <div class="wrapper">
+            <div class="bismillah">بسم الله الرحمن الرحيم</div>
+            <div class="header">
+                <div class="brand-title">FAZ NETWORK</div>
+                <div class="brand-tagline">ইন্টারনেট কানেকশন রিচার্জ ও সাইন-আপ</div>
+            </div>
+
+            <div class="selected-plan-banner" id="planBanner">
+                নির্বাচিত প্যাকেজ: ১ দিন (২০ টাকা)
+            </div>
+
+            <table class="pricing-table" id="pricingTable">
+                <thead>
+                    <tr>
+                        <th>মেয়াদ</th>
+                        <th>প্রোফাইল</th>
+                        <th>মূল্য</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-amount="10" data-name="১ ঘণ্টা (১০ টাকা)">
+                        <td>১ ঘণ্টা</td>
+                        <td><span class="code-badge">1Hour</span></td>
+                        <td>১০/-</td>
+                    </tr>
+                    <tr data-amount="15" data-name="১২ ঘণ্টা (১৫ টাকা)">
+                        <td>১২ ঘণ্টা</td>
+                        <td><span class="code-badge">12Hour</span></td>
+                        <td>১৫/-</td>
+                    </tr>
+                    <tr data-amount="20" data-name="১ দিন (২০ টাকা)" class="active">
+                        <td>১ দিন</td>
+                        <td><span class="code-badge">1Day</span></td>
+                        <td>২০/-</td>
+                    </tr>
+                    <tr data-amount="40" data-name="৩ দিন (৪০ টাকা)">
+                        <td>৩ দিন</td>
+                        <td><span class="code-badge">3Day</span></td>
+                        <td>৪০/-</td>
+                    </tr>
+                    <tr data-amount="60" data-name="৭ দিন (৬০ টাকা)">
+                        <td>৭ দিন</td>
+                        <td><span class="code-badge">7Day</span></td>
+                        <td>৬০/-</td>
+                    </tr>
+                    <tr data-amount="90" data-name="১৫ দিন (৯০ টাকা)">
+                        <td>১৫ দিন</td>
+                        <td><span class="code-badge">15Day</span></td>
+                        <td>৯০/-</td>
+                    </tr>
+                    <tr data-amount="150" data-name="৩০ দিন (১৫০ টাকা)">
+                        <td>৩০ দিন</td>
+                        <td><span class="code-badge">30Day</span></td>
+                        <td>১৫০/-</td>
+                    </tr>
+                    <tr data-amount="200" data-name="১০০ জিবি (২০০ টাকা)">
+                        <td>১০০ জিবি</td>
+                        <td><span class="code-badge">100GB</span></td>
+                        <td>২০০/-</td>
+                    </tr>
+                    <tr data-amount="350" data-name="৩০০ জিবি (৩৫০ টাকা)">
+                        <td>৩০০ জিবি</td>
+                        <td><span class="code-badge">300GB</span></td>
+                        <td>৩৫০/-</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pay-card">
+                <h4>বিকাশ / নগদ পার্সোনাল সেন্ড মানি</h4>
+                <div class="number-box">
+                    <span class="number-display" id="bkashNum">01339932887</span>
+                    <button type="button" class="btn-copy" onclick="copyNumber()">কপি করুন</button>
+                </div>
+                <ul class="pay-rules">
+                    <li>১. প্যাকেজ অনুযায়ী সঠিক টাকা Send Money করুন।</li>
+                    <li>২. ফিরতি এসএমএস এর TrxID নিচে লিখুন।</li>
+                </ul>
+            </div>
+
+            <form id="signupForm">
+                <div class="form-group">
+                    <label>মোবাইল নম্বর (ইউজারনেম)</label>
+                    <input type="tel" id="username" placeholder="017xxxxxxxx" required>
+                </div>
+
+                <div class="form-group">
+                    <label>পাসওয়ার্ড</label>
+                    <input type="password" id="password" placeholder="লগইনের জন্য পাসওয়ার্ড দিন" required>
+                </div>
+
+                <div class="form-group">
+                    <label>বিকাশ / নগদ ট্রানজ্যাকশন আইডি (TrxID)</label>
+                    <input type="text" id="trxId" placeholder="উদাহরণ: BLA678..." required style="text-transform: uppercase;">
+                </div>
+
+                <button type="submit" id="submitBtn">অ্যাকাউন্ট ভেরিফাই ও সক্রিয় করুন</button>
+            </form>
+
+            <div id="msgBox" class="msg-box"></div>
+        </div>
+    </div>
+
+    <script>
+        function copyNumber() {
+            const numText = document.getElementById('bkashNum').innerText;
+            navigator.clipboard.writeText(numText).then(() => {
+                alert('নম্বরটি কপি করা হয়েছে!');
+            });
+        }
+
+        // Add event listeners for plan selection, form submission, etc., here.
+    </script>
+</body>
+</html>
