@@ -22,11 +22,12 @@ async function createUserManagerUser(username, password, profileName, commentTex
 
     try {
         await api.connect();
-        
+
         await api.write('/user-manager/user/add', [
             `=name=${username}`,
             `=password=${password}`,
-            `=comment=${commentText}`
+            `=comment=${commentText}`,
+            '=disabled=no'
         ]);
 
         await api.write('/user-manager/user-profile/add', [
@@ -43,7 +44,7 @@ async function createUserManagerUser(username, password, profileName, commentTex
 }
 
 app.all('/forward', async (req, res) => {
-    const rawMessage = (req.query.message || req.body?.message || (typeof req.body === 'string' ? req.body : '') || '').toString();
+    const rawMessage = (req.query.message || req.body?.message || typeof req.body === 'string' ? req.body : '').toString();
     const sender = (req.query.sender || req.body?.sender || '').toString();
 
     console.log('--- Incoming Request ---');
@@ -53,29 +54,30 @@ app.all('/forward', async (req, res) => {
     const amountMatch = rawMessage.match(/(?:Tk|BDT)\s*([\d,.]+)/i);
     const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : 0;
 
-    const phoneMatch = rawMessage.match(/(?:from|sender)\s*(?:01|\+?8801)(\d{9})/i) || rawMessage.match(/(01[3-9]\d{8})/);
-    const customerNumber = phoneMatch ? ('01' + (phoneMatch[1] || phoneMatch[0].slice(-9))) : (sender ? sender.replace(/[^0-9]/g, '') : null);
+    const phoneMatch = rawMessage.match(/(?:from|sender)\s*(?:\+?01|\+?8801|\+88|\b01(?:\d{8}))/i) || rawMessage.match(/(01[3-9]\d{8})/);
+    const customerNumber = phoneMatch ? ('01' + (phoneMatch[1] || phoneMatch[0]).slice(-9)) : (sender ? sender.replace(/[^0-9]/g, '').slice(-9) : null);
 
-    const trxMatch = rawMessage.match(/TrxID\s+([A-Z0-9]+)/i);
-    const trxId = trxMatch ? trxMatch[1] : 'Manual';
+    const trxMatch = rawMessage.match(/(TrxID\s*([A-Z0-9]+))/i);
+    const trxId = trxMatch ? trxMatch[2] : 'Manual';
 
     let profile = null;
-    if (amount === 10) profile = 'Profile - 1Hour';
-    else if (amount === 15) profile = 'Profile - 12Hour';
-    else if (amount === 20) profile = 'Profile - 1Day';
-    else if (amount === 40) profile = 'Profile - 3Day';
-    else if (amount === 60) profile = 'Profile - 7Day';
-    else if (amount === 90) profile = 'Profile - 15Day';
-    else if (amount === 150) profile = 'Profile - 30Day';
-    else if (amount === 200) profile = 'Profile - 100GB';
-    else if (amount === 350) profile = 'Profile - 300GB';
 
-    if (customerNumber && profile) {
-        const comment = `bKash/Nagad Trx: ${trxId}, Tk: ${amount}`;
-        await createUserManagerUser(customerNumber, customerNumber, profile, comment);
+    if (amount === 10) profile = '1Hour';
+    else if (amount === 15) profile = '12Hour';
+    else if (amount === 20) profile = '1Day';
+    else if (amount === 40) profile = '3Day';
+    else if (amount === 60) profile = '7Day';
+    else if (amount === 90) profile = '15Day';
+    else if (amount === 150) profile = '30Day';
+    else if (amount === 200) profile = '100GB';
+    else if (amount === 350) profile = '200GB';
+
+    if (profile && customerNumber) {
+        await createUserManagerUser(customerNumber, customerNumber, profile, `TrxID: ${trxId}`);
+        res.status(200).send('SUCCESS: User added to User Manager');
+    } else {
+        res.status(400).send('ERROR: Invalid amount or phone number');
     }
-
-    res.status(200).send('Processed');
 });
 
 app.listen(PORT, () => {
