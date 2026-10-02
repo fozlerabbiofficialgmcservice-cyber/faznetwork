@@ -15,7 +15,7 @@ const MIKROTIK_PORT = 1126;
 
 const paymentStore = new Map();
 
-// ১. MacroDroid রিকোয়েস্ট রিসিভ করা (পূর্বের সচল রুট)
+// ১. MacroDroid রিকোয়েস্ট রিসিভ করা (সচল রুট)
 app.post('/forward', (req, res) => {
     let rawText = '';
     
@@ -27,7 +27,6 @@ app.post('/forward', (req, res) => {
 
     console.log(`[SMS Hit] Data: ${rawText}`);
 
-    // বিকাশ / নগদ TrxID বের করার লজিক
     const trxMatch = rawText.match(/(?:TrxID|TxnID|Txn ID|Transaction ID)[:\s]*([A-Z0-9]+)/i);
     const amountMatch = rawText.match(/(?:Tk|BDT|amount)[:\s]*([\d,]+(?:\.\d{2})?)/i);
 
@@ -72,7 +71,6 @@ app.post('/api/signup', async (req, res) => {
         });
     }
 
-    // MikroTik RouterOS v7 User Manager-এ ইউজার তৈরি
     const conn = new RosApi({
         host: MIKROTIK_HOST,
         user: MIKROTIK_USER,
