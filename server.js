@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -121,7 +121,10 @@ app.post('/api/request-recharge', (req, res) => {
 
 app.post('/forward', async (req, res) => {
     try {
-        const sms_body = req.body.sms_body || req.query.sms_body;
+        console.log('[DEBUG] Full Request Body:', req.body);
+        console.log('[DEBUG] Full Request Query:', req.query);
+
+        const sms_body = req.body.sms_body || req.body.sms_message || req.query.sms_body || req.query.sms_message;
         const sender = req.body.sender || req.query.sender;
         const text = sms_body || '';
 
