@@ -1,16 +1,12 @@
 {
-  "name": "faz-network-portal",
+  "name": "sms-forwarder",
   "version": "1.0.0",
-  "description": "FAZ NETWORK MikroTik User Manager Auto Recharge",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.19.2",
     "node-routeros": "^1.6.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }
