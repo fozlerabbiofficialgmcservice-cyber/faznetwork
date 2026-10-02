@@ -1,13 +1,12 @@
 {
-  "name": "faznetwork",
+  "name": "faznetwork-gateway",
   "version": "1.0.0",
-  "description": "FAZ NETWORK Hotspot System",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.19.2",
-    "node-routeros": "^1.6.9"
+    "node-routeros": "^1.6.0"
   }
 }
