@@ -67,16 +67,19 @@ async function createUserManagerUser(username, password, profileName, commentTex
 }
 
 app.all('/forward', async (req, res) => {
+    // MacroDroid Query Params বা Body থেকে মেসেজ রিড করা
     let rawMessage = '';
-    if (typeof req.body === 'string') {
-        rawMessage = req.body;
-    } else if (req.body && typeof req.body === 'object') {
-        rawMessage = req.body.message ? String(req.body.message) : JSON.stringify(req.body);
-    } else if (req.query && req.query.message) {
+    if (req.query && req.query.message) {
         rawMessage = String(req.query.message);
+    } else if (req.body && req.body.message) {
+        rawMessage = String(req.body.message);
+    } else if (typeof req.body === 'string' && req.body.trim().length > 0) {
+        rawMessage = req.body;
+    } else if (req.body && Object.keys(req.body).length > 0) {
+        rawMessage = JSON.stringify(req.body);
     }
 
-    const sender = (req.query.sender || req.body?.sender || '').toString();
+    const sender = (req.query?.sender || req.body?.sender || '').toString();
 
     console.log('--- Incoming Request ---');
     console.log('Raw Message:', rawMessage);
@@ -86,7 +89,7 @@ app.all('/forward', async (req, res) => {
     const amountMatch = rawMessage.match(/(?:Tk|BDT)\s*([\d,.]+)/i);
     const amount = amountMatch ? Math.round(parseFloat(amountMatch[1].replace(',', ''))) : 0;
 
-    // ২. গ্রাহকের ১১ ডিজিটের ফোন নম্বর বের করা (013 - 019)
+    // ২. গ্রাহকের ১১ ডিজিটের ফোন নম্বর বের করা
     const phoneMatch = rawMessage.match(/(01[3-9]\d{8})/);
     let customerNumber = null;
     if (phoneMatch) {
@@ -102,7 +105,7 @@ app.all('/forward', async (req, res) => {
     const trxMatch = rawMessage.match(/TrxID[:\s]+([A-Z0-9]+)/i);
     const trxId = trxMatch ? trxMatch[1] : 'Manual';
 
-    // ৪. প্রোফাইল নির্ধারণ
+    // ৪. MikroTik Profiles অনুযায়ী সঠিক নামের ম্যাপিং
     let profile = null;
     if (amount === 10) profile = 'Profile-1Hour';
     else if (amount === 15) profile = 'Profile-12Hour';
@@ -122,7 +125,6 @@ app.all('/forward', async (req, res) => {
         return res.status(200).send(`OK: Processed for ${customerNumber}`);
     } else {
         console.warn(`[IGNORED] Data incomplete or invalid amount`);
-        // MacroDroid যাতে 400 এরর না দেখায়, তাই 200 পাঠিয়ে দেওয়া হলো
         return res.status(200).send('Ignored: Not a valid recharge SMS');
     }
 });
