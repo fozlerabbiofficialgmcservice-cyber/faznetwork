@@ -1,12 +1,16 @@
 {
-  "name": "faznetwork-gateway",
+  "name": "faz-network-portal",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "FAZ NETWORK MikroTik User Manager Auto Recharge",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
     "node-routeros": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
