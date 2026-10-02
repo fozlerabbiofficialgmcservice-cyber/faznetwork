@@ -4,11 +4,23 @@ const { RouterOSAPI } = require('node-routeros');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// CORS এনাবল করা যাতে যে-কোনো ডোমেইন/হোস্টিং থেকে রিকোয়েস্ট আসতে পারে
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
+});
+
 app.use(express.text({ type: '*/*' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// সার্ভার ক্র্যাশ হওয়া পুরোপুরি ঠেকানোর জন্য
+// সাময়িক পেমেন্ট লগ জমা রাখার জন্য (SMS থেকে আসা ভেরিফিকেশন ডাটা)
+const pendingPayments = new Map();
+
+// সার্ভার ক্র্যাশ হওয়া ঠেকানোর হ্যান্ডলার
 process.on('uncaughtException', (err) => {
     console.error('[UNCAUGHT EXCEPTION]:', err);
 });
@@ -20,6 +32,7 @@ app.get('/', (req, res) => {
     res.send('FAZ Network User Manager Server is Running!');
 });
 
+// MikroTik User Manager-এ ইউজার তৈরি বা আপডেট করার ফাংশন
 async function createUserManagerUser(username, password, profileName, commentText) {
     const api = new RouterOSAPI({
         host: '103.54.37.182',
@@ -43,7 +56,6 @@ async function createUserManagerUser(username, password, profileName, commentTex
             ]);
             console.log(`[USER CREATED]: ${username}`);
         } catch (addErr) {
-            // যদি ইউজার আগে থেকেই থাকে, তাহলে আপডেট করবে
             console.log(`[USER ALREADY EXISTS, UPDATING]: ${username}`);
             await api.write('/user-manager/user/set', [
                 `=numbers=${username}`,
@@ -59,9 +71,10 @@ async function createUserManagerUser(username, password, profileName, commentTex
         ]);
 
         console.log(`[SUCCESS] Profile '${profileName}' assigned to: ${username}`);
-
+        return true;
     } catch (err) {
         console.error('[ROUTER ACTION ERROR]:', err.message || err);
+        return false;
     } finally {
         try {
             await api.close();
@@ -69,6 +82,21 @@ async function createUserManagerUser(username, password, profileName, commentTex
     }
 }
 
+// টাকার পরিমাণ অনুযায়ী প্রোফাইল নির্ণয়
+function getProfileByAmount(amount) {
+    if (amount === 10) return 'Profile-1Hour';
+    if (amount === 15) return 'Profile-12Hour';
+    if (amount === 20) return 'Profile-1Day';
+    if (amount === 40) return 'Profile-3Day';
+    if (amount === 60) return 'Profile-7Day';
+    if (amount === 90) return 'Profile-15Day';
+    if (amount === 150) return 'Profile-30Day';
+    if (amount === 200) return 'Profile-100GB';
+    if (amount === 350) return 'Profile-300GB';
+    return null;
+}
+
+// ১. ইনকামিং SMS রিসিভ করার এন্ডপয়েন্ট (SMS Forwarder অ্যাপ থেকে কল হবে)
 app.all('/forward', async (req, res) => {
     let rawMessage = '';
     
@@ -88,11 +116,9 @@ app.all('/forward', async (req, res) => {
     console.log('Raw Message:', rawMessage);
     console.log('Sender:', sender);
 
-    // ১. টাকার পরিমাণ বের করা
     const amountMatch = rawMessage.match(/(?:Tk|BDT)\s*([\d,.]+)/i);
     const amount = amountMatch ? Math.round(parseFloat(amountMatch[1].replace(',', ''))) : 0;
 
-    // ২. গ্রাহকের ফোন নম্বর বের করা
     const phoneMatch = rawMessage.match(/(01[3-9]\d{8})/);
     let customerNumber = null;
     if (phoneMatch) {
@@ -104,31 +130,71 @@ app.all('/forward', async (req, res) => {
         }
     }
 
-    // ৩. TrxID বের করা
     const trxMatch = rawMessage.match(/TrxID[:\s]+([A-Z0-9]+)/i);
-    const trxId = trxMatch ? trxMatch[1] : 'Manual';
+    const trxId = trxMatch ? trxMatch[1] : null;
+    const profile = getProfileByAmount(amount);
 
-    // ৪. প্রোফাইল ম্যাপিং
-    let profile = null;
-    if (amount === 10) profile = 'Profile-1Hour';
-    else if (amount === 15) profile = 'Profile-12Hour';
-    else if (amount === 20) profile = 'Profile-1Day';
-    else if (amount === 40) profile = 'Profile-3Day';
-    else if (amount === 60) profile = 'Profile-7Day';
-    else if (amount === 90) profile = 'Profile-15Day';
-    else if (amount === 150) profile = 'Profile-30Day';
-    else if (amount === 200) profile = 'Profile-100GB';
-    else if (amount === 350) profile = 'Profile-300GB';
+    if (trxId) {
+        // TrxID মেমোরিতে সেভ রাখা হচ্ছে (ওয়েবসাইট থেকে ভেরিফাই করার জন্য)
+        pendingPayments.set(trxId.toUpperCase(), {
+            phone: customerNumber,
+            amount: amount,
+            profile: profile,
+            time: Date.now()
+        });
+    }
 
-    console.log(`Parsed Data -> Phone: ${customerNumber}, Amount: ${amount}, Profile: ${profile}`);
-
+    // এসএমএসে নম্বর ও প্রোফাইল সরাসরি পাওয়া গেলে রাউটারে অটো একটিভ
     if (customerNumber && profile) {
-        const comment = `bKash/Nagad Trx: ${trxId}, Tk: ${amount}`;
+        const comment = `Auto SMS Trx: ${trxId || 'N/A'}, Tk: ${amount}`;
         await createUserManagerUser(customerNumber, customerNumber, profile, comment);
         return res.status(200).send(`OK: Processed for ${customerNumber}`);
+    }
+
+    return res.status(200).send('Logged for manual or signup verification');
+});
+
+// ২. ওয়েবসাইট ফরম থেকে ইউজার সাইন আপ হ্যান্ডলার
+app.post('/api/signup', async (req, res) => {
+    const { username, password, trxId, phone } = req.body;
+    const targetUser = username || phone;
+
+    if (!targetUser || !password) {
+        return res.status(400).json({ success: false, message: 'ইউজারনেম ও পাসওয়ার্ড দেওয়া বাধ্যতামূলক।' });
+    }
+
+    // যদি TrxID দিয়ে ভেরিফাই করতে চান
+    if (trxId) {
+        const cleanTrx = trxId.trim().toUpperCase();
+        const payment = pendingPayments.get(cleanTrx);
+
+        if (!payment) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'ট্রানজেকশন আইডি পাওয়া যায়নি বা পেমেন্ট এখনো রিসিভ হয়নি।' 
+            });
+        }
+
+        const comment = `Web Signup Trx: ${cleanTrx}, Tk: ${payment.amount}`;
+        const created = await createUserManagerUser(targetUser, password, payment.profile, comment);
+
+        if (created) {
+            pendingPayments.delete(cleanTrx); // ব্যবহারের পর রিমুভ
+            return res.json({ success: true, message: 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!' });
+        } else {
+            return res.status(500).json({ success: false, message: 'রাউটারে অ্যাকাউন্ট তৈরি করতে ব্যর্থ হয়েছে।' });
+        }
+    }
+
+    // ট্রানজেকশন আইডি ছাড়া সাধারণ রেজিস্ট্রেশন (যদি ট্রায়াল/ডিফল্ট প্রোফাইল চান)
+    const defaultProfile = 'Profile-1Hour';
+    const comment = `Web Free/Direct Signup`;
+    const created = await createUserManagerUser(targetUser, password, defaultProfile, comment);
+
+    if (created) {
+        return res.json({ success: true, message: 'অ্যাকাউন্ট তৈরি হয়েছে!' });
     } else {
-        console.warn(`[IGNORED] Data incomplete or invalid amount`);
-        return res.status(200).send('Ignored: Data incomplete');
+        return res.status(500).json({ success: false, message: 'অ্যাকাউন্ট তৈরিতে সমস্যা হয়েছে।' });
     }
 });
 
