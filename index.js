@@ -4,9 +4,9 @@ const { RouterOSAPI } = require('node-routeros');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(express.text({ type: '*/*' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.get('/', (req, res) => {
     res.send('FAZ Network User Manager Server is Running!');
@@ -24,13 +24,12 @@ async function createUserManagerUser(username, password, profileName, commentTex
     try {
         await api.connect();
 
-        // ইউজার আগে থেকে আছে কিনা চেক করা
+        // ১. চেক করা ইউজার আগে থেকে আছে কিনা
         const existingUsers = await api.write('/user-manager/user/print', [
             `?name=${username}`
         ]);
 
         if (!existingUsers || existingUsers.length === 0) {
-            // নতুন ইউজার তৈরি
             await api.write('/user-manager/user/add', [
                 `=name=${username}`,
                 `=password=${password}`,
@@ -40,7 +39,6 @@ async function createUserManagerUser(username, password, profileName, commentTex
             ]);
             console.log(`[USER ADDED] ${username}`);
         } else {
-            // আগের ইউজারের কমেন্ট ও পাসওয়ার্ড আপডেট
             await api.write('/user-manager/user/set', [
                 `=.id=${existingUsers[0]['.id']}`,
                 `=password=${password}`,
@@ -49,7 +47,7 @@ async function createUserManagerUser(username, password, profileName, commentTex
             console.log(`[USER UPDATED] ${username}`);
         }
 
-        // প্রোফাইল যুক্ত করা
+        // ২. প্রোফাইল যুক্ত করা
         await api.write('/user-manager/user-profile/add', [
             `=user=${username}`,
             `=profile=${profileName}`
@@ -58,7 +56,7 @@ async function createUserManagerUser(username, password, profileName, commentTex
         console.log(`[SUCCESS] Profile '${profileName}' assigned to: ${username}`);
 
     } catch (err) {
-        console.error('[ERROR DETAILS]:', err.r ? err.r() : (err.message || err));
+        console.error('[ERROR DETAILS]:', err);
     } finally {
         try {
             await api.close();
@@ -67,14 +65,14 @@ async function createUserManagerUser(username, password, profileName, commentTex
 }
 
 app.all('/forward', async (req, res) => {
-    // MacroDroid Query Params বা Body থেকে মেসেজ রিড করা
     let rawMessage = '';
+    
     if (req.query && req.query.message) {
         rawMessage = String(req.query.message);
-    } else if (req.body && req.body.message) {
-        rawMessage = String(req.body.message);
     } else if (typeof req.body === 'string' && req.body.trim().length > 0) {
         rawMessage = req.body;
+    } else if (req.body && req.body.message) {
+        rawMessage = String(req.body.message);
     } else if (req.body && Object.keys(req.body).length > 0) {
         rawMessage = JSON.stringify(req.body);
     }
@@ -89,7 +87,7 @@ app.all('/forward', async (req, res) => {
     const amountMatch = rawMessage.match(/(?:Tk|BDT)\s*([\d,.]+)/i);
     const amount = amountMatch ? Math.round(parseFloat(amountMatch[1].replace(',', ''))) : 0;
 
-    // ২. গ্রাহকের ১১ ডিজিটের ফোন নম্বর বের করা
+    // ২. গ্রাহকের ১১ ডিজিটের নম্বর বের করা
     const phoneMatch = rawMessage.match(/(01[3-9]\d{8})/);
     let customerNumber = null;
     if (phoneMatch) {
@@ -105,7 +103,7 @@ app.all('/forward', async (req, res) => {
     const trxMatch = rawMessage.match(/TrxID[:\s]+([A-Z0-9]+)/i);
     const trxId = trxMatch ? trxMatch[1] : 'Manual';
 
-    // ৪. MikroTik Profiles অনুযায়ী সঠিক নামের ম্যাপিং
+    // ৪. সঠিক প্রোফাইল নির্ধারণ
     let profile = null;
     if (amount === 10) profile = 'Profile-1Hour';
     else if (amount === 15) profile = 'Profile-12Hour';
@@ -125,7 +123,7 @@ app.all('/forward', async (req, res) => {
         return res.status(200).send(`OK: Processed for ${customerNumber}`);
     } else {
         console.warn(`[IGNORED] Data incomplete or invalid amount`);
-        return res.status(200).send('Ignored: Not a valid recharge SMS');
+        return res.status(200).send('Ignored: Data incomplete');
     }
 });
 
