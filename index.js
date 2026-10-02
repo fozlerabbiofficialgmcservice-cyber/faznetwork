@@ -17,16 +17,18 @@ async function createUserManagerUser(username, password, profileName, commentTex
         host: '103.54.37.182',
         port: 8728,
         user: 'smsbot',
-        password: '66778'
+        password: '66778',
+        timeout: 10
     });
 
     try {
         await api.connect();
-        
+
         await api.write('/user-manager/user/add', [
             `=name=${username}`,
             `=password=${password}`,
-            `=comment=${commentText}`
+            `=comment=${commentText}`,
+            '=disabled=no'
         ]);
 
         await api.write('/user-manager/user-profile/add', [
@@ -38,7 +40,9 @@ async function createUserManagerUser(username, password, profileName, commentTex
     } catch (err) {
         console.error('[ERROR] MikroTik User Manager API Error:', err.message || err);
     } finally {
-        api.close();
+        try {
+            await api.close();
+        } catch (_) {}
     }
 }
 
@@ -50,15 +54,27 @@ app.all('/forward', async (req, res) => {
     console.log('Raw Message:', rawMessage);
     console.log('Sender:', sender);
 
+    // টাকার পরিমাণ বের করা
     const amountMatch = rawMessage.match(/(?:Tk|BDT)\s*([\d,.]+)/i);
     const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : 0;
 
-    const phoneMatch = rawMessage.match(/(?:from|sender)\s*(?:01|\+?8801)(\d{9})/i) || rawMessage.match(/(01[3-9]\d{8})/);
-    const customerNumber = phoneMatch ? ('01' + (phoneMatch[1] || phoneMatch[0].slice(-9))) : (sender ? sender.replace(/[^0-9]/g, '') : null);
+    // গ্রাহকের মোবাইল নম্বর বের করা
+    const phoneMatch = rawMessage.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9]\d{8})/i) || rawMessage.match(/(01[3-9]\d{8})/);
+    let customerNumber = null;
+    if (phoneMatch) {
+        customerNumber = phoneMatch[1] || phoneMatch[0];
+    } else if (sender) {
+        const cleanSender = sender.replace(/[^0-9]/g, '');
+        if (cleanSender.length >= 11) {
+            customerNumber = cleanSender.slice(-11);
+        }
+    }
 
-    const trxMatch = rawMessage.match(/TrxID\s+([A-Z0-9]+)/i);
+    // TrxID বের করা (কোলন বা স্পেস দুটোই সাপোর্ট করবে)
+    const trxMatch = rawMessage.match(/TrxID[:\s]+([A-Z0-9]+)/i);
     const trxId = trxMatch ? trxMatch[1] : 'Manual';
 
+    // প্রোফাইল ম্যাচিং
     let profile = null;
     if (amount === 10) profile = 'Profile - 1Hour';
     else if (amount === 15) profile = 'Profile - 12Hour';
@@ -73,9 +89,11 @@ app.all('/forward', async (req, res) => {
     if (customerNumber && profile) {
         const comment = `bKash/Nagad Trx: ${trxId}, Tk: ${amount}`;
         await createUserManagerUser(customerNumber, customerNumber, profile, comment);
+        return res.status(200).send(`SUCCESS: User ${customerNumber} added with profile ${profile}`);
+    } else {
+        console.warn(`[SKIPPED] Missing data: Phone=${customerNumber}, Amount=${amount}, Profile=${profile}`);
+        return res.status(400).send('ERROR: Invalid amount or customer number not found');
     }
-
-    res.status(200).send('Processed');
 });
 
 app.listen(PORT, () => {
