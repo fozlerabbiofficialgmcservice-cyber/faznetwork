@@ -1,9 +1,10 @@
 {
   "name": "faznetwork",
   "version": "1.0.0",
-  "main": "server.js",
+  "description": "FAZ NETWORK Hotspot System",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.19.2",
