@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAZ NETWORK - হটস্পট প্যাক রেজিস্ট্রেশন</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
+        .card { background: #fff; max-width: 420px; width: 100%; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #0d6efd; margin-top: 0; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #6c757d; font-size: 13px; margin-bottom: 18px; }
+        .info-box { background: #e7f1ff; border-left: 4px solid #0d6efd; padding: 12px; border-radius: 4px; font-size: 13px; margin-bottom: 15px; line-height: 1.5; color: #084298; }
+        .rates { font-size: 12px; background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; border-radius: 4px; margin-bottom: 15px; color: #664d03; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 5px; color: #333; }
+        input { width: 100%; padding: 10px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; }
+        input:focus { outline: none; border-color: #0d6efd; }
+        button { width: 100%; padding: 12px; background: #0d6efd; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; transition: 0.2s; }
+        button:hover { background: #0b5ed7; }
+        .msg { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 13px; text-align: center; display: none; }
+        .msg.error { display: block; background: #f8d7da; color: #842029; }
+        .msg.success { display: block; background: #d1e7dd; color: #0f5132; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>FAZ NETWORK</h2>
+    <div class="subtitle">স্বয়ংক্রিয় হটস্পট ভাউচার পোর্টাল</div>
+
+    <div class="rates">
+        <b>প্যাকেজ মূল্যতালিকা:</b><br>
+        • ১০ টাকা = ১ ঘণ্টা | ২০ টাকা = ১ দিন<br>
+        • ৪০ টাকা = ৩ দিন | ৬০ টাকা = ৭ দিন<br>
+        • ৯০ টাকা = ১৫ দিন | ১৫০ টাকা = ৩০ দিন
+    </div>
+
+    <div class="info-box">
+        ১. বিকাশ / নগদ (Send Money): <b>01339932887</b><br>
+        ২. ফিরতি এসএমএসের <b>TrxID</b> নিচে লিখুন।
+    </div>
+
+    <form id="signupForm">
+        <div class="form-group">
+            <label>মোবাইল নম্বর (ইউজারনেম)</label>
+            <input type="tel" id="username" placeholder="017xxxxxxxx" required>
+        </div>
+
+        <div class="form-group">
+            <label>পাসওয়ার্ড</label>
+            <input type="password" id="password" placeholder="লগইনের জন্য পাসওয়ার্ড দিন" required>
+        </div>
+
+        <div class="form-group">
+            <label>বিকাশ / নগদ ট্রানজ্যাকশন আইডি (TrxID)</label>
+            <input type="text" id="trxId" placeholder="উদাহরণ: BLA678..." required style="text-transform: uppercase;">
+        </div>
+
+        <button type="submit" id="submitBtn">অ্যাকাউন্ট ভেরিফাই ও সক্রিয় করুন</button>
+    </form>
+
+    <div id="statusMsg" class="msg"></div>
+</div>
+
+<script>
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const msg = document.getElementById('statusMsg');
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const trxId = document.getElementById('trxId').value.trim();
+
+    btn.disabled = true;
+    btn.innerText = 'ভেরিফাই করা হচ্ছে, অপেক্ষা করুন...';
+    msg.className = 'msg';
+    msg.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, trxId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            msg.className = 'msg success';
+            msg.innerText = data.message;
+            document.getElementById('signupForm').reset();
+        } else {
+            msg.className = 'msg error';
+            msg.innerText = data.message || 'ভেরিফিকেশন সম্পন্ন হয়নি!';
+        }
+    } catch (err) {
+        msg.className = 'msg error';
+        msg.innerText = 'সার্ভারে সংযোগ করা যাচ্ছে না। পুনরায় চেষ্টা করুন।';
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'অ্যাকাউন্ট ভেরিফাই ও সক্রিয় করুন';
+    }
+});
+</script>
+
+</body>
+</html>
