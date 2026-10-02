@@ -121,7 +121,8 @@ app.post('/api/request-recharge', (req, res) => {
 
 app.post('/forward', async (req, res) => {
     try {
-        const { sms_body, sender } = req.body;
+        const sms_body = req.body.sms_body || req.query.sms_body;
+        const sender = req.body.sender || req.query.sender;
         const text = sms_body || '';
 
         console.log(`[SMS RECEIVED from ${sender || 'Unknown'}]:`, text);
