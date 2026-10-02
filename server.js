@@ -151,7 +151,7 @@ app.post('/forward', async (req, res) => {
         if (!detectedUser) {
             return res.status(400).json({ 
                 success: false, 
-                error: 'মেসেজে সঠিক ইউজার আইডি (Ref) পাওয়া যায়নি।' 
+                error: 'মেসেজ থেকে গ্রাহকের আইডি (Ref) পাওয়া যায়নি।' 
             });
         }
 
