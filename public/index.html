@@ -1,108 +1,505 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAZ NETWORK - হটস্পট প্যাক রেজিস্ট্রেশন</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
-        body { background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
-        .card { background: #fff; max-width: 420px; width: 100%; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        h2 { text-align: center; color: #0d6efd; margin-top: 0; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #6c757d; font-size: 13px; margin-bottom: 18px; }
-        .info-box { background: #e7f1ff; border-left: 4px solid #0d6efd; padding: 12px; border-radius: 4px; font-size: 13px; margin-bottom: 15px; line-height: 1.5; color: #084298; }
-        .rates { font-size: 12px; background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; border-radius: 4px; margin-bottom: 15px; color: #664d03; }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 5px; color: #333; }
-        input { width: 100%; padding: 10px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; }
-        input:focus { outline: none; border-color: #0d6efd; }
-        button { width: 100%; padding: 12px; background: #0d6efd; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; transition: 0.2s; }
-        button:hover { background: #0b5ed7; }
-        .msg { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 13px; text-align: center; display: none; }
-        .msg.error { display: block; background: #f8d7da; color: #842029; }
-        .msg.success { display: block; background: #d1e7dd; color: #0f5132; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FAZ NETWORK - প্যাকেজ রেজিস্ট্রেশন ও ভেরিফিকেশন</title>
+  <style>
+    :root {
+      --bg-dark: #070d12;
+      --card-bg: rgba(11, 20, 26, 0.96);
+      --card-border: rgba(52, 211, 153, 0.2);
+      --accent-mint: #34d399;
+      --accent-teal: #059669;
+      --accent-soft: #6ee7b7;
+      --input-bg: rgba(255, 255, 255, 0.04);
+      --text-white: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 85% 85%, rgba(20, 184, 166, 0.1) 0%, transparent 50%),
+        linear-gradient(180deg, #050a0e 0%, #0a141b 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px 14px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text-white);
+    }
+
+    @keyframes coolShift {
+      0% { background-position: 0% 50%; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.25)); }
+      50% { background-position: 100% 50%; filter: drop-shadow(0 0 16px rgba(45, 212, 191, 0.35)); }
+      100% { background-position: 0% 50%; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.25)); }
+    }
+
+    .cool-container {
+      position: relative;
+      width: 100%;
+      max-width: 430px;
+      border-radius: 26px;
+      padding: 2px;
+      background: linear-gradient(120deg, #059669, #34d399, #0d9488, #10b981);
+      background-size: 250% 250%;
+      animation: coolShift 8s ease infinite;
+    }
+
+    .wrapper {
+      width: 100%;
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 26px 20px;
+      backdrop-filter: blur(20px);
+    }
+
+    .bismillah {
+      text-align: center;
+      font-size: 19px;
+      color: var(--accent-soft);
+      letter-spacing: 1.5px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      opacity: 0.95;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: 999px;
+      padding: 4px 14px;
+      width: fit-content;
+      margin: 0 auto 16px auto;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .brand-title {
+      font-size: 27px;
+      font-weight: 900;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: #ffffff;
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+    .brand-tagline {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      color: var(--accent-mint);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 999px;
+    }
+
+    /* Selected Plan Notice */
+    .selected-plan-banner {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid var(--accent-mint);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      text-align: center;
+      color: #f8fafc;
+      font-weight: 700;
+    }
+
+    .pricing-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 13px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.25);
+      margin-bottom: 16px;
+    }
+    .pricing-table th {
+      background: rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+      padding: 9px 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .pricing-table td {
+      padding: 9px 8px;
+      text-align: center;
+      font-size: 12.5px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+    .pricing-table tr {
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .pricing-table tbody tr:hover {
+      background: rgba(52, 211, 153, 0.08);
+    }
+    .pricing-table tr.active {
+      background: rgba(52, 211, 153, 0.18);
+    }
+    .code-badge {
+      background: rgba(52, 211, 153, 0.1);
+      color: #6ee7b7;
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .price-badge {
+      color: #34d399;
+      font-weight: 800;
+    }
+
+    .pay-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 15px;
+      padding: 14px;
+      margin-bottom: 18px;
+      text-align: left;
+    }
+    .pay-card h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f1f5f9;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .number-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1.5px solid rgba(52, 211, 153, 0.35);
+      padding: 8px 12px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .number-display {
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+    }
+    .btn-copy {
+      background: rgba(52, 211, 153, 0.12);
+      border: 1px solid var(--accent-mint);
+      color: var(--accent-mint);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-copy:active { transform: scale(0.95); }
+    .pay-rules {
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.55;
+    }
+
+    /* Form Fields */
+    .field {
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .field label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
+    .field input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      padding: 13px 16px;
+      border-radius: 13px;
+      font-size: 14.5px;
+      font-weight: 600;
+      outline: none;
+      transition: 0.25s;
+    }
+    .field input:focus {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: var(--accent-mint);
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.25);
+    }
+    .field input::placeholder {
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+      color: #ffffff;
+      border: none;
+      padding: 14px;
+      border-radius: 13px;
+      font-size: 15.5px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      margin-top: 6px;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+      transition: 0.2s;
+    }
+    .btn-submit:active { transform: scale(0.98); }
+    .btn-submit:disabled {
+      background: #334155;
+      color: #94a3b8;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* Notification Messages */
+    .msg-box {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      text-align: center;
+      line-height: 1.5;
+      display: none;
+    }
+    .msg-box.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+    }
+    .msg-box.success {
+      display: block;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      color: #6ee7b7;
+    }
+
+    .btn-call {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      color: #34d399;
+      padding: 10px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      margin-top: 15px;
+      transition: 0.2s;
+    }
+  </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>FAZ NETWORK</h2>
-    <div class="subtitle">স্বয়ংক্রিয় হটস্পট ভাউচার পোর্টাল</div>
+<div class="cool-container">
+  <div class="wrapper">
+    
+    <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
 
-    <div class="rates">
-        <b>প্যাকেজ মূল্যতালিকা:</b><br>
-        • ১০ টাকা = ১ ঘণ্টা | ২০ টাকা = ১ দিন<br>
-        • ৪০ টাকা = ৩ দিন | ৬০ টাকা = ৭ দিন<br>
-        • ৯০ টাকা = ১৫ দিন | ১৫০ টাকা = ৩০ দিন
+    <div class="status-badge">
+      <span class="status-dot"></span> ইনস্ট্যান্ট ভেরিফিকেশন সিস্টেম
     </div>
 
-    <div class="info-box">
-        ১. বিকাশ / নগদ (Send Money): <b>01339932887</b><br>
-        ২. ফিরতি এসএমএসের <b>TrxID</b> নিচে লিখুন।
+    <div class="header">
+      <div class="brand-title">FAZ NETWORK</div>
+      <div class="brand-tagline">⚡ অটোমেটিক প্যাকেজ অ্যাক্টিভেশন</div>
     </div>
 
-    <form id="signupForm">
-        <div class="form-group">
-            <label>মোবাইল নম্বর (ইউজারনেম)</label>
-            <input type="tel" id="username" placeholder="017xxxxxxxx" required>
-        </div>
+    <div class="selected-plan-banner" id="planBanner">
+      👉 প্যাকেজ সিলেক্ট করতে নিচের টেবিলে ট্যাপ করুন
+    </div>
 
-        <div class="form-group">
-            <label>পাসওয়ার্ড</label>
-            <input type="password" id="password" placeholder="লগইনের জন্য পাসওয়ার্ড দিন" required>
-        </div>
+    <!-- Pricing Table with Click to Select -->
+    <table class="pricing-table" id="pricingTable">
+      <thead>
+        <tr><th>মেয়াদ</th><th>প্রোফাইল</th><th>মূল্য</th></tr>
+      </thead>
+      <tbody>
+        <tr data-amount="10" data-name="১ ঘণ্টা (১০ টাকা)"><td>১ ঘণ্টা</td><td><span class="code-badge">1Hour</span></td><td class="price-badge">১০/-</td></tr>
+        <tr data-amount="15" data-name="১২ ঘণ্টা (১৫ টাকা)"><td>১২ ঘণ্টা</td><td><span class="code-badge">12Hour</span></td><td class="price-badge">১৫/-</td></tr>
+        <tr data-amount="20" data-name="১ দিন (২০ টাকা)" class="active"><td>১ দিন (২৪ ঘণ্টা)</td><td><span class="code-badge">1Day</span></td><td class="price-badge">২০/-</td></tr>
+        <tr data-amount="40" data-name="৩ দিন (৪০ টাকা)"><td>৩ দিন</td><td><span class="code-badge">3Day</span></td><td class="price-badge">৪০/-</td></tr>
+        <tr data-amount="60" data-name="৭ দিন (৬০ টাকা)"><td>৭ দিন (১ সপ্তাহ)</td><td><span class="code-badge">7Day</span></td><td class="price-badge">৬০/-</td></tr>
+        <tr data-amount="90" data-name="১৫ দিন (৯০ টাকা)"><td>১৫ দিন</td><td><span class="code-badge">15Day</span></td><td class="price-badge">৯০/-</td></tr>
+        <tr data-amount="150" data-name="৩০ দিন (১৫০ টাকা)"><td>৩০ দিন (১ মাস)</td><td><span class="code-badge">30Day</span></td><td class="price-badge">১৫০/-</td></tr>
+        <tr data-amount="200" data-name="১০০ জিবি (২০০ টাকা)"><td>১০০ জিবি</td><td><span class="code-badge">100GB</span></td><td class="price-badge">২০০/-</td></tr>
+        <tr data-amount="350" data-name="৩০০ জিবি (৩৫০ টাকা)"><td>৩০০ জিবি</td><td><span class="code-badge">300GB</span></td><td class="price-badge">৩৫০/-</td></tr>
+      </tbody>
+    </table>
 
-        <div class="form-group">
-            <label>বিকাশ / নগদ ট্রানজ্যাকশন আইডি (TrxID)</label>
-            <input type="text" id="trxId" placeholder="উদাহরণ: BLA678..." required style="text-transform: uppercase;">
-        </div>
+    <div class="pay-card">
+      <h4>বিকাশ / নগদ পার্সোনাল সেন্ড মানি</h4>
+      <div class="number-box">
+        <span class="number-display" id="bkashNum">01339932887</span>
+        <button type="button" class="btn-copy" onclick="copyNumber()">কপি করুন</button>
+      </div>
+      <div class="pay-rules">
+        ১. প্যাকেজ অনুযায়ী সঠিক টাকা <strong>Send Money</strong> করুন।<br>
+        ২. টাকা পাঠানোর পর ফিরতি SMS থেকে <strong>TrxID</strong> কপি করুন।<br>
+        ৩. নিচে তথ্য পূরণ করে সাবমিট করলেই ইন্টারনেট চালু হবে।
+      </div>
+    </div>
 
-        <button type="submit" id="submitBtn">অ্যাকাউন্ট ভেরিফাই ও সক্রিয় করুন</button>
+    <!-- Registration / Verification Form -->
+    <form id="verifyForm">
+      <div class="field">
+        <label>মোবাইল নম্বর <span style="color:#34d399">*</span></label>
+        <input type="tel" id="userInput" placeholder="যে নম্বর থেকে টাকা পাঠিয়েছেন" required autocomplete="tel" oninput="syncPass()" />
+      </div>
+
+      <div class="field">
+        <label>পাসওয়ার্ড <span style="color:#34d399">*</span></label>
+        <input type="password" id="passInput" placeholder="লগইনের জন্য পাসওয়ার্ড দিন" required autocomplete="new-password" />
+      </div>
+
+      <div class="field">
+        <label>বিকাশ / নগদ TrxID <span style="color:#34d399">*</span></label>
+        <input type="text" id="trxInput" placeholder="উদাহরণ: BLA678D3K" required style="text-transform: uppercase;" />
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">অ্যাকাউন্ট ভেরিফাই ও সক্রিয় করুন</button>
     </form>
 
-    <div id="statusMsg" class="msg"></div>
+    <div id="statusBox" class="msg-box"></div>
+
+    <a href="tel:01339932887" class="btn-call">
+      📞 হেল্পলাইন: 01339932887
+    </a>
+  </div>
 </div>
 
 <script>
-document.getElementById('signupForm').addEventListener('submit', async (e) => {
+  // Table row select & update banner
+  const rows = document.querySelectorAll("#pricingTable tbody tr");
+  const banner = document.getElementById("planBanner");
+
+  rows.forEach(row => {
+    row.addEventListener("click", () => {
+      rows.forEach(r => r.classList.remove("active"));
+      row.classList.add("active");
+      const name = row.getAttribute("data-name");
+      const amount = row.getAttribute("data-amount");
+      banner.innerHTML = `নির্বাচিত প্যাকেজ: <strong>${name}</strong> (পাঠাবেন <strong>${amount}৳</strong>)`;
+    });
+  });
+
+  // Mobile number syncs to password automatically if untouched
+  function syncPass() {
+    const userVal = document.getElementById("userInput").value;
+    const passField = document.getElementById("passInput");
+    if (!passField.getAttribute('data-manual')) {
+      passField.value = userVal;
+    }
+  }
+
+  document.getElementById("passInput").addEventListener('input', function() {
+    this.setAttribute('data-manual', 'true');
+  });
+
+  function copyNumber() {
+    const num = "01339932887";
+    const btn = document.querySelector(".btn-copy");
+    navigator.clipboard.writeText(num).then(() => {
+      btn.innerText = "কপি হয়েছে!";
+      btn.style.background = "#10b981";
+      btn.style.color = "#ffffff";
+      setTimeout(() => {
+        btn.innerText = "কপি করুন";
+        btn.style.background = "rgba(52, 211, 153, 0.12)";
+        btn.style.color = "var(--accent-mint)";
+      }, 2000);
+    });
+  }
+
+  // Submit to Backend API
+  document.getElementById('verifyForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn');
-    const msg = document.getElementById('statusMsg');
+    const msg = document.getElementById('statusBox');
 
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const trxId = document.getElementById('trxId').value.trim();
+    const username = document.getElementById('userInput').value.trim();
+    const password = document.getElementById('passInput').value.trim();
+    const trxId = document.getElementById('trxInput').value.trim();
 
     btn.disabled = true;
     btn.innerText = 'ভেরিফাই করা হচ্ছে, অপেক্ষা করুন...';
-    msg.className = 'msg';
+    msg.className = 'msg-box';
     msg.style.display = 'none';
 
     try {
-        const response = await fetch('/api/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, trxId })
-        });
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, trxId })
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (response.ok && data.success) {
-            msg.className = 'msg success';
-            msg.innerText = data.message;
-            document.getElementById('signupForm').reset();
-        } else {
-            msg.className = 'msg error';
-            msg.innerText = data.message || 'ভেরিফিকেশন সম্পন্ন হয়নি!';
-        }
+      if (response.ok && data.success) {
+        msg.className = 'msg-box success';
+        msg.innerHTML = `🎉 ${data.message}<br><small>এখন হটস্পট পেজে গিয়ে লগইন করুন।</small>`;
+        document.getElementById('verifyForm').reset();
+      } else {
+        msg.className = 'msg-box error';
+        msg.innerText = data.message || 'ভেরিফিকেশন সম্পন্ন হয়নি!';
+      }
     } catch (err) {
-        msg.className = 'msg error';
-        msg.innerText = 'সার্ভারে সংযোগ করা যাচ্ছে না। পুনরায় চেষ্টা করুন।';
+      msg.className = 'msg-box error';
+      msg.innerText = 'সার্ভারে সংযোগ করা যাচ্ছে না। পুনরায় চেষ্টা করুন।';
     } finally {
-        btn.disabled = false;
-        btn.innerText = 'অ্যাকাউন্ট ভেরিফাই ও সক্রিয় করুন';
+      btn.disabled = false;
+      btn.innerText = 'অ্যাকাউন্ট ভেরিফাই ও সক্রিয় করুন';
     }
-});
+  });
 </script>
 
 </body>
