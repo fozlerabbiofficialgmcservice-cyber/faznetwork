@@ -20,36 +20,56 @@ const MIKROTIK_CONFIG = {
     timeout: 10
 };
 
+// টাকার পরিমাণের সাথে মিল রেখে প্রোফাইল নির্ধারণ
+const PRICE_PROFILE_MAP = {
+    '10': 'Profile - 1Hour',
+    '15': 'Profile - 12Hour',
+    '20': 'Profile - 1Day',
+    '40': 'Profile - 3Day',
+    '60': 'Profile - 7Day',
+    '90': 'Profile - 15Day',
+    '150': 'Profile - 30Day',
+    '200': 'Profile - 100GB',
+    '350': 'Profile - 300GB'
+};
+
 const pendingOrders = new Map();
 
-async function createUserInUserManager(username, password, groupName = 'pppoe') {
+async function assignUserProfile(username, profileName) {
     const conn = new RosApi(MIKROTIK_CONFIG);
 
     try {
         await conn.connect();
 
+        // ১. ইউজার বিদ্যমান কিনা চেক করা, না থাকলে তৈরি করা
         const existingUsers = await conn.write('/user-manager/user/print', [
             `?name=${username}`
         ]);
 
-        if (existingUsers && existingUsers.length > 0) {
+        if (!existingUsers || existingUsers.length === 0) {
+            await conn.write('/user-manager/user/add', [
+                `=name=${username}`,
+                `=password=${username}`,
+                `=disabled=no`
+            ]);
+            console.log(`[USER MANAGER] User ${username} created.`);
+        } else {
             const uId = existingUsers[0]['.id'];
             await conn.write('/user-manager/user/set', [
                 `=.id=${uId}`,
-                `=disabled=no`,
-                `=group=${groupName}`
-            ]);
-            console.log(`[USER MANAGER] User ${username} updated. Group: ${groupName}`);
-        } else {
-            await conn.write('/user-manager/user/add', [
-                `=name=${username}`,
-                `=password=${password || username}`,
-                `=group=${groupName}`,
                 `=disabled=no`
             ]);
-            console.log(`[USER MANAGER] User ${username} created. Group: ${groupName}`);
+            console.log(`[USER MANAGER] User ${username} enabled.`);
         }
 
+        // ২. ইউজারের ওপর প্রোফাইল/প্যাকেজ অ্যাসাইন করা
+        await conn.write('/user-manager/user-profile/add', [
+            `=user=${username}`,
+            `=profile=${profileName}`
+        ]);
+        console.log(`[USER MANAGER] Profile '${profileName}' assigned to ${username}`);
+
+        // ৩. পুরনো কোনো আটকে থাকা সেশন থাকলে ডিসকানেক্ট করা
         try {
             const activeSessions = await conn.write('/user-manager/session/print', [
                 `?user=${username}`
@@ -60,7 +80,7 @@ async function createUserInUserManager(username, password, groupName = 'pppoe') 
         } catch (sessErr) {}
 
         await conn.close();
-        return { success: true, message: `User ${username} active in group ${groupName}` };
+        return { success: true, message: `User ${username} activated with profile ${profileName}` };
     } catch (err) {
         if (conn) {
             try { await conn.close(); } catch (e) {}
@@ -84,7 +104,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/request-recharge', (req, res) => {
-    const { username, group, phone } = req.body;
+    const { username, profile, phone } = req.body;
     if (!username) {
         return res.status(400).json({ success: false, message: 'Username প্রদান করুন।' });
     }
@@ -92,18 +112,18 @@ app.post('/api/request-recharge', (req, res) => {
     const cleanUser = username.trim().toLowerCase();
     pendingOrders.set(cleanUser, {
         username: username.trim(),
-        group: group || 'pppoe',
+        profile: profile || 'Profile - 30Day',
         phone: phone || '',
         time: Date.now()
     });
 
     return res.json({ 
         success: true, 
-        message: 'রিচার্জ অর্ডার সাবমিট হয়েছে। SMS আসলে সচল হবে।' 
+        message: 'রিচার্জের অনুরোধ জমা হয়েছে। পেমেন্ট কনফার্ম হলে সচল হবে।' 
     });
 });
 
-app.post('/api/macrodroid-sms', async (req, res) => {
+app.post('/forward', async (req, res) => {
     try {
         const { sms_body, sender } = req.body;
         const text = sms_body || '';
@@ -112,15 +132,25 @@ app.post('/api/macrodroid-sms', async (req, res) => {
 
         let detectedUser = null;
         let trxId = null;
+        let amount = null;
 
+        // ট্রানজেকশন আইডি বের করা
         const trxMatch = text.match(/(?:TrxID|TxnID|Trx)\s*[:]?\s*([A-Za-z0-9]+)/i);
         if (trxMatch) trxId = trxMatch[1];
 
+        // টাকার পরিমাণ বের করা (যেমন: Tk 150.00 বা Tk 150)
+        const amountMatch = text.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+        if (amountMatch) {
+            amount = Math.round(parseFloat(amountMatch[1])).toString();
+        }
+
+        // রেফারেন্স থেকে ইউজার আইডি খোঁজা
         const refMatch = text.match(/Ref\s*[:]?\s*([A-Za-z0-9_.-]+)/i);
-        if (refMatch) {
+        if (refMatch && refMatch[1].trim() !== '0') {
             detectedUser = refMatch[1].trim();
         }
 
+        // মেসেজে রেফারেন্স না থাকলে পেন্ডিং লিস্ট থেকে নেওয়া
         if (!detectedUser && pendingOrders.size > 0) {
             const lastEntry = Array.from(pendingOrders.values()).pop();
             detectedUser = lastEntry.username;
@@ -129,14 +159,19 @@ app.post('/api/macrodroid-sms', async (req, res) => {
         if (!detectedUser) {
             return res.status(400).json({ 
                 success: false, 
-                error: 'মেসেজ থেকে গ্রাহকের আইডি (Ref) পাওয়া যায়নি।' 
+                error: 'মেসেজে সঠিক ইউজার আইডি (Ref) পাওয়া যায়নি।' 
             });
         }
 
-        const orderInfo = pendingOrders.get(detectedUser.toLowerCase());
-        const targetGroup = orderInfo ? orderInfo.group : 'pppoe';
+        // প্রোফাইল নির্ধারণ (টাকা অনুযায়ী, অথবা ডিফল্ট)
+        let selectedProfile = 'Profile - 30Day';
+        if (amount && PRICE_PROFILE_MAP[amount]) {
+            selectedProfile = PRICE_PROFILE_MAP[amount];
+        } else if (pendingOrders.has(detectedUser.toLowerCase())) {
+            selectedProfile = pendingOrders.get(detectedUser.toLowerCase()).profile;
+        }
 
-        const result = await createUserInUserManager(detectedUser, detectedUser, targetGroup);
+        const result = await assignUserProfile(detectedUser, selectedProfile);
 
         pendingOrders.delete(detectedUser.toLowerCase());
 
@@ -144,7 +179,8 @@ app.post('/api/macrodroid-sms', async (req, res) => {
             success: true,
             user: detectedUser,
             trxId: trxId,
-            group: targetGroup,
+            amount: amount,
+            profile: selectedProfile,
             mikrotik: result
         });
 
