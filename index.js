@@ -1,176 +1,150 @@
 const express = require('express');
-const { RouterOSAPI } = require('node-routeros');
+const RosApi = require('node-routeros').RouterOSAPI;
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// CORS পলিসি
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept'
-  );
-  next();
-});
-
-// মিডলওয়্যার ও স্ট্যাটিক ফোল্ডার (ওয়েব পেজ দেখানোর জন্য)
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.text({ type: '*/*' }));
-app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// মেমোরি স্টোর
-const pendingPayments = new Map();
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
 
-process.on('uncaughtException', (err) => {
-  console.error('[UNCAUGHT EXCEPTION]:', err);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('[UNHANDLED REJECTION]:', reason);
-});
-
-// হোমপেজে ফ্রন্টএন্ড ফর্ম লোড হবে
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// MikroTik RouterOS v7 User Manager ইন্টিগ্রেশন
-async function createUserManagerUser(username, password, profileName, commentText) {
-  const api = new RouterOSAPI({
+const MIKROTIK_CONFIG = {
     host: process.env.MIKROTIK_HOST || '103.54.37.182',
-    port: parseInt(process.env.MIKROTIK_PORT, 10) || 1126,
+    port: parseInt(process.env.MIKROTIK_PORT) || 1126,
     user: process.env.MIKROTIK_USER || 'smsbot',
     password: process.env.MIKROTIK_PASSWORD || '66778',
     timeout: 10
-  });
+};
 
-  try {
-    await api.connect();
-    // এখানে রাউটারে ইউজার তৈরির API কমান্ড রান হবে
-    await api.write('/user-manager/user/add', [
-      `=name=${username}`,
-      `=password=${password}`,
-      `=group=${profileName}`,
-      `=comment=${commentText}`
-    ]);
-    await api.close();
-    return true;
-  } catch (err) {
-    console.error('MikroTik API Error:', err);
-    try { await api.close(); } catch (_) {}
-    return false;
-  }
+const PRICE_PROFILE_MAP = {
+    '10': 'Profile - 1Hour',
+    '15': 'Profile - 12Hour',
+    '20': 'Profile - 1Day',
+    '40': 'Profile - 3Day',
+    '60': 'Profile - 7Day',
+    '90': 'Profile - 15Day',
+    '150': 'Profile - 30Day',
+    '200': 'Profile - 100GB',
+    '350': 'Profile - 300GB'
+};
+
+const pendingOrders = new Map();
+
+async function assignUserProfile(username, profileName) {
+    const conn = new RosApi(MIKROTIK_CONFIG);
+    try {
+        await conn.connect();
+        const existingUsers = await conn.write('/user-manager/user/print', [`?name=${username}`]);
+        if (!existingUsers || existingUsers.length === 0) {
+            await conn.write('/user-manager/user/add', [`=name=${username}`, `=password=${username}`, `=disabled=no`]);
+            console.log(`[USER MANAGER] User ${username} created.`);
+        } else {
+            const uId = existingUsers[0]['.id'];
+            await conn.write('/user-manager/user/set', [`=.id=${uId}`, `=disabled=no`]);
+            console.log(`[USER MANAGER] User ${username} enabled.`);
+        }
+
+        await conn.write('/user-manager/user-profile/add', [`=user=${username}`, `=profile=${profileName}`]);
+        console.log(`[USER MANAGER] Profile '${profileName}' assigned to ${username}`);
+
+        try {
+            const activeSessions = await conn.write('/user-manager/session/print', [`?user=${username}`]);
+            for (const sess of activeSessions) {
+                await conn.write('/user-manager/session/remove', [`=.id=${sess['.id']}`]);
+            }
+        } catch (sessErr) {}
+
+        await conn.close();
+        return { success: true, message: `User ${username} activated with profile ${profileName}` };
+    } catch (err) {
+        if (conn) {
+            try { await conn.close(); } catch (e) {}
+        }
+        console.error('[MIKROTIK ERROR]:', err.message);
+        throw err;
+    }
 }
 
-// টাকার পরিমাণ অনুযায়ী MikroTik প্রোফাইল সিলেকশন
-function getProfileByAmount(amount) {
-  if (amount === 10) return 'Profile-1Hour';
-  if (amount === 15) return 'Profile-12Hour';
-  if (amount === 150) return 'Profile-30Day';
-  if (amount === 200) return 'Profile-100GB';
-  if (amount === 350) return 'Profile-300GB';
-  return 'Profile-1Day'; // ডিফল্ট প্রোফাইল
-}
-
-// MacroDroid থেকে SMS রিসিভ করার এন্ডপয়েন্ট
-app.all('/forward', async (req, res) => {
-  let rawMessage = '';
-  
-  if (typeof req.body === 'string') {
-    rawMessage = req.body;
-  } else if (req.body && req.body.message) {
-    rawMessage = req.body.message;
-  } else if (req.query && req.query.message) {
-    rawMessage = req.query.message;
-  }
-
-  const sender = (req.query?.sender || req.body?.sender || '').toString();
-
-  console.log('--- Incoming SMS via MacroDroid ---');
-  console.log('Raw Message:', rawMessage);
-  console.log('Sender:', sender);
-
-  // bKash / Nagad TrxID ও Amount বের করা
-  const trxMatch = rawMessage.match(/(?:TrxID|TxnID|Transaction ID)[:\s]+([A-Z0-9]+)/i);
-  const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
-
-  const amountMatch = rawMessage.match(/(?:Tk|BDT|amount)[:\s]*([0-9]+(?:\.[0-9]+)?)/i);
-  const amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
-
-  const phoneMatch = rawMessage.match(/(?:from|sender)[:\s]*(01[0-9]{9})/i);
-  const customerNumber = phoneMatch ? phoneMatch[1] : '';
-
-  const profile = getProfileByAmount(amount);
-
-  if (trxId) {
-    pendingPayments.set(trxId, {
-      phone: customerNumber,
-      amount: amount,
-      profile: profile,
-      time: Date.now()
-    });
-
-    console.log(`[PAYMENT STORED] TrxID: ${trxId}, Amount: ${amount}, Profile: ${profile}`);
-  }
-
-  return res.status(200).send('Logged for verification');
+app.get('/', (req, res) => {
+    return res.status(200).send('FAZ NETWORK User Manager Server is Running!');
 });
 
-// কাস্টমার সাইন-আপ ও TrxID ভেরিফিকেশন এন্ডপয়েন্ট
-app.post('/api/signup', async (req, res) => {
-  const { username, password, trxId, phone } = req.body;
-  const targetUser = (username || phone || '').trim();
-
-  if (!targetUser || !password) {
-    return res.status(400).json({
-      success: false,
-      message: 'মোবাইল নম্বর ও পাসওয়ার্ড আবশ্যক।'
+app.post('/api/request-recharge', (req, res) => {
+    const { username, profile, phone } = req.body;
+    if (!username) return res.status(400).json({ success: false, message: 'Username প্রদান করুন।' });
+    const cleanUser = username.trim().toLowerCase();
+    pendingOrders.set(cleanUser, {
+        username: username.trim(),
+        profile: profile || 'Profile - 30Day',
+        phone: phone || '',
+        time: Date.now()
     });
-  }
+    return res.json({ success: true, message: 'রিচার্জের অনুরোধ জমা হয়েছে।' });
+});
 
-  if (!trxId) {
-    return res.status(400).json({
-      success: false,
-      message: 'বিকাশ/নগদ TrxID দেওয়া বাধ্যতামূলক।'
-    });
-  }
+app.post('/forward', async (req, res) => {
+    try {
+        console.log('[DEBUG] Received Body:', req.body);
+        let sms_body = req.body.sms_body || req.body.sms_message || req.body.message || '';
+        let sender = req.body.sender || req.body.from || '';
 
-  const cleanTrx = trxId.trim().toUpperCase();
-  const payment = pendingPayments.get(cleanTrx);
+        if (typeof req.body === 'string') {
+            sms_body = req.body;
+        }
 
-  if (!payment) {
-    return res.status(400).json({
-      success: false,
-      message: 'ট্রানজেকশন আইডি মেলেনি অথবা পেমেন্টের এসএমএস এখনও সার্ভারে পৌঁছায়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।'
-    });
-  }
+        console.log(`[SMS RECEIVED from ${sender}]: ${sms_body}`);
 
-  // পেমেন্ট অনুযায়ী MikroTik-এ ইউজার তৈরি
-  const comment = `Web Signup Trx: ${cleanTrx}, Tk: ${payment.amount}`;
-  const created = await createUserManagerUser(
-    targetUser,
-    password,
-    payment.profile,
-    comment
-  );
+        let detectedUser = null;
+        let amount = null;
 
-  if (created) {
-    pendingPayments.delete(cleanTrx); // একবার ব্যবহার হয়ে গেলে মুছে ফেলা হবে
-    return res.json({
-      success: true,
-      message: `অ্যাকাউন্ট সক্রিয় হয়েছে! প্যাকেজ: ${payment.profile}`
-    });
-  } else {
-    return res.status(500).json({
-      success: false,
-      message: 'রাউটারে অ্যাকাউন্ট তৈরি করতে ব্যর্থ হয়েছে।'
-    });
-  }
+        const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+        if (amountMatch) amount = Math.round(parseFloat(amountMatch[1])).toString();
+
+        const refMatch = sms_body.match(/Ref\s*[:]?\s*([A-Za-z0-9_.-]+)/i);
+        if (refMatch && refMatch[1].trim() !== '0') {
+            detectedUser = refMatch[1].trim();
+        }
+
+        if (!detectedUser && pendingOrders.size > 0) {
+            const lastEntry = Array.from(pendingOrders.values()).pop();
+            detectedUser = lastEntry.username;
+        }
+
+        if (!detectedUser) {
+            console.log('[INFO] No customer ID / Ref found in message.');
+            return res.status(200).json({ 
+                success: true, 
+                message: 'মেসেজ সার্ভারে এসেছে, তবে এতে কোনো কাস্টমার Ref নেই।' 
+            });
+        }
+
+        let selectedProfile = 'Profile - 30Day';
+        if (amount && PRICE_PROFILE_MAP[amount]) {
+            selectedProfile = PRICE_PROFILE_MAP[amount];
+        } else if (pendingOrders.has(detectedUser.toLowerCase())) {
+            selectedProfile = pendingOrders.get(detectedUser.toLowerCase()).profile;
+        }
+
+        const result = await assignUserProfile(detectedUser, selectedProfile);
+        pendingOrders.delete(detectedUser.toLowerCase());
+
+        return res.status(200).json({
+            success: true,
+            user: detectedUser,
+            amount: amount,
+            profile: selectedProfile,
+            mikrotik: result
+        });
+    } catch (error) {
+        console.error('[WEBHOOK ERROR]:', error.message);
+        return res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+    console.log(`Server listening on port ${PORT}`);
 });
