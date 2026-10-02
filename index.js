@@ -24,7 +24,7 @@ async function createUserManagerUser(username, password, profileName, commentTex
     try {
         await api.connect();
 
-        // ১. চেক করা ইউজার আগে থেকে আছে কিনা
+        // ইউজার আগে থেকে আছে কিনা চেক করা
         const existingUsers = await api.write('/user-manager/user/print', [
             `?name=${username}`
         ]);
@@ -40,7 +40,7 @@ async function createUserManagerUser(username, password, profileName, commentTex
             ]);
             console.log(`[USER ADDED] ${username}`);
         } else {
-            // আগে থেকে থাকলে আপডেট
+            // আগের ইউজারের কমেন্ট ও পাসওয়ার্ড আপডেট
             await api.write('/user-manager/user/set', [
                 `=.id=${existingUsers[0]['.id']}`,
                 `=password=${password}`,
@@ -49,7 +49,7 @@ async function createUserManagerUser(username, password, profileName, commentTex
             console.log(`[USER UPDATED] ${username}`);
         }
 
-        // ২. প্রোফাইল অ্যাসাইন করা
+        // প্রোফাইল যুক্ত করা
         await api.write('/user-manager/user-profile/add', [
             `=user=${username}`,
             `=profile=${profileName}`
@@ -82,15 +82,15 @@ app.all('/forward', async (req, res) => {
     console.log('Raw Message:', rawMessage);
     console.log('Sender:', sender);
 
-    // টাকার পরিমাণ বের করা
+    // ১. টাকার পরিমাণ বের করা
     const amountMatch = rawMessage.match(/(?:Tk|BDT)\s*([\d,.]+)/i);
-    const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : 0;
+    const amount = amountMatch ? Math.round(parseFloat(amountMatch[1].replace(',', ''))) : 0;
 
-    // ফোন নম্বর বের করা
-    const phoneMatch = rawMessage.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9]\d{8})/i) || rawMessage.match(/(01[3-9]\d{8})/);
+    // ২. গ্রাহকের ১১ ডিজিটের ফোন নম্বর বের করা (013 - 019)
+    const phoneMatch = rawMessage.match(/(01[3-9]\d{8})/);
     let customerNumber = null;
     if (phoneMatch) {
-        customerNumber = phoneMatch[1] || phoneMatch[0];
+        customerNumber = phoneMatch[1];
     } else if (sender) {
         const cleanSender = sender.replace(/[^0-9]/g, '');
         if (cleanSender.length >= 11) {
@@ -98,11 +98,11 @@ app.all('/forward', async (req, res) => {
         }
     }
 
-    // TrxID বের করা
+    // ৩. TrxID বের করা
     const trxMatch = rawMessage.match(/TrxID[:\s]+([A-Z0-9]+)/i);
     const trxId = trxMatch ? trxMatch[1] : 'Manual';
 
-    // MikroTik Profiles অনুযায়ী সঠিক নামের ম্যাপিং (কোনো স্পেস নেই)
+    // ৪. প্রোফাইল নির্ধারণ
     let profile = null;
     if (amount === 10) profile = 'Profile-1Hour';
     else if (amount === 15) profile = 'Profile-12Hour';
@@ -114,13 +114,16 @@ app.all('/forward', async (req, res) => {
     else if (amount === 200) profile = 'Profile-100GB';
     else if (amount === 350) profile = 'Profile-300GB';
 
+    console.log(`Parsed Data -> Phone: ${customerNumber}, Amount: ${amount}, Profile: ${profile}`);
+
     if (customerNumber && profile) {
         const comment = `bKash/Nagad Trx: ${trxId}, Tk: ${amount}`;
         await createUserManagerUser(customerNumber, customerNumber, profile, comment);
-        return res.status(200).send(`SUCCESS: User ${customerNumber} processed with ${profile}`);
+        return res.status(200).send(`OK: Processed for ${customerNumber}`);
     } else {
-        console.warn(`[SKIPPED] Missing data: Phone=${customerNumber}, Amount=${amount}, Profile=${profile}`);
-        return res.status(400).send('ERROR: Invalid amount or customer number');
+        console.warn(`[IGNORED] Data incomplete or invalid amount`);
+        // MacroDroid যাতে 400 এরর না দেখায়, তাই 200 পাঠিয়ে দেওয়া হলো
+        return res.status(200).send('Ignored: Not a valid recharge SMS');
     }
 });
 
