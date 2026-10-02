@@ -1,22 +1,25 @@
 const express = require('express');
+const path = require('path');
 const RosApi = require('node-routeros').RouterOSAPI;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// মিডলওয়্যার কনফিগারেশন
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.text({ type: '*/*' })); // যে ফরম্যাটেই SMS আসুক ক্যাচ করবে
+app.use(express.text({ type: '*/*' }));
 
-const MIKROTIK_HOST = process.env.MIKROTIK_HOST;
-const MIKROTIK_USER = process.env.MIKROTIK_USER;
-const MIKROTIK_PASSWORD = process.env.MIKROTIK_PASSWORD;
-const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT, 10) || 8728;
+// MikroTik সরাসরি কনফিগারেশন (কোনো Env Variable লাগবে না)
+const MIKROTIK_HOST = '103.54.37.182';
+const MIKROTIK_USER = 'smsbot';
+const MIKROTIK_PASSWORD = '66778';
+const MIKROTIK_PORT = 1126;
 
-// TrxID জমা রাখার স্টোর
+// TrxID মেমোরি স্টোর
 const paymentStore = new Map();
 
-// ১. MacroDroid রিকোয়েস্ট রিসিভ করা (আপনার পূর্বের সচল রুট)
+// ১. MacroDroid SMS রিসিভার (/forward)
 app.post('/forward', (req, res) => {
     let rawText = '';
     
@@ -28,7 +31,6 @@ app.post('/forward', (req, res) => {
 
     console.log(`[SMS Hit] Data: ${rawText}`);
 
-    // বিকাশ / নগদ TrxID বের করার লজিক
     const trxMatch = rawText.match(/(?:TrxID|TxnID|Txn ID|Transaction ID)[:\s]*([A-Z0-9]+)/i);
     const amountMatch = rawText.match(/(?:Tk|BDT|amount)[:\s]*([\d,]+(?:\.\d{2})?)/i);
 
@@ -42,14 +44,14 @@ app.post('/forward', (req, res) => {
             timestamp: Date.now()
         });
 
-        console.log(`[SAVED SUCCESS] TrxID: ${trxId}`);
+        console.log(`[SAVED SUCCESS] TrxID: ${trxId} | Amount: ${amount}`);
         return res.status(200).send('OK');
     }
 
     return res.status(200).send('No TrxID found');
 });
 
-// ২. সাইন-আপ ভেরিফিকেশন API
+// ২. গ্রাহক সাইন-আপ ও User Manager এ ইউজার তৈরি API
 app.post('/api/signup', async (req, res) => {
     const { username, password, trxId } = req.body;
     if (!username || !password || !trxId) {
@@ -73,7 +75,7 @@ app.post('/api/signup', async (req, res) => {
         });
     }
 
-    // MikroTik RouterOS v7 User Manager-এ ইউজার তৈরি
+    // MikroTik RouterOS v7 User Manager এ কানেক্ট
     const conn = new RosApi({
         host: MIKROTIK_HOST,
         user: MIKROTIK_USER,
@@ -95,16 +97,18 @@ app.post('/api/signup', async (req, res) => {
 
         return res.json({ success: true, message: 'অ্যাকাউন্ট সফলভাবে সক্রিয় করা হয়েছে!' });
     } catch (error) {
+        console.error('MikroTik Error:', error);
         try { await conn.close(); } catch (e) {}
         return res.status(500).json({ success: false, message: 'রাউটারে অ্যাকাউন্ট তৈরিতে সমস্যা হয়েছে।' });
     }
 });
 
-// ৩. হোম রুট (হেলথ চেক)
+// ৩. সরাসরি আপনার সুন্দর index.html পেজটি ওপেন হওয়া
 app.get('*', (req, res) => {
-    res.send('FAZ NETWORK Service is Live');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// সার্ভার চালু
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
 });
