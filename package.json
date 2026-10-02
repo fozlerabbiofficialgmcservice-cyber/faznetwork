@@ -1,12 +1,12 @@
 {
-  "name": "sms-forwarder",
+  "name": "faznetwork",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
-    "node-routeros": "^1.6.0"
+    "node-routeros": "^1.6.9"
   }
 }
