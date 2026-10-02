@@ -89,8 +89,10 @@ app.post('/api/request-recharge', (req, res) => {
 app.post('/forward', async (req, res) => {
     try {
         console.log('[DEBUG] Received Body:', req.body);
-        let sms_body = req.body.sms_body || req.body.sms_message || req.body.message || '';
-        let sender = req.body.sender || req.body.from || '';
+        console.log('[DEBUG] Received Query:', req.query);
+
+        let sms_body = req.query.sms_body || req.body.sms_body || req.body.sms_message || req.body.message || '';
+        let sender = req.query.sender || req.body.sender || req.body.from || '';
 
         if (typeof req.body === 'string') {
             sms_body = req.body;
