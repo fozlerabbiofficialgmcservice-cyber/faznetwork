@@ -1,137 +1,117 @@
 const express = require('express');
-const { RouterOSAPI } = require('node-routeros');
+const RosApi = require('node-routeros').RouterOSAPI;
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
 
-app.use(express.text({ type: '*/*' }));
-app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// সার্ভার ক্র্যাশ হওয়া পুরোপুরি ঠেকানোর জন্য
-process.on('uncaughtException', (err) => {
-    console.error('[UNCAUGHT EXCEPTION]:', err);
-});
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('[UNHANDLED REJECTION]:', reason);
-});
+// ১. MikroTik কানেকশন ডিটেইলস (সরাসরি কোডে)
+const MIKROTIK_CONFIG = {
+    host: 'YOUR_ROUTER_IP_OR_DDNS', // আপনার রাউটারের আইপি / ডোমেন
+    user: 'admin',                 // রাউটারের ইউজার
+    password: 'YOUR_PASSWORD',      // রাউটারের পাসওয়ার্ড
+    port: 8728,                    // এপিআই পোর্ট
+    timeout: 10
+};
 
-app.get('/', (req, res) => {
-    res.send('FAZ Network User Manager Server is Running!');
-});
+// ২. প্যাকেজ রেট ও User Manager প্রোফাইল ম্যাপিং
+const PACKAGES = {
+    10: '1_Hour',
+    20: '1_Day',
+    50: '3_Days',
+    100: '7_Days',
+    300: '30_Days',
+    500: '1_Month'
+};
 
-async function createUserManagerUser(username, password, profileName, commentText) {
-    const api = new RouterOSAPI({
-        host: '103.54.37.182',
-        port: 1112,
-        user: 'smsbot',
-        password: '66778',
-        timeout: 10
-    });
+// ডুপ্লিকেট ট্রানজেকশন ঠেকানোর রেকর্ড
+const processedTrx = new Set();
 
+// MikroTik User Manager-এ ইউজার ক্রিয়েট ফাংশন
+async function createUserManagerUser(phone, profileName, trxId) {
+    const conn = new RosApi(MIKROTIK_CONFIG);
     try {
-        await api.connect();
+        await conn.connect();
+        
+        // RouterOS v7 User Manager কমান্ড
+        await conn.write('/user-manager/user/add', [
+            `=name=${phone}`,
+            `=password=${phone.slice(-4)}`,
+            `=comment=TrxID:${trxId}`,
+            `=attributes=phone:${phone}`
+        ]);
 
-        // ১. সরাসরি ইউজার যোগ করার চেষ্টা
-        try {
-            await api.write('/user-manager/user/add', [
-                `=name=${username}`,
-                `=password=${password}`,
-                `=comment=${commentText}`,
-                '=group=Hotspot',
-                '=disabled=no'
-            ]);
-            console.log(`[USER CREATED]: ${username}`);
-        } catch (addErr) {
-            // যদি ইউজার আগে থেকেই থাকে, তাহলে আপডেট করবে
-            console.log(`[USER ALREADY EXISTS, UPDATING]: ${username}`);
-            await api.write('/user-manager/user/set', [
-                `=numbers=${username}`,
-                `=password=${password}`,
-                `=comment=${commentText}`
-            ]);
-        }
-
-        // ২. ইউজারের সাথে প্রোফাইল যুক্ত করা
-        await api.write('/user-manager/user-profile/add', [
-            `=user=${username}`,
+        await conn.write('/user-manager/user-profile/add', [
+            `=user=${phone}`,
             `=profile=${profileName}`
         ]);
 
-        console.log(`[SUCCESS] Profile '${profileName}' assigned to: ${username}`);
-
+        await conn.close();
+        return true;
     } catch (err) {
-        console.error('[ROUTER ACTION ERROR]:', err.message || err);
-    } finally {
-        try {
-            await api.close();
-        } catch (_) {}
+        if (conn) {
+            try { await conn.close(); } catch (e) {}
+        }
+        throw err;
     }
 }
 
-app.all('/forward', async (req, res) => {
-    let rawMessage = '';
-    
-    if (req.query && req.query.message) {
-        rawMessage = String(req.query.message);
-    } else if (typeof req.body === 'string' && req.body.trim().length > 0) {
-        rawMessage = req.body;
-    } else if (req.body && req.body.message) {
-        rawMessage = String(req.body.message);
-    } else if (req.body && Object.keys(req.body).length > 0) {
-        rawMessage = JSON.stringify(req.body);
-    }
+// সার্ভিস লাইভ চেক রুট
+app.get('/', (req, res) => {
+    res.status(200).send('FAZ NETWORK SMS Gateway Running...');
+});
 
-    const sender = (req.query?.sender || req.body?.sender || '').toString();
+// মূল SMS Webhook রুট
+app.post('/', async (req, res) => {
+    try {
+        const text = req.body.message || req.body.text || req.body.content || req.body.msg || "";
+        console.log("রিসিভড এসএমএস:", text);
 
-    console.log('--- Incoming Request ---');
-    console.log('Raw Message:', rawMessage);
-    console.log('Sender:', sender);
-
-    // ১. টাকার পরিমাণ বের করা
-    const amountMatch = rawMessage.match(/(?:Tk|BDT)\s*([\d,.]+)/i);
-    const amount = amountMatch ? Math.round(parseFloat(amountMatch[1].replace(',', ''))) : 0;
-
-    // ২. গ্রাহকের ফোন নম্বর বের করা
-    const phoneMatch = rawMessage.match(/(01[3-9]\d{8})/);
-    let customerNumber = null;
-    if (phoneMatch) {
-        customerNumber = phoneMatch[1];
-    } else if (sender) {
-        const cleanSender = sender.replace(/[^0-9]/g, '');
-        if (cleanSender.length >= 11) {
-            customerNumber = cleanSender.slice(-11);
+        if (!text) {
+            return res.status(400).send("No message text received");
         }
-    }
 
-    // ৩. TrxID বের করা
-    const trxMatch = rawMessage.match(/TrxID[:\s]+([A-Z0-9]+)/i);
-    const trxId = trxMatch ? trxMatch[1] : 'Manual';
+        // ক. TrxID বের করা
+        const trxMatch = text.match(/(?:TrxID|TxnID|Trx)\s*[:]?\s*([A-Za-z0-9]+)/i);
+        const trxId = trxMatch ? trxMatch[1] : null;
 
-    // ৪. প্রোফাইল ম্যাপিং
-    let profile = null;
-    if (amount === 10) profile = 'Profile-1Hour';
-    else if (amount === 15) profile = 'Profile-12Hour';
-    else if (amount === 20) profile = 'Profile-1Day';
-    else if (amount === 40) profile = 'Profile-3Day';
-    else if (amount === 60) profile = 'Profile-7Day';
-    else if (amount === 90) profile = 'Profile-15Day';
-    else if (amount === 150) profile = 'Profile-30Day';
-    else if (amount === 200) profile = 'Profile-100GB';
-    else if (amount === 350) profile = 'Profile-300GB';
+        // খ. টাকার পরিমাণ বের করা
+        const amountMatch = text.match(/(?:Tk|BDT|amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i) || 
+                            text.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:Tk|BDT)/i);
+        const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])) : null;
 
-    console.log(`Parsed Data -> Phone: ${customerNumber}, Amount: ${amount}, Profile: ${profile}`);
+        // গ. ফোন নম্বর বের করা
+        const phoneMatch = text.match(/(01[3-9][0-9]{8})/);
+        const customerPhone = phoneMatch ? phoneMatch[1] : null;
 
-    if (customerNumber && profile) {
-        const comment = `bKash/Nagad Trx: ${trxId}, Tk: ${amount}`;
-        await createUserManagerUser(customerNumber, customerNumber, profile, comment);
-        return res.status(200).send(`OK: Processed for ${customerNumber}`);
-    } else {
-        console.warn(`[IGNORED] Data incomplete or invalid amount`);
-        return res.status(200).send('Ignored: Data incomplete');
+        if (!trxId || !customerPhone || !amount) {
+            return res.status(400).send("Parsing failed: TrxID, Amount, or Phone missing");
+        }
+
+        if (processedTrx.has(trxId)) {
+            return res.status(200).send("Duplicate transaction ignored");
+        }
+
+        const profile = PACKAGES[amount];
+        if (!profile) {
+            return res.status(400).send(`No package found for amount: ${amount}`);
+        }
+
+        // MikroTik-এ ইউজার তৈরি
+        await createUserManagerUser(customerPhone, profile, trxId);
+        processedTrx.add(trxId);
+
+        console.log(`[SUCCESS] User: ${customerPhone} created with profile: ${profile}`);
+        return res.status(200).send("OK - User Created");
+
+    } catch (error) {
+        console.error("ত্রুটি:", error.message);
+        return res.status(500).send(error.message);
     }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running on port ${PORT}`);
+app.listen(PORT, () => {
+    console.log(`FAZ NETWORK Server Running on Port ${PORT}`);
 });
