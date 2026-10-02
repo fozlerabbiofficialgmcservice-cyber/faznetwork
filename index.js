@@ -1,96 +1,82 @@
 const express = require('express');
 const RosApi = require('node-routeros').RouterOSAPI;
-const path = require('path');
 
 const app = express();
+// Render ডিফল্ট পোর্ট ছাড়া লোকাল পোর্ট 3000
 const PORT = process.env.PORT || 3000;
 
-// মিডলওয়্যার কনফিগারেশন
+// মিডলওয়্যার
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.text({ type: '*/*' }));
 
-// MikroTik এনভায়রনমেন্ট ভ্যারিয়েবল (Render Environment থেকে মান নেবে)
-const MIKROTIK_HOST = process.env.MIKROTIK_HOST;
-const MIKROTIK_USER = process.env.MIKROTIK_USER;
-const MIKROTIK_PASSWORD = process.env.MIKROTIK_PASSWORD;
-const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT, 10) || 8728;
+// MikroTik সরাসরি কনফিগারেশন (কোনো Environment Variable লাগবে না)
+const MIKROTIK_HOST = '103.54.37.182';
+const MIKROTIK_USER = 'smsbot';
+const MIKROTIK_PASSWORD = '66778';
+const MIKROTIK_PORT = 1126;
 
-// ট্রানজ্যাকশন ডাটাবেস (মেমোরি স্টোর)
+// TrxID মেমোরি স্টোর
 const paymentStore = new Map();
 
-// হোম পেজ রুট (public/index.html লোড করবে)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// হেলথ চেক রুট
-app.get('/health', (req, res) => {
-    res.json({ status: 'Server is running', service: 'FAZ NETWORK Hotspot API' });
-});
-
-// ১. MacroDroid SMS Webhook এন্ডপয়েন্ট
-// MacroDroid থেকে JSON বডিতে পাঠাবেন: { "sender": "{sms_number}", "message": "{sms_body}" }
-app.post('/api/sms-webhook', (req, res) => {
-    const { message, sender } = req.body;
-
-    if (!message) {
-        return res.status(400).json({ success: false, message: 'SMS বডি পাওয়া যায়নি।' });
+// ১. MacroDroid রিকোয়েস্ট রিসিভ এন্ডপয়েন্ট (/forward)
+app.post('/forward', (req, res) => {
+    let rawText = '';
+    
+    if (typeof req.body === 'object' && req.body !== null) {
+        rawText = req.body.message || JSON.stringify(req.body);
+    } else {
+        rawText = String(req.body || '');
     }
 
-    console.log(`[MacroDroid SMS Received] Sender: ${sender}, Message: ${message}`);
+    console.log(`[SMS Received] ${rawText}`);
 
-    // রেগুলার এক্সপ্রেশন দিয়ে বিকাশ/নগদের TrxID এবং Amount বের করা
-    const trxMatch = message.match(/(?:TrxID|TxnID|Txn ID|Transaction ID)[:\s]*([A-Z0-9]+)/i);
-    const amountMatch = message.match(/(?:Tk|BDT|amount)[:\s]*([\d,]+(?:\.\d{2})?)/i);
+    // TrxID এবং টাকার পরিমাণ খোঁজা
+    const trxMatch = rawText.match(/(?:TrxID|TxnID|Txn ID|Transaction ID)[:\s]*([A-Z0-9]+)/i);
+    const amountMatch = rawText.match(/(?:Tk|BDT|amount)[:\s]*([\d,]+(?:\.\d{2})?)/i);
 
     if (trxMatch && trxMatch[1]) {
         const trxId = trxMatch[1].trim().toUpperCase();
         const amount = amountMatch ? amountMatch[1].replace(/,/g, '') : '0';
 
         paymentStore.set(trxId, {
-            sender: sender || 'Unknown',
             amount: amount,
             used: false,
             timestamp: Date.now()
         });
 
         console.log(`[SAVED] TrxID: ${trxId} | Amount: ${amount}`);
-        return res.json({ success: true, message: 'SMS parsed successfully', trxId });
+        return res.status(200).send('OK');
     }
 
-    return res.status(422).json({ success: false, message: 'মেসেজে কোনো বৈধ TrxID পাওয়া যায়নি।' });
+    return res.status(200).send('No TrxID found');
 });
 
-// ২. গ্রাহক সাইন-আপ ও TrxID ভেরিফিকেশন এন্ডপয়েন্ট
+// ২. গ্রাহক সাইন-আপ ও User Manager এ ইউজার তৈরি API
 app.post('/api/signup', async (req, res) => {
     const { username, password, trxId } = req.body;
-
     if (!username || !password || !trxId) {
-        return res.status(400).json({ success: false, message: 'ইউজারনেম, পাসওয়ার্ড এবং TrxID সবকটি আবশ্যক!' });
+        return res.status(400).json({ success: false, message: 'সবগুলো ঘর পূরণ করুন।' });
     }
 
     const cleanTrx = trxId.trim().toUpperCase();
-
-    // ১. TrxID মেমোরি স্টোরে আছে কি না পরীক্ষা
     const payment = paymentStore.get(cleanTrx);
 
     if (!payment) {
         return res.status(400).json({ 
             success: false, 
-            message: 'ভুল ট্রানজ্যাকশন আইডি অথবা পেমেন্টের এসএমএস এখনও সার্ভারে পৌঁছায়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।' 
+            message: 'ভুল ট্রানজ্যাকশন আইডি অথবা পেমেন্টের এসএমএস এখনও সার্ভারে পৌঁছায়নি।' 
         });
     }
 
-    // ২. TrxID আগে ব্যবহার হয়েছে কি না পরীক্ষা
     if (payment.used) {
         return res.status(400).json({ 
             success: false, 
-            message: 'এই ট্রানজ্যাকশন আইডিটি ইতোমধ্যে ব্যবহার করা হয়েছে।' 
+            message: 'এই TrxID পূর্বে ব্যবহার করা হয়েছে।' 
         });
     }
 
-    // ৩. MikroTik RouterOS v7 User Manager-এ ইউজার ক্রিয়েট
+    // সরাসরি MikroTik কানেকশন
     const conn = new RosApi({
         host: MIKROTIK_HOST,
         user: MIKROTIK_USER,
@@ -100,38 +86,32 @@ app.post('/api/signup', async (req, res) => {
     });
 
     try {
-        console.log(`Connecting to MikroTik at ${MIKROTIK_HOST}:${MIKROTIK_PORT}...`);
         await conn.connect();
-
-        // User Manager-এ ইউজার যোগ করার কমান্ড
+        
+        // RouterOS v7 User Manager-এ ইউজার যোগ
         await conn.write('/user-manager/user/add', [
             `=name=${username}`,
             `=password=${password}`
         ]);
-
         await conn.close();
 
-        // TrxID ব্যবহৃত হিসেবে চিহ্নিত করা
         payment.used = true;
         paymentStore.set(cleanTrx, payment);
 
-        console.log(`[USER CREATED] Username: ${username} activated with TrxID: ${cleanTrx}`);
-        return res.json({ 
-            success: true, 
-            message: 'পেমেন্ট সফলভাবে ভেরিফাই হয়েছে এবং আপনার ইন্টারনেট অ্যাকাউন্ট সক্রিয় করা হয়েছে!' 
-        });
+        return res.json({ success: true, message: 'অ্যাকাউন্ট সফলভাবে সক্রিয় করা হয়েছে!' });
     } catch (error) {
-        console.error('MikroTik Error Details:', error);
+        console.error('MikroTik Error:', error);
         try { await conn.close(); } catch (e) {}
-        return res.status(500).json({ 
-            success: false, 
-            message: 'User Manager-এ অ্যাকাউন্ট তৈরি করা যায়নি বা রাউটারে সংযোগ ব্যর্থ হয়েছে।',
-            error: error.message 
-        });
+        return res.status(500).json({ success: false, message: 'রাউটারে অ্যাকাউন্ট তৈরিতে সমস্যা হয়েছে।' });
     }
 });
 
+// ৩. হোম পেজ হেলথ চেক
+app.get('*', (req, res) => {
+    res.send('FAZ NETWORK Service is Live');
+});
+
 // সার্ভার চালু করা
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`FAZ NETWORK Server is running on port ${PORT}`);
 });
