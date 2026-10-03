@@ -14,7 +14,7 @@ process.on('unhandledRejection', (reason) => {
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// মাইক্রোটিক লগইন পেজ থেকে AJAX রিকোয়েস্ট আসার জন্য CORS অনুমতি দেওয়া হলো
+// মাইক্রোটিক লগইন পেজ থেকে AJAX রিকোয়েস্ট আসার জন্য CORS অনুমতি দেওয়া হলো
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -79,7 +79,7 @@ function encodeWord(word) {
     return Buffer.concat([encodeLength(b.length), b]);
 }
 
-// একক কমান্ড নির্বাহক - প্রতি কমান্ডের জন্য আলাদা ও নির্ভরযোগ্য কানেকশন
+// একক কমান্ড এক্সিকিউটর
 function executeSingleCommand(cmdWords) {
     return new Promise((resolve) => {
         const client = new net.Socket();
@@ -93,7 +93,7 @@ function executeSingleCommand(cmdWords) {
                 client.destroy();
                 resolve(false);
             }
-        }, 5000);
+        }, 6000);
 
         client.connect(MIKROTIK_PORT, MIKROTIK_HOST, () => {
             const loginReq = Buffer.concat([
@@ -112,7 +112,6 @@ function executeSingleCommand(cmdWords) {
             if (!loggedIn && (text.includes('!done') || text.includes('!trap'))) {
                 loggedIn = true;
                 buffer = Buffer.alloc(0);
-                // লগইন শেষ, এবার কাঙ্ক্ষিত কমান্ড পাঠানো
                 const payload = cmdWords.map(w => encodeWord(w));
                 payload.push(Buffer.from([0x00]));
                 client.write(Buffer.concat(payload));
@@ -127,6 +126,7 @@ function executeSingleCommand(cmdWords) {
         });
 
         client.on('error', (err) => {
+            console.error('[ROUTER SOCKET ERROR]:', err.message);
             if (!finished) {
                 finished = true;
                 clearTimeout(timer);
@@ -145,25 +145,38 @@ function executeSingleCommand(cmdWords) {
     });
 }
 
-// ইউজার তৈরি
+// ১. ইউজার তৈরি করা
 async function ensureUser(username, comment = '') {
     console.log(`[USER MANAGER] Ensuring user: ${username}`);
-    const cmd = ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=group=Hotspot`];
+    const cmd = [
+        '/user-manager/user/add',
+        `=name=${username}`,
+        `=password=${username}`,
+        `=group=Hotspot`
+    ];
     if (comment) cmd.push(`=comment=${comment}`);
     await executeSingleCommand(cmd);
 }
 
-// প্রোফাইল যুক্ত করা
+// ২. প্রোফাইল অ্যাসাইন করা
 async function attachProfile(username, profileName) {
     console.log(`[USER MANAGER] Attaching profile: ${username} -> ${profileName}`);
-    // RouterOS v7 User Manager কমান্ড
-    const cmd = ['/user-manager/user-profile/add', `=user=${username}`, `=profile=${profileName}`];
+    const cmd = [
+        '/user-manager/user-profile/add',
+        `=user=${username}`,
+        `=profile=${profileName}`
+    ];
     return await executeSingleCommand(cmd);
 }
 
-// কমেন্ট আপডেট করা
+// ৩. কমেন্ট আপডেট করা (* বাদ দিয়ে সঠিক RouterOS v7 সিনট্যাক্স)
 async function updateUserComment(username, comment) {
-    const cmd = ['/user-manager/user/set', `*${username}`, `=comment=${comment}`];
+    console.log(`[USER MANAGER] Updating comment for: ${username}`);
+    const cmd = [
+        '/user-manager/user/set',
+        `=numbers=${username}`,
+        `=comment=${comment}`
+    ];
     await executeSingleCommand(cmd);
 }
 
@@ -171,7 +184,7 @@ app.get('/', (req, res) => {
     return res.status(200).send('FAZ NETWORK Hotspot API is Running!');
 });
 
-// ১. SMS Webhook (MacroDroid থেকে কল হবে)
+// ১. SMS Webhook (MacroDroid থেকে এসএমএস আসবে)
 app.post('/forward', async (req, res) => {
     try {
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
@@ -195,12 +208,10 @@ app.post('/forward', async (req, res) => {
             if (clean.length >= 11) detectedPhone = clean.slice(-11);
         }
 
-        // SMS আসার সাথে সাথে ইউজার ক্রিয়েট
         if (detectedPhone) {
             await ensureUser(detectedPhone, `Received Tk ${amount || '0'}`);
         }
 
-        // TrxID সেভ রাখা
         if (trxId && amount) {
             saveTransaction(trxId, {
                 amount: amount,
@@ -235,28 +246,28 @@ app.post('/api/verify-trx', async (req, res) => {
         if (!transaction) {
             return res.status(404).json({
                 success: false,
-                message: `TrxID (${cleanTrx}) পাওয়া যায়নি! টাকা পাঠানো হয়েছে কিনা নিশ্চিত করুন।`
+                message: `TrxID (${cleanTrx}) পাওয়া যায়নি! টাকা পাঠানো হয়েছে কিনা নিশ্চিত করুন।`
             });
         }
 
         if (transaction.used) {
             return res.status(400).json({
                 success: false,
-                message: 'এই TrxID দিয়ে আগেই প্যাকেজ নেওয়া হয়েছে।'
+                message: 'এই TrxID দিয়ে আগেই প্যাকেজ নেওয়া হয়েছে।'
             });
         }
 
         const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile - 1Hour';
         const commentText = `TrxID: ${cleanTrx} | Tk: ${transaction.amount}`;
 
-        // ১. নিশ্চিত করা ইউজার আছে কি না
+        // ১. আগে ইউজার তৈরি বা নিশ্চিত করা
         await ensureUser(cleanUser, commentText);
 
-        // ২. ইউজারের কমেন্ট আপডেট
-        await updateUserComment(cleanUser, commentText);
-
-        // ৩. ইউজারের প্রোফাইল যোগ করা
+        // ২. প্রোফাইল যুক্ত করা (সবার আগে প্রোফাইল অ্যাসাইন হবে)
         await attachProfile(cleanUser, profile);
+
+        // ৩. কমেন্ট আপডেট করা
+        await updateUserComment(cleanUser, commentText);
 
         transaction.used = true;
         transaction.activatedUser = cleanUser;
@@ -264,12 +275,13 @@ app.post('/api/verify-trx', async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
+            message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
             username: cleanUser,
-            password: cleanUser, // ইউজারনেম ও পাসওয়ার্ড একই রাখা হয়েছে
+            password: cleanUser,
             profile: profile
         });
     } catch (err) {
+        console.error('[VERIFY ERROR]:', err);
         return res.status(500).json({ success: false, error: err.message });
     }
 });
