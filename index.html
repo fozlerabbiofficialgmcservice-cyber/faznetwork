@@ -103,7 +103,6 @@
             margin-bottom: 16px;
         }
 
-        /* সুন্দর ট্যাব সুইচ বাটন */
         .tab-switcher {
             display: flex;
             background: rgba(0, 0, 0, 0.4);
@@ -132,7 +131,6 @@
             box-shadow: 0 2px 10px rgba(5, 150, 105, 0.4);
         }
 
-        /* পেমেন্ট কার্ড */
         .payment-account-card {
             background: rgba(0, 0, 0, 0.45);
             border: 1px solid rgba(245, 158, 11, 0.4);
@@ -191,7 +189,6 @@
             margin-top: 4px;
         }
 
-        /* প্যাকেজ গ্রিড ভিউ */
         .packages-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -219,7 +216,6 @@
             color: var(--accent-gold);
         }
 
-        /* ইনপুট ফিল্ডস */
         .input-group {
             margin-bottom: 12px;
             text-align: left;
@@ -323,40 +319,47 @@
         <div class="brand-title">FAZ NETWORK</div>
         <div class="brand-subtitle">স্বয়ংক্রিয় হাই-স্পিড হটস্পট জোন</div>
 
-        <!-- স্ট্যাটাস মেসেজ বক্স -->
+        <!-- Status Message Box -->
         <div id="status-box" class="alert-box"></div>
 
-        <!-- সুইচ ট্যাব -->
+        <!-- Switch Tabs -->
         <div class="tab-switcher">
-            <button class="tab-btn active" onclick="switchTab('existing')">বিদ্যমান গ্রাহক / ভাউচার</button>
-            <button class="tab-btn" onclick="switchTab('recharge')">নতুন প্যাকেজ / রিচার্জ</button>
+            <button type="button" class="tab-btn active" onclick="switchTab('existing')">বিদ্যমান গ্রাহক / ভাউচার</button>
+            <button type="button" class="tab-btn" onclick="switchTab('recharge')">নতুন প্যাকেজ / রিচার্জ</button>
         </div>
 
-        <!-- ১. বিদ্যমান গ্রাহকদের সরাসরি লগইন ট্যাব -->
+        <!-- 1. Existing Customer Tab (Single Phone/Voucher Field) -->
         <div id="tab-existing-content">
-            <form name="login" action="$(link-login-only)" method="post">
+            <form name="login" action="$(link-login-only)" method="post" onsubmit="return fillExistingLogin()">
                 <input type="hidden" name="dst" value="$(link-orig)" />
                 <input type="hidden" name="popup" value="true" />
 
+                <!-- MikroTik Hidden Submission Fields -->
+                <input type="hidden" id="mt_user_hidden" name="username" />
+                <input type="hidden" id="mt_pass_hidden" name="password" />
+
                 <div class="input-group">
-                    <label for="existing_user">ইউজারনেম / মোবাইল নম্বর</label>
+                    <label for="existing_phone">মোবাইল নম্বর / ভাউচার কোড</label>
                     <div class="input-box">
-                        <input type="text" id="existing_user" name="username" value="$(username)" placeholder="ইউজারনেম বা কার্ড নম্বর" required />
+                        <input 
+                            type="text" 
+                            id="existing_phone" 
+                            placeholder="017xxxxxxxx বা ভাউচার নম্বর" 
+                            required 
+                            autocomplete="tel"
+                        />
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label for="existing_pass">পাসওয়ার্ড</label>
-                    <div class="input-box">
-                        <input type="password" id="existing_pass" name="password" placeholder="পাসওয়ার্ড দিন" required />
-                    </div>
+                <div style="font-size: 11px; color: #a7f3d0; margin-bottom: 12px; text-align: left; line-height: 1.4;">
+                    💡 <b>পরামর্শ:</b> পূর্বে প্যাকেজ কেনা থাকলে বা কার্ড থাকলে শুধু নম্বরটি দিয়ে সরাসরি চালু করুন।
                 </div>
 
                 <button type="submit" class="btn-action">ইন্টারনেট চালু করুন</button>
             </form>
         </div>
 
-        <!-- ২. নতুন প্যাকেজ ও পেমেন্ট ট্যাব -->
+        <!-- 2. New Recharge / Package Tab -->
         <div id="tab-recharge-content" style="display: none;">
             <div class="payment-account-card">
                 <div class="payment-account-title">
@@ -403,7 +406,7 @@
     </div>
 </div>
 
-<!-- অটোমেটিক ব্যাকএন্ড লগইন ফর্ম -->
+<!-- Auto Login Form (Used after API TrxID verification) -->
 <form id="mikrotik-auto-login" action="$(link-login-only)" method="post" style="display:none;">
     <input type="hidden" name="username" id="mt-user" />
     <input type="hidden" name="password" id="mt-pass" />
@@ -437,6 +440,19 @@
         box.style.display = 'block';
         box.className = 'alert-box ' + (isError ? 'alert-error' : 'alert-success');
         box.innerText = text;
+    }
+
+    // Auto sets both username and password from the phone input
+    function fillExistingLogin() {
+        const inputVal = document.getElementById('existing_phone').value.trim();
+        if (!inputVal) {
+            showStatus('অনুগ্রহ করে মোবাইল নম্বর বা ভাউচার কোড দিন।', true);
+            return false;
+        }
+
+        document.getElementById('mt_user_hidden').value = inputVal;
+        document.getElementById('mt_pass_hidden').value = inputVal;
+        return true;
     }
 
     async function handleVerification() {
