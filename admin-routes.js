@@ -10,7 +10,6 @@ const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
 const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 const DB_FILE = path.join(__dirname, 'transactions.json');
 
-// লেন্থ এনকোডিং
 function encodeLength(len) {
     if (len < 0x80) return Buffer.from([len]);
     if (len < 0x4000) return Buffer.from([(len >> 8) | 0x80, len & 0xFF]);
@@ -22,7 +21,6 @@ function encodeWord(word) {
     return Buffer.concat([encodeLength(b.length), b]);
 }
 
-// মাইক্রোটিকে একাধিক ফলাফল পড়ার জন্য API এক্সিকিউটর
 function executeQueryCommand(cmdWords) {
     return new Promise((resolve) => {
         const client = new net.Socket();
@@ -64,7 +62,6 @@ function executeQueryCommand(cmdWords) {
                     finished = true;
                     clearTimeout(timer);
                     client.end();
-                    // মাইক্রোটিক রেসপন্স পার্সিং
                     const blocks = text.split('!re');
                     blocks.shift();
                     blocks.forEach(block => {
@@ -88,7 +85,6 @@ function executeQueryCommand(cmdWords) {
     });
 }
 
-// ট্রানজেকশন তালিকা রিটার্ন
 router.get('/transactions', (req, res) => {
     try {
         if (!fs.existsSync(DB_FILE)) return res.json({});
@@ -99,14 +95,13 @@ router.get('/transactions', (req, res) => {
     }
 });
 
-// PPPoE ইউজার তালিকা
 router.get('/pppoe/list', async (req, res) => {
     const list = await executeQueryCommand(['/ppp/secret/print']);
     res.json(list);
 });
 
-// নতুন PPPoE ইউজার যোগ
 router.post('/pppoe/add', async (req, res) => {
+    if (!req.body) return res.status(400).json({ success: false, message: 'Invalid body' });
     const { name, password, profile, comment } = req.body;
     const cmd = [
         '/ppp/secret/add',
@@ -120,25 +115,23 @@ router.post('/pppoe/add', async (req, res) => {
     res.json({ success: true });
 });
 
-// PPPoE সক্রিয়/নিষ্ক্রিয় ও রিকানেক্ট
 router.post('/pppoe/toggle', async (req, res) => {
+    if (!req.body) return res.status(400).json({ success: false, message: 'Invalid body' });
     const { username, disable } = req.body;
     await executeQueryCommand(['/ppp/secret/set', `=numbers=${username}`, `=disabled=${disable}`]);
     if (disable === 'yes') {
-        // একটিভ সেশন কেটে দেওয়া
         await executeQueryCommand(['/ppp/active/remove', `?name=${username}`]);
     }
     res.json({ success: true });
 });
 
-// Hotspot ইউজার তালিকা
 router.get('/hotspot/list', async (req, res) => {
     const list = await executeQueryCommand(['/user-manager/user/print']);
     res.json(list);
 });
 
-// Hotspot ম্যানুয়াল রিনিউ
 router.post('/hotspot/renew', async (req, res) => {
+    if (!req.body) return res.status(400).json({ success: false, message: 'Invalid body' });
     const { username, profile } = req.body;
     await executeQueryCommand([
         '/user-manager/user-profile/add',
