@@ -2,7 +2,6 @@ const express = require('express');
 const net = require('net');
 const path = require('path');
 
-// কোনো অপ্রত্যাশিত এররেও যাতে সার্ভার বন্ধ না হয়
 process.on('uncaughtException', (err) => {
     console.error('[UNCAUGHT EXCEPTION SAFEGUARD]:', err.message);
 });
@@ -37,9 +36,10 @@ const PRICE_PROFILE_MAP = {
     '350': 'Profile - 300GB'
 };
 
-const pendingOrders = new Map();
+// সফল SMS ট্রানজেকশন জমা রাখার ক্যাশ/স্টোর
+// ফরম্যাট: { 'TRXID': { amount: '10', sender: '01710415717', used: false, time: Date.now() } }
+const transactionsStore = new Map();
 
-// RouterOS API দৈর্ঘ্য এনকোডিং হেল্পার
 function encodeLength(len) {
     if (len < 0x80) return Buffer.from([len]);
     if (len < 0x4000) return Buffer.from([(len >> 8) | 0x80, len & 0xFF]);
@@ -53,9 +53,8 @@ function encodeWord(word) {
     return Buffer.concat([encodeLength(b.length), b]);
 }
 
-// সরাসরি সকেট দিয়ে কমান্ড এক্সিকিউট করা (RouterOS v7 Safe)
 function sendMikrotikCommands(commands) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const client = new net.Socket();
         let buffer = Buffer.alloc(0);
         let currentCommandIndex = 0;
@@ -65,12 +64,11 @@ function sendMikrotikCommands(commands) {
             if (!isDone) {
                 isDone = true;
                 client.destroy();
-                resolve({ success: true, warning: 'Command executed with timeout' });
+                resolve({ success: true, warning: 'Timeout handled' });
             }
         }, 8000);
 
         client.connect(MIKROTIK_PORT, MIKROTIK_HOST, () => {
-            // ১. লগইন শুরু (RouterOS v6/v7 post-login)
             const loginReq = Buffer.concat([
                 encodeWord('/login'),
                 encodeWord(`=name=${MIKROTIK_USER}`),
@@ -84,11 +82,7 @@ function sendMikrotikCommands(commands) {
             buffer = Buffer.concat([buffer, data]);
             const responseStr = buffer.toString('utf-8');
 
-            // লগইন সফল হয়েছে
-            if (responseStr.includes('!done') && currentCommandIndex === 0) {
-                buffer = Buffer.alloc(0);
-                executeNext();
-            } else if (responseStr.includes('!done') || responseStr.includes('!empty') || responseStr.includes('!trap')) {
+            if (responseStr.includes('!done') || responseStr.includes('!empty') || responseStr.includes('!trap')) {
                 buffer = Buffer.alloc(0);
                 executeNext();
             }
@@ -134,11 +128,8 @@ function sendMikrotikCommands(commands) {
 async function activateUserOnMikrotik(username, profileName) {
     try {
         const commands = [
-            // ১. ইউজার না থাকলে তৈরি করবে
             ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=disabled=no`],
-            // ২. ইউজার এনাবল নিশ্চিত করা
             ['/user-manager/user/enable', `?name=${username}`],
-            // ৩. প্যাকেজ/প্রোফাইল অ্যাসাইন করা
             ['/user-manager/user-profile/add', `=user=${username}`, `=profile=${profileName}`]
         ];
 
@@ -155,102 +146,100 @@ app.get('/', (req, res) => {
     return res.status(200).send('FAZ NETWORK User Manager Server is Running!');
 });
 
-app.post('/api/request-recharge', (req, res) => {
-    const { username, profile, phone } = req.body;
-    if (!username) return res.status(400).json({ success: false, message: 'Username প্রদান করুন।' });
-    const cleanUser = username.trim().toLowerCase();
-    pendingOrders.set(cleanUser, {
-        username: username.trim(),
-        profile: profile || 'Profile - 30Day',
-        phone: phone || '',
-        time: Date.now()
-    });
-    return res.json({ success: true, message: 'রিচার্জের অনুরোধ জমা হয়েছে।' });
-});
-
+// ১. SMS ফরওয়ার্ডার এন্ডপয়েন্ট (বিকাশ SMS আসলে TrxID সেভ করবে)
 app.post('/forward', async (req, res) => {
     try {
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
         let sender = req.query.sender || req.body.sender || req.body.from || '';
 
-        if (typeof req.body === 'string') {
-            sms_body = req.body;
-        }
+        if (typeof req.body === 'string') sms_body = req.body;
 
-        console.log(`[SMS RECEIVED from ${sender}]: ${sms_body}`);
+        console.log(`[SMS RECEIVED]: ${sms_body}`);
 
-        let detectedUser = null;
-        let amount = null;
+        // TrxID বের করা (যেমন: TrxID DJ38C3MQHS)
+        const trxMatch = sms_body.match(/TrxID\s*[:]?\s*([A-Za-z0-9]+)/i);
+        const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
 
-        // টাকা বের করা
+        // টাকার পরিমাণ বের করা
         const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
-        if (amountMatch) {
-            amount = Math.floor(parseFloat(amountMatch[1])).toString();
-        }
+        const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
 
-        // রেফারেন্স বের করা
-        const refMatch = sms_body.match(/Ref\s*[:]?\s*([A-Za-z0-9_.-]+)/i);
-        if (refMatch && refMatch[1].trim() !== '0') {
-            detectedUser = refMatch[1].trim();
-        }
+        // প্রেরকের নম্বর
+        const phoneMatch = sms_body.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
+        const senderPhone = phoneMatch ? phoneMatch[1] : (sender.replace(/[^0-9]/g, '').slice(-11));
 
-        // বিকাশ এসএমএস থেকে নম্বর বের করা (from 01710415717)
-        if (!detectedUser) {
-            const phoneInMsg = sms_body.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
-            if (phoneInMsg && phoneInMsg[1]) {
-                detectedUser = phoneInMsg[1];
-            }
-        }
-
-        // সেন্ডার নম্বর
-        if (!detectedUser && sender) {
-            let cleanPhone = sender.replace(/[^0-9]/g, '');
-            if (cleanPhone.startsWith('880')) {
-                cleanPhone = cleanPhone.substring(2);
-            } else if (cleanPhone.startsWith('88')) {
-                cleanPhone = cleanPhone.substring(2);
-            }
-            if (cleanPhone.length >= 10) {
-                detectedUser = cleanPhone;
-            }
-        }
-
-        if (!detectedUser && pendingOrders.size > 0) {
-            const lastEntry = Array.from(pendingOrders.values()).pop();
-            detectedUser = lastEntry.username;
-        }
-
-        if (!detectedUser) {
-            return res.status(200).json({ 
-                success: true, 
-                message: 'মেসেজ গৃহীত হয়েছে, কোনো কাস্টমার নম্বর পাওয়া যায়নি।' 
+        if (trxId && amount) {
+            transactionsStore.set(trxId, {
+                amount: amount,
+                sender: senderPhone,
+                used: false,
+                receivedAt: Date.now()
             });
+            console.log(`[STORED TRX] TrxID: ${trxId} | Amount: ${amount} | Phone: ${senderPhone}`);
         }
-
-        // প্যাকেজ নির্ধারণ
-        let selectedProfile = 'Profile - 1Hour';
-        if (amount && PRICE_PROFILE_MAP[amount]) {
-            selectedProfile = PRICE_PROFILE_MAP[amount];
-        } else if (pendingOrders.has(detectedUser.toLowerCase())) {
-            selectedProfile = pendingOrders.get(detectedUser.toLowerCase()).profile;
-        }
-
-        console.log(`[PROCESS] Activating User: ${detectedUser} | Profile: ${selectedProfile} | Amount: ${amount}`);
-
-        // মিক্রোটিক অ্যাক্টিভেশন কল
-        const result = await activateUserOnMikrotik(detectedUser, selectedProfile);
-        pendingOrders.delete(detectedUser.toLowerCase());
 
         return res.status(200).json({
             success: true,
-            user: detectedUser,
-            amount: amount,
-            profile: selectedProfile,
-            mikrotik: result
+            message: 'SMS সংরক্ষিত হয়েছে।',
+            trxId: trxId,
+            amount: amount
         });
     } catch (error) {
         console.error('[FORWARD ERROR]:', error.message);
-        return res.status(200).json({ success: false, error: error.message });
+        return res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ২. গ্রাহক ওয়েব পেজে TrxID সাবমিট করলে ভেরিফাই ও অ্যাক্টিভেশন এন্ডপয়েন্ট
+app.post('/api/verify-trx', async (req, res) => {
+    try {
+        const { username, trxId } = req.body;
+
+        if (!username || !trxId) {
+            return res.status(400).json({ success: false, message: 'ইউজারনেম এবং TrxID প্রদান করুন।' });
+        }
+
+        const cleanTrx = trxId.trim().toUpperCase();
+        const cleanUser = username.trim();
+
+        // TrxID খোঁজা
+        const transaction = transactionsStore.get(cleanTrx);
+
+        if (!transaction) {
+            return res.status(404).json({
+                success: false,
+                message: 'এই TrxID-এর কোনো পেমেন্ট পাওয়া যায়নি। সঠিক TrxID লিখুন অথবা ১ মিনিট পর চেষ্টা করুন।'
+            });
+        }
+
+        if (transaction.used) {
+            return res.status(400).json({
+                success: false,
+                message: 'এই TrxID দিয়ে আগেই রিচার্জ সম্পন্ন করা হয়েছে।'
+            });
+        }
+
+        // টাকা অনুযায়ী প্রোফাইল বের করা
+        const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile - 1Hour';
+
+        // MikroTik-এ ইউজার ক্রিয়েট ও প্রোফাইল অ্যাসাইন করা
+        const result = await activateUserOnMikrotik(cleanUser, profile);
+
+        // TrxID ব্যবহৃত হিসেবে চিহ্নিত করা
+        transaction.used = true;
+        transactionsStore.set(cleanTrx, transaction);
+
+        return res.status(200).json({
+            success: true,
+            message: `অভিনন্দন! আপনার ${profile} সফলভাবে চালু হয়েছে।`,
+            user: cleanUser,
+            profile: profile,
+            amount: transaction.amount,
+            mikrotik: result
+        });
+    } catch (err) {
+        console.error('[VERIFY ERROR]:', err.message);
+        return res.status(500).json({ success: false, error: err.message });
     }
 });
 
