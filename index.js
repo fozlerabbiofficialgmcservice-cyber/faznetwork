@@ -103,33 +103,54 @@ app.post('/forward', async (req, res) => {
         let detectedUser = null;
         let amount = null;
 
+        // টাকা (Amount / Tk) বের করা
         const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
         if (amountMatch) amount = Math.round(parseFloat(amountMatch[1])).toString();
 
+        // রেফারেন্স বের করার চেষ্টা
         const refMatch = sms_body.match(/Ref\s*[:]?\s*([A-Za-z0-9_.-]+)/i);
         if (refMatch && refMatch[1].trim() !== '0') {
             detectedUser = refMatch[1].trim();
         }
 
+        // যদি কোনো রেফারেন্স না থাকে বা Ref: 0 থাকে, তাহলে প্রেরকের মোবাইল নম্বরকে ইউজারনেম হিসেবে নেওয়া হবে
+        if (!detectedUser && sender) {
+            // +88 বা 88 বাদ দিয়ে মূল নম্বর রাখা (যেমন: 01710415717)
+            let cleanPhone = sender.replace(/[^0-9]/g, '');
+            if (cleanPhone.startsWith('880')) {
+                cleanPhone = cleanPhone.substring(2);
+            } else if (cleanPhone.startsWith('88')) {
+                cleanPhone = cleanPhone.substring(2);
+            }
+            if (cleanPhone.length >= 10) {
+                detectedUser = cleanPhone;
+                console.log(`[INFO] Ref পাওয়া যায়নি, তাই প্রেরকের নম্বর (${detectedUser}) কে ইউজারনেম হিসেবে ব্যবহার করা হচ্ছে।`);
+            }
+        }
+
+        // ওয়েব ফর্মের পেন্ডিং রিকোয়েস্ট থেকে চেক
         if (!detectedUser && pendingOrders.size > 0) {
             const lastEntry = Array.from(pendingOrders.values()).pop();
             detectedUser = lastEntry.username;
         }
 
         if (!detectedUser) {
-            console.log('[INFO] No customer ID / Ref found in message.');
+            console.log('[INFO] কোনো ইউজারনেম বা মোবাইল নম্বর খুঁজে পাওয়া যায়নি।');
             return res.status(200).json({ 
                 success: true, 
-                message: 'মেসেজ সার্ভারে এসেছে, তবে এতে কোনো কাস্টমার Ref নেই।' 
+                message: 'মেসেজ সার্ভারে এসেছে, তবে কোনো গ্রাহক নম্বর পাওয়া যায়নি।' 
             });
         }
 
-        let selectedProfile = 'Profile - 30Day';
+        // প্যাকেজ/প্রোফাইল নির্ধারণ (টাকা অনুযায়ী)
+        let selectedProfile = 'Profile - 1Day'; // ডিফল্ট প্রোফাইল
         if (amount && PRICE_PROFILE_MAP[amount]) {
             selectedProfile = PRICE_PROFILE_MAP[amount];
         } else if (pendingOrders.has(detectedUser.toLowerCase())) {
             selectedProfile = pendingOrders.get(detectedUser.toLowerCase()).profile;
         }
+
+        console.log(`[PROCESS] Activating User: ${detectedUser} with Profile: ${selectedProfile} (Amount: ${amount})`);
 
         const result = await assignUserProfile(detectedUser, selectedProfile);
         pendingOrders.delete(detectedUser.toLowerCase());
