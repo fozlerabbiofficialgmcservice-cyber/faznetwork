@@ -2,98 +2,190 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FAZ NETWORK - হটস্পট রিচার্জ</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Hind+Siliguri:wght@500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAZ NETWORK - Welcome to High-Speed Internet</title>
     <style>
         :root {
-            --bg-color: #0b131e;
-            --card-bg: #132235;
-            --accent-green: #10b981;
+            --primary-islamic: #0a3d2e;
             --accent-gold: #f59e0b;
-            --text-main: #ffffff;
-            --text-sub: #cbd5e1;
+            --accent-glow: #10b981;
+            --bg-dark: #041812;
+            --card-bg: rgba(10, 35, 28, 0.90);
+            --text-main: #f0fdf4;
+            --text-muted: #94a3b8;
+            --bkash-color: #e2136e;
+            --nagad-color: #f7941d;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Hind Siliguri', sans-serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.20) 0%, transparent 60%),
+                radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(6, 78, 59, 0.35) 0%, transparent 50%);
             min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
-            padding: 14px;
+            justify-content: center;
+            padding: 20px 14px;
             color: var(--text-main);
         }
 
-        .container {
+        /* অ্যানিমেটেড RGB ও গোল্ডেন বর্ডার কন্টেইনার */
+        .glow-wrapper {
+            position: relative;
             width: 100%;
-            max-width: 420px;
-            background: var(--card-bg);
-            border: 2px solid #1e3a5f;
+            max-width: 440px;
             border-radius: 20px;
-            padding: 22px 18px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            padding: 2px;
+            background: linear-gradient(60deg, #f59e0b, #10b981, #047857, #d97706, #10b981, #f59e0b);
+            background-size: 300% 300%;
+            animation: rgbFlow 6s ease-in-out infinite;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.25), 0 15px 35px rgba(0, 0, 0, 0.7);
         }
 
+        @keyframes rgbFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .main-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 18px;
+            padding: 24px 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* বড় আকারের বিসমিল্লাহ হেডার */
         .bismillah {
-            font-family: 'Amiri', serif;
-            font-size: 24px;
-            color: var(--accent-gold);
-            text-align: center;
-            margin-bottom: 4px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #1e3a5f;
-            padding-bottom: 12px;
-        }
-
-        .header h1 {
-            font-size: 22px;
+            font-size: 21px;
             font-weight: 700;
-            color: #38bdf8;
-            letter-spacing: 0.5px;
+            color: var(--accent-gold);
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            text-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+            font-family: 'Amiri', 'Traditional Arabic', 'Segoe UI', Tahoma, sans-serif;
         }
 
-        .header p {
+        /* লোগো সেকশন */
+        .logo-box {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo-img {
+            max-width: 115px;
+            height: auto;
+            filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.55));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.04);
+        }
+
+        .brand-title {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            color: #ffffff;
+            text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+        }
+
+        .brand-subtitle {
             font-size: 13px;
-            color: var(--text-sub);
-            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 2px;
+            margin-bottom: 16px;
         }
 
-        .hadith-quote {
-            background: #0f2d3d;
-            border-left: 4px solid var(--accent-green);
-            padding: 10px 12px;
+        /* বিকাশ ও নগদ Send Money নম্বর বক্স */
+        .payment-account-card {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .payment-account-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .badge-bkash {
+            background: var(--bkash-color);
+            color: #fff;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .badge-nagad {
+            background: var(--nagad-color);
+            color: #fff;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .account-number {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            letter-spacing: 1.5px;
+            margin: 4px 0;
+            user-select: all;
+            display: inline-block;
+            background: rgba(245, 158, 11, 0.12);
+            padding: 4px 14px;
             border-radius: 6px;
-            font-size: 13px;
-            color: #e2e8f0;
-            margin-bottom: 18px;
-            line-height: 1.5;
-            font-weight: 500;
+            border: 1px dashed rgba(245, 158, 11, 0.5);
         }
 
-        .section-title {
-            font-size: 15px;
+        .send-money-alert {
+            font-size: 12px;
+            color: #a7f3d0;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* প্যাকেজ গ্রিড ভিউ */
+        .section-tag {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
             font-weight: 700;
             color: var(--accent-gold);
             margin-bottom: 10px;
-            border-bottom: 1px dashed #334155;
-            padding-bottom: 4px;
+            padding: 0 4px;
+            text-transform: uppercase;
         }
 
-        /* স্পষ্ট প্যাকেজ কার্ড */
         .packages-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -102,283 +194,350 @@
         }
 
         .pkg-card {
-            background: #1a2f4c;
-            border: 2px solid #294975;
-            border-radius: 12px;
-            padding: 10px 4px;
-            text-align: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 10px;
+            padding: 9px 5px;
             cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+        }
+
+        .pkg-card:hover {
+            border-color: var(--accent-glow);
+            background: rgba(16, 185, 129, 0.12);
+            transform: translateY(-2px);
         }
 
         .pkg-card.active {
             border-color: var(--accent-gold);
-            background: #23416a;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(16, 185, 129, 0.2));
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
         }
 
-        .pkg-title {
-            font-size: 13px;
+        .pkg-time {
+            font-size: 12px;
+            font-weight: 600;
             color: #ffffff;
-            font-weight: 700;
         }
 
         .pkg-price {
-            font-size: 18px;
-            font-weight: 800;
-            color: #facc15;
-            margin-top: 4px;
-        }
-
-        .pkg-price span {
-            font-size: 12px;
-            font-weight: 600;
-            color: #e2e8f0;
-        }
-
-        /* বিকাশ নম্বর বক্স */
-        .bkash-guide {
-            background: #2a1122;
-            border: 2px solid #e11d48;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 18px;
-        }
-
-        .bkash-guide-title {
-            font-size: 13px;
-            color: #fda4af;
-            font-weight: 700;
-        }
-
-        .bkash-num {
-            font-size: 20px;
-            font-weight: 800;
-            color: #ffffff;
-            background: #e11d48;
-            padding: 6px 12px;
-            border-radius: 8px;
-            display: inline-block;
-            margin: 6px 0;
-            letter-spacing: 1px;
-        }
-
-        .bkash-note {
-            font-size: 12px;
-            color: #e2e8f0;
-            font-weight: 500;
-        }
-
-        /* ফর্ম ইনপুট */
-        .form-group {
-            margin-bottom: 12px;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            color: #ffffff;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            background: #0f1c2d;
-            border: 2px solid #294975;
-            border-radius: 10px;
-            padding: 12px;
-            color: #ffffff;
             font-size: 15px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            margin-top: 2px;
+        }
+
+        .pkg-badge {
+            font-size: 10px;
+            color: #a7f3d0;
+            display: block;
+        }
+
+        /* ইনপুট ফিল্ডস */
+        .input-group {
+            margin-bottom: 13px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
             font-weight: 600;
-            outline: none;
+            color: #cbd5e1;
+            margin-bottom: 5px;
+            padding-left: 2px;
         }
 
-        input[type="text"]:focus {
-            border-color: var(--accent-green);
+        .input-box {
+            position: relative;
         }
 
-        .btn-submit {
+        .input-box input {
             width: 100%;
-            background: #059669;
+            padding: 12px 14px;
+            background: rgba(3, 20, 15, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            font-size: 15px;
             color: #ffffff;
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-box input:focus {
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+            background: rgba(3, 20, 15, 0.95);
+        }
+
+        .input-box input::placeholder {
+            color: #64748b;
+        }
+
+        /* অ্যাকশন বাটন */
+        .btn-activate {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            border: 1px solid #10b981;
+            color: #ffffff;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.35);
+            transition: all 0.25s ease;
             margin-top: 6px;
         }
 
-        .btn-submit:disabled {
-            background: #475569;
+        .btn-activate:hover {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+            transform: translateY(-1px);
         }
 
-        #statusMessage {
+        .btn-activate:disabled {
+            background: #334155;
+            border-color: #475569;
+            color: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* অ্যালার্ট বক্স */
+        .alert-box {
             display: none;
-            margin-top: 14px;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            line-height: 1.5;
-            text-align: center;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            text-align: left;
         }
 
-        .status-success {
-            background: #064e3b;
-            border: 2px solid #059669;
-            color: #6ee7b7;
-        }
-
-        .status-error {
-            background: #4c0519;
-            border: 2px solid #e11d48;
+        .alert-error {
+            background: rgba(220, 38, 38, 0.15);
+            border: 1px solid #ef4444;
             color: #fca5a5;
         }
 
-        .footer {
-            margin-top: 18px;
-            text-align: center;
-            font-size: 13px;
-            color: #94a3b8;
-            font-weight: 600;
+        .alert-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid #10b981;
+            color: #6ee7b7;
         }
 
-        .footer b {
+        /* ফুটার ও হেল্পলাইন */
+        .card-footer {
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .helpline {
             color: var(--accent-gold);
+            font-weight: 700;
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
-    <div class="header">
-        <h1>FAZ NETWORK HOTSPOT</h1>
-        <p>স্বয়ংক্রিয় রিচার্জ ও ইনস্ট্যান্ট অ্যাক্টিভেশন</p>
-    </div>
+<div class="glow-wrapper">
+    <div class="main-card">
+        <!-- ১. বড় বিসমিল্লাহ হেডার -->
+        <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
 
-    <div class="hadith-quote">
-        "যে ব্যক্তি মানুষের প্রতি কৃতজ্ঞতা প্রকাশ করে না, সে আল্লাহর প্রতিও কৃতজ্ঞ হয় না।" — <i>(সুনান তিরমিজি)</i>
-    </div>
-
-    <div class="section-title">প্যাকেজসমূহ নির্বাচন করুন</div>
-    <div class="packages-grid">
-        <div class="pkg-card" onclick="selectPkg('10')">
-            <div class="pkg-title">১ ঘণ্টা</div>
-            <div class="pkg-price">১০ <span>টাকা</span></div>
-        </div>
-        <div class="pkg-card" onclick="selectPkg('15')">
-            <div class="pkg-title">১২ ঘণ্টা</div>
-            <div class="pkg-price">১৫ <span>টাকা</span></div>
-        </div>
-        <div class="pkg-card" onclick="selectPkg('20')">
-            <div class="pkg-title">১ দিন</div>
-            <div class="pkg-price">২০ <span>টাকা</span></div>
-        </div>
-        <div class="pkg-card" onclick="selectPkg('40')">
-            <div class="pkg-title">৩ দিন</div>
-            <div class="pkg-price">৪০ <span>টাকা</span></div>
-        </div>
-        <div class="pkg-card" onclick="selectPkg('60')">
-            <div class="pkg-title">৭ দিন</div>
-            <div class="pkg-price">৬০ <span>টাকা</span></div>
-        </div>
-        <div class="pkg-card" onclick="selectPkg('90')">
-            <div class="pkg-title">১৫ দিন</div>
-            <div class="pkg-price">৯০ <span>টাকা</span></div>
-        </div>
-        <div class="pkg-card active" onclick="selectPkg('150')">
-            <div class="pkg-title">৩০ দিন আনলিমিটেড</div>
-            <div class="pkg-price">১৫০ <span>টাকা</span></div>
-        </div>
-        <div class="pkg-card" onclick="selectPkg('200')">
-            <div class="pkg-title">১০০ জিবি (৩০ দিন)</div>
-            <div class="pkg-price">২০০ <span>টাকা</span></div>
-        </div>
-        <div class="pkg-card" onclick="selectPkg('350')">
-            <div class="pkg-title">৩০০ জিবি (৩০ দিন)</div>
-            <div class="pkg-price">৩৫০ <span>টাকা</span></div>
-        </div>
-    </div>
-
-    <div class="bkash-guide">
-        <div class="bkash-guide-title">বিকাশ Send Money নম্বর:</div>
-        <div class="bkash-num">01339932887</div>
-        <div class="bkash-note">টাকা পাঠানোর পর মেসেজে আসা TrxID নিচে লিখুন।</div>
-    </div>
-
-    <div class="section-title">পেমেন্ট ভেরিফাই ও অ্যাক্টিভেশন</div>
-    <form id="verifyForm">
-        <div class="form-group">
-            <label for="username">আপনার মোবাইল নম্বর (ইউজার আইডি):</label>
-            <input type="text" id="username" placeholder="01XXXXXXXXX" required />
+        <!-- ২. লোগো -->
+        <div class="logo-box">
+            <img src="logo-Faznetwork.png" alt="FAZ Network Logo" class="logo-img">
         </div>
 
-        <div class="form-group">
-            <label for="trxId">বিকাশ TrxID (ট্রানজেকশন আইডি):</label>
-            <input type="text" id="trxId" placeholder="যেমন: DJ38C3MQHS" required style="text-transform: uppercase;" />
+        <div class="brand-title">FAZ NETWORK</div>
+        <div class="brand-subtitle">স্বয়ংক্রিয় হাই-স্পিড হটস্পট জোন</div>
+
+        <!-- ৩. বিকাশ ও নগদ Send Money কার্ড -->
+        <div class="payment-account-card">
+            <div class="payment-account-title">
+                <span class="badge-bkash">bKash</span>
+                <span class="badge-nagad">Nagad</span>
+                <span>Personal (Send Money)</span>
+            </div>
+            <div class="account-number">01339932887</div>
+            <div class="send-money-alert">
+                ★ প্যাকেজের সঠিক টাকা শুধুমাত্র <b>Send Money</b> করুন ★
+            </div>
         </div>
 
-        <button type="submit" class="btn-submit" id="submitBtn">ভেরিফাই করে ইন্টারনেট চালু করুন</button>
-    </form>
+        <!-- স্ট্যাটাস মেসেজ বক্স -->
+        <div id="status-box" class="alert-box"></div>
 
-    <div id="statusMessage"></div>
+        <!-- প্যাকেজ গ্রিড -->
+        <div class="section-tag">
+            <span>প্যাকেজ নির্বাচন করুন</span>
+            <span style="font-size: 11px; color: var(--accent-glow);">হাই স্পিড</span>
+        </div>
 
-    <div class="footer">
-        কারিগরি সহায়তায়: <b>FAZ NETWORK</b> | হেল্পলাইন: <b>01339932887</b>
+        <div class="packages-grid">
+            <div class="pkg-card active" onclick="selectPackage(this, '10')">
+                <div class="pkg-time">১ ঘণ্টা</div>
+                <div class="pkg-price">৳ ১০</div>
+                <span class="pkg-badge">Profile-1Hour</span>
+            </div>
+            <div class="pkg-card" onclick="selectPackage(this, '15')">
+                <div class="pkg-time">১২ ঘণ্টা</div>
+                <div class="pkg-price">৳ ১৫</div>
+                <span class="pkg-badge">Profile-12Hour</span>
+            </div>
+            <div class="pkg-card" onclick="selectPackage(this, '20')">
+                <div class="pkg-time">১ দিন (২৪ ঘঃ)</div>
+                <div class="pkg-price">৳ ২০</div>
+                <span class="pkg-badge">Profile-1Day</span>
+            </div>
+            <div class="pkg-card" onclick="selectPackage(this, '40')">
+                <div class="pkg-time">৩ দিন</div>
+                <div class="pkg-price">৳ ৪০</div>
+                <span class="pkg-badge">Profile-3Day</span>
+            </div>
+            <div class="pkg-card" onclick="selectPackage(this, '60')">
+                <div class="pkg-time">৭ দিন (১ সপ্তাহ)</div>
+                <div class="pkg-price">৳ ৬০</div>
+                <span class="pkg-badge">Profile-7Day</span>
+            </div>
+            <div class="pkg-card" onclick="selectPackage(this, '90')">
+                <div class="pkg-time">১৫ দিন</div>
+                <div class="pkg-price">৳ ৯০</div>
+                <span class="pkg-badge">Profile-15Day</span>
+            </div>
+            <div class="pkg-card" onclick="selectPackage(this, '150')">
+                <div class="pkg-time">৩০ দিন (১ মাস)</div>
+                <div class="pkg-price">৳ ১৫০</div>
+                <span class="pkg-badge">Profile-30Day</span>
+            </div>
+            <div class="pkg-card" onclick="selectPackage(this, '200')">
+                <div class="pkg-time">১০০ জিবি</div>
+                <div class="pkg-price">৳ ২০০</div>
+                <span class="pkg-badge">Profile-100GB</span>
+            </div>
+            <div class="pkg-card" onclick="selectPackage(this, '350')">
+                <div class="pkg-time">৩০০ জিবি</div>
+                <div class="pkg-price">৳ ৩৫০</div>
+                <span class="pkg-badge">Profile-300GB</span>
+            </div>
+        </div>
+
+        <!-- ইনপুট ফর্ম -->
+        <div class="input-group">
+            <label for="cust_phone">যে মোবাইল নম্বর থেকে Send Money করেছেন</label>
+            <div class="input-box">
+                <input type="tel" id="cust_phone" placeholder="017xxxxxxxx" maxlength="11" />
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="cust_trx">ফিরতি SMS-এর ট্রানজেকশন আইডি (TrxID)</label>
+            <div class="input-box">
+                <input type="text" id="cust_trx" placeholder="যেমন: DJ38C3MQHG" style="text-transform: uppercase;" />
+            </div>
+        </div>
+
+        <button type="button" id="btn-login" class="btn-activate" onclick="handleVerification()">
+            প্যাকেজ চালু ও লগইন করুন
+        </button>
+
+        <div class="card-footer">
+            <span>যেকোনো প্রয়োজনে হেল্পলাইন:</span>
+            <a href="tel:01339932887" class="helpline">01339932887</a>
+        </div>
     </div>
 </div>
 
+<!-- মাইক্রোটিকের অভ্যন্তরীণ লগইন ফর্ম -->
+<form id="mikrotik-login-form" name="login" action="$(link-login-only)" method="post" style="display:none;">
+    <input type="hidden" name="username" id="mt-user" />
+    <input type="hidden" name="password" id="mt-pass" />
+    <input type="hidden" name="dst" value="$(link-orig)" />
+    <input type="hidden" name="popup" value="true" />
+</form>
+
 <script>
-    function selectPkg(amount) {
+    const BACKEND_API_URL = 'https://faznetwork.onrender.com/api/verify-trx';
+
+    function selectPackage(card, amount) {
         document.querySelectorAll('.pkg-card').forEach(c => c.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+        card.classList.add('active');
     }
 
-    const form = document.getElementById('verifyForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const statusMsg = document.getElementById('statusMessage');
+    function showStatus(text, isError = false) {
+        const box = document.getElementById('status-box');
+        box.style.display = 'block';
+        box.className = 'alert-box ' + (isError ? 'alert-error' : 'alert-success');
+        box.innerText = text;
+    }
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const username = document.getElementById('username').value.trim();
-        const trxId = document.getElementById('trxId').value.trim().toUpperCase();
+    async function handleVerification() {
+        const phoneInput = document.getElementById('cust_phone').value.trim();
+        const trxInput = document.getElementById('cust_trx').value.trim().toUpperCase();
+        const btn = document.getElementById('btn-login');
 
-        if (!username || !trxId) return;
+        if (!phoneInput || phoneInput.length < 11) {
+            showStatus('অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন।', true);
+            return;
+        }
 
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'ভেরিফাই করা হচ্ছে, অপেক্ষা করুন...';
-        statusMsg.style.display = 'none';
+        if (!trxInput || trxInput.length < 5) {
+            showStatus('অনুগ্রহ করে সঠিক TrxID প্রদান করুন।', true);
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = 'যাচাই করা হচ্ছে... অপেক্ষা করুন';
+        showStatus('পেমেন্ট ও রাউটার ভেরিফাই করা হচ্ছে...');
 
         try {
-            const response = await fetch('/api/verify-trx', {
+            const response = await fetch(BACKEND_API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, trxId })
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: phoneInput,
+                    trxId: trxInput
+                })
             });
 
             const data = await response.json();
 
-            statusMsg.style.display = 'block';
             if (response.ok && data.success) {
-                statusMsg.className = 'status-success';
-                statusMsg.innerHTML = `<b>আলহামদুলিল্লাহ!</b><br>${data.message}`;
-                form.reset();
+                showStatus('আলহামদুলিল্লাহ! পেমেন্ট সফল হয়েছে। ইন্টারনেট সংযুক্ত হচ্ছে...');
+
+                document.getElementById('mt-user').value = data.username;
+                document.getElementById('mt-pass').value = data.password;
+
+                setTimeout(() => {
+                    document.getElementById('mikrotik-login-form').submit();
+                }, 800);
+
             } else {
-                statusMsg.className = 'status-error';
-                statusMsg.innerHTML = `<b>ত্রুটি:</b> ${data.message || 'ভেরিফিকেশন সম্পন্ন হয়নি।'}`;
+                showStatus(data.message || 'যাচাই ব্যর্থ হয়েছে। TrxID সঠিক কি না নিশ্চিত করুন।', true);
+                btn.disabled = false;
+                btn.innerText = 'প্যাকেজ চালু ও লগইন করুন';
             }
-        } catch (error) {
-            statusMsg.style.display = 'block';
-            statusMsg.className = 'status-error';
-            statusMsg.innerHTML = 'সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি। একটু পর চেষ্টা করুন।';
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'ভেরিফাই করে ইন্টারনেট চালু করুন';
+        } catch (err) {
+            console.error(err);
+            showStatus('সার্ভারের সাথে সংযোগ করা যায়নি। নেটওয়ার্ক চেক করুন।', true);
+            btn.disabled = false;
+            btn.innerText = 'প্যাকেজ চালু ও লগইন করুন';
         }
-    });
+    }
 </script>
 
 </body>
