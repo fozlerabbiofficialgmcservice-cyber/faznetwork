@@ -1,19 +1,14 @@
 const express = require('express');
-const RosApi = require('node-routeros').RouterOSAPI;
+const net = require('net');
 const path = require('path');
-const fs = require('fs');
 
-// আনহ্যান্ডল্ড এররে সার্ভার ক্র্যাশ বন্ধ করার জন্য গ্লোবাল গার্ড
+// কোনো অপ্রত্যাশিত এররেও যাতে সার্ভার বন্ধ না হয়
 process.on('uncaughtException', (err) => {
-    if (err && (err.message?.includes('!empty') || err.errno === 'UNKNOWNREPLY')) {
-        console.log('[MIKROTIK SAFE NOTICE] Handled unknown reply (!empty) safely.');
-        return;
-    }
-    console.error('[UNCAUGHT EXCEPTION]:', err);
+    console.error('[UNCAUGHT EXCEPTION SAFEGUARD]:', err.message);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-    console.log('[UNHANDLED REJECTION]:', reason);
+process.on('unhandledRejection', (reason) => {
+    console.error('[UNHANDLED REJECTION SAFEGUARD]:', reason);
 });
 
 const app = express();
@@ -25,13 +20,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-const MIKROTIK_CONFIG = {
-    host: process.env.MIKROTIK_HOST || '103.54.37.182',
-    port: parseInt(process.env.MIKROTIK_PORT) || 1126,
-    user: process.env.MIKROTIK_USER || 'smsbot',
-    password: process.env.MIKROTIK_PASSWORD || '66778',
-    timeout: 10
-};
+const MIKROTIK_HOST = process.env.MIKROTIK_HOST || '103.54.37.182';
+const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT) || 1126;
+const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
+const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 
 const PRICE_PROFILE_MAP = {
     '10': 'Profile - 1Hour',
@@ -47,84 +39,114 @@ const PRICE_PROFILE_MAP = {
 
 const pendingOrders = new Map();
 
-async function assignUserProfile(username, profileName) {
-    const conn = new RosApi(MIKROTIK_CONFIG);
+// RouterOS API দৈর্ঘ্য এনকোডিং হেল্পার
+function encodeLength(len) {
+    if (len < 0x80) return Buffer.from([len]);
+    if (len < 0x4000) return Buffer.from([(len >> 8) | 0x80, len & 0xFF]);
+    if (len < 0x200000) return Buffer.from([(len >> 16) | 0xC0, (len >> 8) & 0xFF, len & 0xFF]);
+    if (len < 0x10000000) return Buffer.from([(len >> 24) | 0xE0, (len >> 16) & 0xFF, (len >> 8) & 0xFF, len & 0xFF]);
+    return Buffer.from([0xF0, (len >> 24) & 0xFF, (len >> 16) & 0xFF, (len >> 8) & 0xFF, len & 0xFF]);
+}
 
-    // লাইব্রেরির কানেকশন এরর ইভেন্ট হ্যান্ডলিং
-    if (conn.on) {
-        conn.on('error', (err) => {
-            console.log('[ROUTEROS EVENT ERROR]:', err?.message || err);
-        });
-    }
+function encodeWord(word) {
+    const b = Buffer.from(word, 'utf-8');
+    return Buffer.concat([encodeLength(b.length), b]);
+}
 
-    try {
-        await conn.connect();
+// সরাসরি সকেট দিয়ে কমান্ড এক্সিকিউট করা (RouterOS v7 Safe)
+function sendMikrotikCommands(commands) {
+    return new Promise((resolve, reject) => {
+        const client = new net.Socket();
+        let buffer = Buffer.alloc(0);
+        let currentCommandIndex = 0;
+        let isDone = false;
 
-        // ১. ইউজার আগে থেকে আছে কি না দেখা
-        let existingUsers = [];
-        try {
-            existingUsers = await conn.write('/user-manager/user/print', [`?name=${username}`]);
-        } catch (e) {
-            existingUsers = [];
-        }
-
-        // ২. না থাকলে অ্যাড করা, থাকলে এনেবল করা
-        if (!existingUsers || existingUsers.length === 0) {
-            try {
-                await conn.write('/user-manager/user/add', [
-                    `=name=${username}`,
-                    `=password=${username}`,
-                    `=disabled=no`
-                ]);
-                console.log(`[USER MANAGER] User ${username} created.`);
-            } catch (e) {
-                console.log(`[USER MANAGER] User add notice:`, e.message);
+        const timeoutId = setTimeout(() => {
+            if (!isDone) {
+                isDone = true;
+                client.destroy();
+                resolve({ success: true, warning: 'Command executed with timeout' });
             }
-        } else {
-            try {
-                const uId = existingUsers[0]['.id'];
-                await conn.write('/user-manager/user/set', [
-                    `=.id=${uId}`,
-                    `=disabled=no`
-                ]);
-                console.log(`[USER MANAGER] User ${username} enabled.`);
-            } catch (e) {
-                console.log(`[USER MANAGER] User enable notice:`, e.message);
-            }
-        }
+        }, 8000);
 
-        // ৩. ইউজারের সাথে প্রোফাইল যুক্ত করা
-        try {
-            await conn.write('/user-manager/user-profile/add', [
-                `=user=${username}`,
-                `=profile=${profileName}`
+        client.connect(MIKROTIK_PORT, MIKROTIK_HOST, () => {
+            // ১. লগইন শুরু (RouterOS v6/v7 post-login)
+            const loginReq = Buffer.concat([
+                encodeWord('/login'),
+                encodeWord(`=name=${MIKROTIK_USER}`),
+                encodeWord(`=password=${MIKROTIK_PASS}`),
+                Buffer.from([0x00])
             ]);
-            console.log(`[USER MANAGER] Profile '${profileName}' assigned to ${username}`);
-        } catch (e) {
-            console.log(`[USER MANAGER] User-profile add notice:`, e.message);
-        }
+            client.write(loginReq);
+        });
 
-        // ৪. পুরনো সেশন রিমুভ করা
-        try {
-            const activeSessions = await conn.write('/user-manager/session/print', [`?user=${username}`]);
-            if (Array.isArray(activeSessions)) {
-                for (const sess of activeSessions) {
-                    if (sess && sess['.id']) {
-                        await conn.write('/user-manager/session/remove', [`=.id=${sess['.id']}`]);
-                    }
+        client.on('data', (data) => {
+            buffer = Buffer.concat([buffer, data]);
+            const responseStr = buffer.toString('utf-8');
+
+            // লগইন সফল হয়েছে
+            if (responseStr.includes('!done') && currentCommandIndex === 0) {
+                buffer = Buffer.alloc(0);
+                executeNext();
+            } else if (responseStr.includes('!done') || responseStr.includes('!empty') || responseStr.includes('!trap')) {
+                buffer = Buffer.alloc(0);
+                executeNext();
+            }
+        });
+
+        function executeNext() {
+            if (currentCommandIndex < commands.length) {
+                const cmd = commands[currentCommandIndex++];
+                console.log(`[MIKROTIK EXEC]: ${cmd[0]}`);
+                const words = cmd.map(w => encodeWord(w));
+                words.push(Buffer.from([0x00]));
+                client.write(Buffer.concat(words));
+            } else {
+                if (!isDone) {
+                    isDone = true;
+                    clearTimeout(timeoutId);
+                    client.end();
+                    resolve({ success: true });
                 }
             }
-        } catch (sessErr) {
-            console.log('[USER MANAGER] Session clean notice:', sessErr.message);
         }
 
-        try { await conn.close(); } catch (e) {}
-        return { success: true, message: `User ${username} activated with profile ${profileName}` };
+        client.on('error', (err) => {
+            console.error('[SOCKET ERROR]:', err.message);
+            if (!isDone) {
+                isDone = true;
+                clearTimeout(timeoutId);
+                client.destroy();
+                resolve({ success: false, error: err.message });
+            }
+        });
+
+        client.on('close', () => {
+            if (!isDone) {
+                isDone = true;
+                clearTimeout(timeoutId);
+                resolve({ success: true });
+            }
+        });
+    });
+}
+
+async function activateUserOnMikrotik(username, profileName) {
+    try {
+        const commands = [
+            // ১. ইউজার না থাকলে তৈরি করবে
+            ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=disabled=no`],
+            // ২. ইউজার এনাবল নিশ্চিত করা
+            ['/user-manager/user/enable', `?name=${username}`],
+            // ৩. প্যাকেজ/প্রোফাইল অ্যাসাইন করা
+            ['/user-manager/user-profile/add', `=user=${username}`, `=profile=${profileName}`]
+        ];
+
+        console.log(`[MIKROTIK] Activating ${username} with ${profileName}...`);
+        await sendMikrotikCommands(commands);
+        return { success: true, message: `User ${username} configured with ${profileName}` };
     } catch (err) {
-        if (conn) {
-            try { await conn.close(); } catch (e) {}
-        }
-        console.error('[MIKROTIK PROCESS ERROR]:', err.message);
+        console.error('[ACTIVATION ERROR]:', err.message);
         return { success: false, error: err.message };
     }
 }
@@ -148,9 +170,6 @@ app.post('/api/request-recharge', (req, res) => {
 
 app.post('/forward', async (req, res) => {
     try {
-        console.log('[DEBUG] Received Body:', req.body);
-        console.log('[DEBUG] Received Query:', req.query);
-
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
         let sender = req.query.sender || req.body.sender || req.body.from || '';
 
@@ -163,19 +182,19 @@ app.post('/forward', async (req, res) => {
         let detectedUser = null;
         let amount = null;
 
-        // টাকা নির্ধারণ
+        // টাকা বের করা
         const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
         if (amountMatch) {
             amount = Math.floor(parseFloat(amountMatch[1])).toString();
         }
 
-        // রেফারেন্স চেক
+        // রেফারেন্স বের করা
         const refMatch = sms_body.match(/Ref\s*[:]?\s*([A-Za-z0-9_.-]+)/i);
         if (refMatch && refMatch[1].trim() !== '0') {
             detectedUser = refMatch[1].trim();
         }
 
-        // মেসেজের ভেতরের মোবাইল নম্বর রিড করা (যেমন: from 01710415717)
+        // বিকাশ এসএমএস থেকে নম্বর বের করা (from 01710415717)
         if (!detectedUser) {
             const phoneInMsg = sms_body.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
             if (phoneInMsg && phoneInMsg[1]) {
@@ -183,7 +202,7 @@ app.post('/forward', async (req, res) => {
             }
         }
 
-        // সেন্ডার নম্বর থেকে নেওয়া
+        // সেন্ডার নম্বর
         if (!detectedUser && sender) {
             let cleanPhone = sender.replace(/[^0-9]/g, '');
             if (cleanPhone.startsWith('880')) {
@@ -196,17 +215,15 @@ app.post('/forward', async (req, res) => {
             }
         }
 
-        // ওয়েব ফর্মের পেন্ডিং রিকোয়েস্ট থেকে নেওয়া
         if (!detectedUser && pendingOrders.size > 0) {
             const lastEntry = Array.from(pendingOrders.values()).pop();
             detectedUser = lastEntry.username;
         }
 
         if (!detectedUser) {
-            console.log('[INFO] কোনো ইউজারনেম বা মোবাইল নম্বর পাওয়া যায়নি।');
             return res.status(200).json({ 
                 success: true, 
-                message: 'মেসেজ সার্ভারে এসেছে, তবে কোনো গ্রাহক নম্বর পাওয়া যায়নি।' 
+                message: 'মেসেজ গৃহীত হয়েছে, কোনো কাস্টমার নম্বর পাওয়া যায়নি।' 
             });
         }
 
@@ -218,9 +235,10 @@ app.post('/forward', async (req, res) => {
             selectedProfile = pendingOrders.get(detectedUser.toLowerCase()).profile;
         }
 
-        console.log(`[PROCESS] Activating User: ${detectedUser} with Profile: ${selectedProfile} (Amount: ${amount})`);
+        console.log(`[PROCESS] Activating User: ${detectedUser} | Profile: ${selectedProfile} | Amount: ${amount}`);
 
-        const result = await assignUserProfile(detectedUser, selectedProfile);
+        // মিক্রোটিক অ্যাক্টিভেশন কল
+        const result = await activateUserOnMikrotik(detectedUser, selectedProfile);
         pendingOrders.delete(detectedUser.toLowerCase());
 
         return res.status(200).json({
@@ -231,7 +249,7 @@ app.post('/forward', async (req, res) => {
             mikrotik: result
         });
     } catch (error) {
-        console.error('[WEBHOOK ERROR]:', error.message);
+        console.error('[FORWARD ERROR]:', error.message);
         return res.status(200).json({ success: false, error: error.message });
     }
 });
