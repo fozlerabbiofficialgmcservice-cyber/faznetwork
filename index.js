@@ -71,7 +71,6 @@ function encodeWord(word) {
     return Buffer.concat([encodeLength(b.length), b]);
 }
 
-// MikroTik Socket Executor
 function runMikrotikApi(commands) {
     return new Promise((resolve) => {
         const client = new net.Socket();
@@ -83,7 +82,7 @@ function runMikrotikApi(commands) {
             if (!isDone) {
                 isDone = true;
                 client.destroy();
-                resolve({ success: true, note: 'Timeout completed' });
+                resolve({ success: true, note: 'Timeout handled' });
             }
         }, 10000);
 
@@ -140,11 +139,11 @@ function runMikrotikApi(commands) {
     });
 }
 
-// ধাপ ১: শুধু ইউজার তৈরি করা (প্রোফাইল ছাড়া)
+// ধাপ ১: প্রাথমিক ইউজার তৈরি (গ্রুপ Hotspot নির্ধারণ করে রাখা)
 async function createUserOnly(username) {
-    console.log(`[USER MANAGER] Step 1: Pre-creating User ${username}`);
+    console.log(`[USER MANAGER] Step 1: Pre-creating User ${username} in Hotspot group`);
     const cmds = [
-        ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=disabled=no`]
+        ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=group=Hotspot`, `=disabled=no`]
     ];
     return await runMikrotikApi(cmds);
 }
@@ -153,11 +152,13 @@ async function createUserOnly(username) {
 async function activateProfileAndComment(username, profileName, commentText) {
     console.log(`[USER MANAGER] Step 2: Setting Profile & Comment for ${username}`);
     const cmds = [
-        // নিশ্চিত ইউজার তৈরি আছে কি না
-        ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=disabled=no`],
-        // ইউজারের কমেন্ট আপডেট করা (TrxID সহ)
-        ['/user-manager/user/set', `=numbers=${username}`, `=comment=${commentText}`],
-        // প্রোফাইল যুক্ত করা
+        // ১. যদি কোনো কারণে ইউজার আগে তৈরি না হয়ে থাকে তবে কমেন্ট ও গ্রুপ সহ তৈরি হবে
+        ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=group=Hotspot`, `=comment=${commentText}`, `=disabled=no`],
+        
+        // ২. ইউজার যদি তৈরি থাকে তবে RouterOS v7 কমান্ড সিনট্যাক্স অনুযায়ী গ্রুপ ও কমেন্ট আপডেট করা
+        ['/user-manager/user/set', `?name=${username}`, `=group=Hotspot`, `=comment=${commentText}`, `=disabled=no`],
+        
+        // ৩. ইউজারের প্রোফাইল অ্যাসাইন করা
         ['/user-manager/user-profile/add', `=user=${username}`, `=profile=${profileName}`]
     ];
     return await runMikrotikApi(cmds);
@@ -167,7 +168,7 @@ app.get('/', (req, res) => {
     return res.status(200).send('FAZ NETWORK Hotspot Server is Running!');
 });
 
-// ১. SMS আসার এন্ডপয়েন্ট (ইউজার তৈরি হবে, TrxID ফাইলে সেভ থাকবে)
+// ১. SMS Webhook
 app.post('/forward', async (req, res) => {
     try {
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
@@ -176,15 +177,15 @@ app.post('/forward', async (req, res) => {
         if (typeof req.body === 'string') sms_body = req.body;
         console.log(`[SMS RECEIVED]: ${sms_body}`);
 
-        // TrxID বের করা
+        // TrxID পার্স করা
         const trxMatch = sms_body.match(/TrxID\s*[:]?\s*([A-Za-z0-9]+)/i);
         const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
 
-        // টাকা বের করা
+        // টাকা পার্স করা
         const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
         const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
 
-        // নম্বর বের করা
+        // ফোন নম্বর পার্স করা
         let detectedPhone = null;
         const phoneMatch = sms_body.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
         if (phoneMatch && phoneMatch[1]) {
@@ -194,12 +195,12 @@ app.post('/forward', async (req, res) => {
             if (clean.length >= 11) detectedPhone = clean.slice(-11);
         }
 
-        // SMS আসলেই আগে ইউজার তৈরি করে রাখা হবে
+        // মেসেজ আসা মাত্রই Hotspot গ্রুপে ইউজার তৈরি
         if (detectedPhone) {
             await createUserOnly(detectedPhone);
         }
 
-        // TrxID ডিস্কে সেভ রাখা
+        // TrxID ডিস্কে জমা রাখা
         if (trxId && amount) {
             saveTransaction(trxId, {
                 amount: amount,
@@ -216,13 +217,13 @@ app.post('/forward', async (req, res) => {
     }
 });
 
-// ২. গ্রাহক যখন ওয়েবসাইটে TrxID সাবমিট করবে
+// ২. TrxID ভেরিফিকেশন ও অ্যাক্টিভেশন
 app.post('/api/verify-trx', async (req, res) => {
     try {
         const { username, trxId } = req.body;
 
         if (!username || !trxId) {
-            return res.status(400).json({ success: false, message: 'মোবাইল নম্বর ও TrxID প্রদান করুন।' });
+            return res.status(400).json({ success: false, message: 'মোবাইল নম্বর ও TrxID সঠিকভাবে লিখুন।' });
         }
 
         const cleanTrx = trxId.trim().toUpperCase();
@@ -234,7 +235,7 @@ app.post('/api/verify-trx', async (req, res) => {
         if (!transaction) {
             return res.status(404).json({
                 success: false,
-                message: `TrxID (${cleanTrx}) পাওয়া যায়নি। অনুগ্রহ করে সঠিক TrxID লিখুন অথবা ১ মিনিট অপেক্ষা করে আবার চেষ্টা করুন।`
+                message: `TrxID (${cleanTrx}) পাওয়া যায়নি। অনুগ্রহ করে সঠিক TrxID লিখুন অথবা ১ মিনিট অপেক্ষা করুন।`
             });
         }
 
@@ -245,14 +246,12 @@ app.post('/api/verify-trx', async (req, res) => {
             });
         }
 
-        // প্যাকেজ নির্ধারণ
         const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile - 1Hour';
         const commentText = `TrxID: ${cleanTrx} | Tk: ${transaction.amount}`;
 
-        // প্রোফাইল ও কমেন্ট সেট করা
+        // ইউজারকে Hotspot গ্রুপে সেট, কমেন্টে TrxID যোগ এবং প্রোফাইল সক্রিয় করা
         await activateProfileAndComment(cleanUser, profile, commentText);
 
-        // TrxID ব্যবহৃত হিসেবে মার্ক করা
         transaction.used = true;
         transaction.activatedUser = cleanUser;
         saveTransaction(cleanTrx, transaction);
