@@ -1,6 +1,7 @@
 const express = require('express');
 const net = require('net');
 const path = require('path');
+const fs = require('fs');
 
 process.on('uncaughtException', (err) => {
     console.error('[UNCAUGHT EXCEPTION SAFEGUARD]:', err.message);
@@ -15,7 +16,6 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
@@ -36,9 +36,27 @@ const PRICE_PROFILE_MAP = {
     '350': 'Profile - 300GB'
 };
 
-// সফল SMS ট্রানজেকশন জমা রাখার ক্যাশ/স্টোর
-// ফরম্যাট: { 'TRXID': { amount: '10', sender: '01710415717', used: false, time: Date.now() } }
-const transactionsStore = new Map();
+const DB_FILE = path.join(__dirname, 'transactions.json');
+
+function loadTransactions() {
+    try {
+        if (!fs.existsSync(DB_FILE)) return {};
+        const data = fs.readFileSync(DB_FILE, 'utf-8');
+        return JSON.parse(data || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveTransaction(trxId, data) {
+    try {
+        const store = loadTransactions();
+        store[trxId] = data;
+        fs.writeFileSync(DB_FILE, JSON.stringify(store, null, 2));
+    } catch (e) {
+        console.error('File write error:', e);
+    }
+}
 
 function encodeLength(len) {
     if (len < 0x80) return Buffer.from([len]);
@@ -81,7 +99,6 @@ function sendMikrotikCommands(commands) {
         client.on('data', (data) => {
             buffer = Buffer.concat([buffer, data]);
             const responseStr = buffer.toString('utf-8');
-
             if (responseStr.includes('!done') || responseStr.includes('!empty') || responseStr.includes('!trap')) {
                 buffer = Buffer.alloc(0);
                 executeNext();
@@ -137,7 +154,6 @@ async function activateUserOnMikrotik(username, profileName) {
         await sendMikrotikCommands(commands);
         return { success: true, message: `User ${username} configured with ${profileName}` };
     } catch (err) {
-        console.error('[ACTIVATION ERROR]:', err.message);
         return { success: false, error: err.message };
     }
 }
@@ -146,7 +162,7 @@ app.get('/', (req, res) => {
     return res.status(200).send('FAZ NETWORK User Manager Server is Running!');
 });
 
-// ১. SMS ফরওয়ার্ডার এন্ডপয়েন্ট (বিকাশ SMS আসলে TrxID সেভ করবে)
+// ১. SMS Webhook Endpoint
 app.post('/forward', async (req, res) => {
     try {
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
@@ -156,59 +172,49 @@ app.post('/forward', async (req, res) => {
 
         console.log(`[SMS RECEIVED]: ${sms_body}`);
 
-        // TrxID বের করা (যেমন: TrxID DJ38C3MQHS)
+        // TrxID বের করা
         const trxMatch = sms_body.match(/TrxID\s*[:]?\s*([A-Za-z0-9]+)/i);
         const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
 
-        // টাকার পরিমাণ বের করা
+        // টাকা বের করা
         const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
         const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
 
-        // প্রেরকের নম্বর
-        const phoneMatch = sms_body.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
-        const senderPhone = phoneMatch ? phoneMatch[1] : (sender.replace(/[^0-9]/g, '').slice(-11));
-
         if (trxId && amount) {
-            transactionsStore.set(trxId, {
+            saveTransaction(trxId, {
                 amount: amount,
-                sender: senderPhone,
+                sender: sender,
                 used: false,
                 receivedAt: Date.now()
             });
-            console.log(`[STORED TRX] TrxID: ${trxId} | Amount: ${amount} | Phone: ${senderPhone}`);
+            console.log(`[SUCCESSFULLY SAVED TO DISK] TrxID: ${trxId} | Amount: ${amount}`);
         }
 
-        return res.status(200).json({
-            success: true,
-            message: 'SMS সংরক্ষিত হয়েছে।',
-            trxId: trxId,
-            amount: amount
-        });
+        return res.status(200).json({ success: true, trxId, amount });
     } catch (error) {
-        console.error('[FORWARD ERROR]:', error.message);
         return res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// ২. গ্রাহক ওয়েব পেজে TrxID সাবমিট করলে ভেরিফাই ও অ্যাক্টিভেশন এন্ডপয়েন্ট
+// ২. TrxID ভেরিফিকেশন Endpoint
 app.post('/api/verify-trx', async (req, res) => {
     try {
         const { username, trxId } = req.body;
 
         if (!username || !trxId) {
-            return res.status(400).json({ success: false, message: 'ইউজারনেম এবং TrxID প্রদান করুন।' });
+            return res.status(400).json({ success: false, message: 'ইউজারনেম এবং TrxID সঠিকভাবে প্রদান করুন।' });
         }
 
         const cleanTrx = trxId.trim().toUpperCase();
         const cleanUser = username.trim();
 
-        // TrxID খোঁজা
-        const transaction = transactionsStore.get(cleanTrx);
+        const store = loadTransactions();
+        const transaction = store[cleanTrx];
 
         if (!transaction) {
             return res.status(404).json({
                 success: false,
-                message: 'এই TrxID-এর কোনো পেমেন্ট পাওয়া যায়নি। সঠিক TrxID লিখুন অথবা ১ মিনিট পর চেষ্টা করুন।'
+                message: `TrxID (${cleanTrx}) সার্ভারে পাওয়া যায়নি! আপনার ম্যাক্রোড্রয়েড থেকে মেসেজটি ফরোয়ার্ড হয়েছে কিনা নিশ্চিত করুন।`
             });
         }
 
@@ -219,26 +225,21 @@ app.post('/api/verify-trx', async (req, res) => {
             });
         }
 
-        // টাকা অনুযায়ী প্রোফাইল বের করা
         const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile - 1Hour';
-
-        // MikroTik-এ ইউজার ক্রিয়েট ও প্রোফাইল অ্যাসাইন করা
         const result = await activateUserOnMikrotik(cleanUser, profile);
 
-        // TrxID ব্যবহৃত হিসেবে চিহ্নিত করা
         transaction.used = true;
-        transactionsStore.set(cleanTrx, transaction);
+        saveTransaction(cleanTrx, transaction);
 
         return res.status(200).json({
             success: true,
-            message: `অভিনন্দন! আপনার ${profile} সফলভাবে চালু হয়েছে।`,
+            message: `আলহামদুলিল্লাহ! আপনার ${profile} সফলভাবে চালু হয়েছে।`,
             user: cleanUser,
             profile: profile,
             amount: transaction.amount,
             mikrotik: result
         });
     } catch (err) {
-        console.error('[VERIFY ERROR]:', err.message);
         return res.status(500).json({ success: false, error: err.message });
     }
 });
