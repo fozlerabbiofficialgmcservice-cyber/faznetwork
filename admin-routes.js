@@ -10,6 +10,7 @@ const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
 const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 const DB_FILE = path.join(__dirname, 'transactions.json');
 
+// লেন্থ এনকোডিং
 function encodeLength(len) {
     if (len < 0x80) return Buffer.from([len]);
     if (len < 0x4000) return Buffer.from([(len >> 8) | 0x80, len & 0xFF]);
@@ -21,21 +22,50 @@ function encodeWord(word) {
     return Buffer.concat([encodeLength(b.length), b]);
 }
 
+// মাইক্রোটিক বাইনারি প্রোটোকল ডিকোড করার পার্সার
+function parseMikrotikStream(buf) {
+    let offset = 0;
+    const words = [];
+    while (offset < buf.length) {
+        let b = buf[offset++];
+        let len = 0;
+        if ((b & 0x80) === 0x00) {
+            len = b;
+        } else if ((b & 0xC0) === 0x80) {
+            len = ((b & ~0xC0) << 8) | buf[offset++];
+        } else if ((b & 0xE0) === 0xC0) {
+            len = ((b & ~0xE0) << 16) | (buf[offset++] << 8) | buf[offset++];
+        } else if ((b & 0xF0) === 0xE0) {
+            len = ((b & ~0xF0) << 24) | (buf[offset++] << 16) | (buf[offset++] << 8) | buf[offset++];
+        } else if ((b & 0xF8) === 0xF0) {
+            len = (buf[offset++] << 24) | (buf[offset++] << 16) | (buf[offset++] << 8) | buf[offset++];
+        }
+        if (len === 0) {
+            words.push('');
+            continue;
+        }
+        if (offset + len > buf.length) break;
+        words.push(buf.toString('utf-8', offset, offset + len));
+        offset += len;
+    }
+    return words;
+}
+
+// কমান্ড এক্সিকিউট করে সম্পূর্ণ রেকর্ড লিস্ট সংগ্রহ
 function executeQueryCommand(cmdWords) {
     return new Promise((resolve) => {
         const client = new net.Socket();
         let buffer = Buffer.alloc(0);
         let loggedIn = false;
         let finished = false;
-        let responseList = [];
 
         const timer = setTimeout(() => {
             if (!finished) {
                 finished = true;
                 client.destroy();
-                resolve(responseList);
+                resolve([]);
             }
-        }, 8000);
+        }, 7000);
 
         client.connect(MIKROTIK_PORT, MIKROTIK_HOST, () => {
             const loginReq = Buffer.concat([
@@ -62,29 +92,46 @@ function executeQueryCommand(cmdWords) {
                     finished = true;
                     clearTimeout(timer);
                     client.end();
-                    const blocks = text.split('!re');
-                    blocks.shift();
-                    blocks.forEach(block => {
-                        let item = {};
-                        block.split('\n').forEach(line => {
-                            if (line.startsWith('=')) {
-                                const parts = line.substring(1).split('=');
-                                if (parts.length >= 2) item[parts[0]] = parts.slice(1).join('=');
+
+                    // প্রোটোকল অনুযায়ী ওয়ার্ড পার্সিং
+                    const words = parseMikrotikStream(buffer);
+                    const results = [];
+                    let currentObj = null;
+
+                    for (const word of words) {
+                        if (word === '!re') {
+                            if (currentObj) results.push(currentObj);
+                            currentObj = {};
+                        } else if (word === '!done' || word === '!trap') {
+                            if (currentObj) results.push(currentObj);
+                            break;
+                        } else if (word.startsWith('=')) {
+                            const eqIdx = word.indexOf('=', 1);
+                            if (eqIdx !== -1) {
+                                const prop = word.substring(1, eqIdx);
+                                const val = word.substring(eqIdx + 1);
+                                if (currentObj) currentObj[prop] = val;
                             }
-                        });
-                        if (Object.keys(item).length) responseList.push(item);
-                    });
-                    resolve(responseList);
+                        }
+                    }
+                    resolve(results);
                 }
             }
         });
 
-        client.on('error', () => {
-            if (!finished) { finished = true; resolve([]); }
+        client.on('error', (err) => {
+            console.error('[ROUTER SOCKET ERROR]:', err.message);
+            if (!finished) {
+                finished = true;
+                clearTimeout(timer);
+                client.destroy();
+                resolve([]);
+            }
         });
     });
 }
 
+// ১. ট্রানজেকশন তালিকা রিটার্ন
 router.get('/transactions', (req, res) => {
     try {
         if (!fs.existsSync(DB_FILE)) return res.json({});
@@ -95,54 +142,82 @@ router.get('/transactions', (req, res) => {
     }
 });
 
+// ২. PPPoE ইউজার তালিকা
 router.get('/pppoe/list', async (req, res) => {
-    const list = await executeQueryCommand(['/ppp/secret/print']);
-    res.json(list);
+    try {
+        const list = await executeQueryCommand(['/ppp/secret/print']);
+        res.json(list);
+    } catch {
+        res.json([]);
+    }
 });
 
+// ৩. নতুন PPPoE ইউজার যোগ
 router.post('/pppoe/add', async (req, res) => {
-    if (!req.body) return res.status(400).json({ success: false, message: 'Invalid body' });
-    const { name, password, profile, comment } = req.body;
-    const cmd = [
-        '/ppp/secret/add',
-        `=name=${name || ''}`,
-        `=password=${password || ''}`,
-        `=profile=${profile || 'default'}`,
-        `=service=pppoe`
-    ];
-    if (comment) cmd.push(`=comment=${comment}`);
-    await executeQueryCommand(cmd);
-    res.json({ success: true });
+    try {
+        const body = req.body || {};
+        const { name, password, profile, comment } = body;
+        if (!name || !password) {
+            return res.status(400).json({ success: false, message: 'Username and password required' });
+        }
+        const cmd = [
+            '/ppp/secret/add',
+            `=name=${name}`,
+            `=password=${password}`,
+            `=profile=${profile || 'default'}`,
+            `=service=pppoe`
+        ];
+        if (comment) cmd.push(`=comment=${comment}`);
+        await executeQueryCommand(cmd);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
 });
 
+// ৪. PPPoE সক্রিয়/নিষ্ক্রিয় ও রিকানেক্ট
 router.post('/pppoe/toggle', async (req, res) => {
-    if (!req.body) return res.status(400).json({ success: false, message: 'Invalid body' });
-    const { username, disable } = req.body;
-    if (username) {
+    try {
+        const body = req.body || {};
+        const { username, disable } = body;
+        if (!username) return res.status(400).json({ success: false, message: 'Username required' });
+
         await executeQueryCommand(['/ppp/secret/set', `=numbers=${username}`, `=disabled=${disable || 'yes'}`]);
         if (disable === 'yes') {
             await executeQueryCommand(['/ppp/active/remove', `?name=${username}`]);
         }
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
     }
-    res.json({ success: true });
 });
 
+// ৫. Hotspot ইউজার তালিকা
 router.get('/hotspot/list', async (req, res) => {
-    const list = await executeQueryCommand(['/user-manager/user/print']);
-    res.json(list);
+    try {
+        const list = await executeQueryCommand(['/user-manager/user/print']);
+        res.json(list);
+    } catch {
+        res.json([]);
+    }
 });
 
+// ৬. Hotspot ম্যানুয়াল রিনিউ
 router.post('/hotspot/renew', async (req, res) => {
-    if (!req.body) return res.status(400).json({ success: false, message: 'Invalid body' });
-    const { username, profile } = req.body;
-    if (username && profile) {
+    try {
+        const body = req.body || {};
+        const { username, profile } = body;
+        if (!username || !profile) return res.status(400).json({ success: false, message: 'Missing parameters' });
+
         await executeQueryCommand([
             '/user-manager/user-profile/add',
             `=user=${username}`,
             `=profile=${profile}`
         ]);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
     }
-    res.json({ success: true });
 });
 
 module.exports = router;
