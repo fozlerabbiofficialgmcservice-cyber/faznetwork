@@ -105,8 +105,8 @@ router.post('/pppoe/add', async (req, res) => {
     const { name, password, profile, comment } = req.body;
     const cmd = [
         '/ppp/secret/add',
-        `=name=${name}`,
-        `=password=${password}`,
+        `=name=${name || ''}`,
+        `=password=${password || ''}`,
         `=profile=${profile || 'default'}`,
         `=service=pppoe`
     ];
@@ -118,9 +118,11 @@ router.post('/pppoe/add', async (req, res) => {
 router.post('/pppoe/toggle', async (req, res) => {
     if (!req.body) return res.status(400).json({ success: false, message: 'Invalid body' });
     const { username, disable } = req.body;
-    await executeQueryCommand(['/ppp/secret/set', `=numbers=${username}`, `=disabled=${disable}`]);
-    if (disable === 'yes') {
-        await executeQueryCommand(['/ppp/active/remove', `?name=${username}`]);
+    if (username) {
+        await executeQueryCommand(['/ppp/secret/set', `=numbers=${username}`, `=disabled=${disable || 'yes'}`]);
+        if (disable === 'yes') {
+            await executeQueryCommand(['/ppp/active/remove', `?name=${username}`]);
+        }
     }
     res.json({ success: true });
 });
@@ -133,11 +135,13 @@ router.get('/hotspot/list', async (req, res) => {
 router.post('/hotspot/renew', async (req, res) => {
     if (!req.body) return res.status(400).json({ success: false, message: 'Invalid body' });
     const { username, profile } = req.body;
-    await executeQueryCommand([
-        '/user-manager/user-profile/add',
-        `=user=${username}`,
-        `=profile=${profile}`
-    ]);
+    if (username && profile) {
+        await executeQueryCommand([
+            '/user-manager/user-profile/add',
+            `=user=${username}`,
+            `=profile=${profile}`
+        ]);
+    }
     res.json({ success: true });
 });
 
