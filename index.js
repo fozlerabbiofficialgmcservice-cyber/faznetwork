@@ -34,15 +34,15 @@ const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
 const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 
 const PRICE_PROFILE_MAP = {
-    '10': 'Profile - 1Hour',
-    '15': 'Profile - 12Hour',
-    '20': 'Profile - 1Day',
-    '40': 'Profile - 3Day',
-    '60': 'Profile - 7Day',
-    '90': 'Profile - 15Day',
-    '150': 'Profile - 30Day',
-    '200': 'Profile - 100GB',
-    '350': 'Profile - 300GB'
+    '10': 'Profile-1Hour',
+    '15': 'Profile-12Hour',
+    '20': 'Profile-1Day',
+    '40': 'Profile-3Day',
+    '60': 'Profile-7Day',
+    '90': 'Profile-15Day',
+    '150': 'Profile-30Day',
+    '200': 'Profile-100GB',
+    '350': 'Profile-300GB'
 };
 
 const DB_FILE = path.join(__dirname, 'transactions.json');
