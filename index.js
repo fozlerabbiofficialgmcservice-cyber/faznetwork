@@ -14,7 +14,7 @@ process.on('unhandledRejection', (reason) => {
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// মাইক্রোটিক লগইন পেজ থেকে AJAX রিকোয়েস্ট আসার জন্য CORS অনুমতি দেওয়া হলো
+// মাইক্রোটিক লগইন পেজ থেকে AJAX রিকোয়েস্ট আসার জন্য CORS অনুমতি
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -28,11 +28,35 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
+// ফ্রড ও ব্রুট-ফোর্স রোধে সিম্পল মেমোরি রেট লিমিটার (প্রতি মিনিটে সর্বোচ্চ ১০টি ট্রাই)
+const requestTracker = {};
+function rateLimiter(req, res, next) {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+    if (!requestTracker[ip]) {
+        requestTracker[ip] = { count: 1, resetTime: now + 60000 };
+    } else {
+        if (now > requestTracker[ip].resetTime) {
+            requestTracker[ip] = { count: 1, resetTime: now + 60000 };
+        } else {
+            requestTracker[ip].count++;
+            if (requestTracker[ip].count > 10) {
+                return res.status(429).json({
+                    success: false,
+                    message: 'অতিরিক্ত চেষ্টা করা হয়েছে। অনুগ্রহ করে ১ মিনিট পর আবার চেষ্টা করুন।'
+                });
+            }
+        }
+    }
+    next();
+}
+
 const MIKROTIK_HOST = process.env.MIKROTIK_HOST || '103.54.37.182';
 const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT) || 1126;
 const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
 const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 
+// মাইক্রোটিকের হুবহু প্রোফাইল নাম
 const PRICE_PROFILE_MAP = {
     '10': 'Profile-1Hour',
     '15': 'Profile-12Hour',
@@ -79,7 +103,6 @@ function encodeWord(word) {
     return Buffer.concat([encodeLength(b.length), b]);
 }
 
-// একক কমান্ড এক্সিকিউটর
 function executeSingleCommand(cmdWords) {
     return new Promise((resolve) => {
         const client = new net.Socket();
@@ -145,7 +168,6 @@ function executeSingleCommand(cmdWords) {
     });
 }
 
-// ১. ইউজার তৈরি করা
 async function ensureUser(username, comment = '') {
     console.log(`[USER MANAGER] Ensuring user: ${username}`);
     const cmd = [
@@ -158,7 +180,6 @@ async function ensureUser(username, comment = '') {
     await executeSingleCommand(cmd);
 }
 
-// ২. প্রোফাইল অ্যাসাইন করা
 async function attachProfile(username, profileName) {
     console.log(`[USER MANAGER] Attaching profile: ${username} -> ${profileName}`);
     const cmd = [
@@ -169,9 +190,7 @@ async function attachProfile(username, profileName) {
     return await executeSingleCommand(cmd);
 }
 
-// ৩. কমেন্ট আপডেট করা (* বাদ দিয়ে সঠিক RouterOS v7 সিনট্যাক্স)
 async function updateUserComment(username, comment) {
-    console.log(`[USER MANAGER] Updating comment for: ${username}`);
     const cmd = [
         '/user-manager/user/set',
         `=numbers=${username}`,
@@ -184,7 +203,7 @@ app.get('/', (req, res) => {
     return res.status(200).send('FAZ NETWORK Hotspot API is Running!');
 });
 
-// ১. SMS Webhook (MacroDroid থেকে এসএমএস আসবে)
+// ১. SMS Webhook (MacroDroid)
 app.post('/forward', async (req, res) => {
     try {
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
@@ -200,16 +219,13 @@ app.post('/forward', async (req, res) => {
         const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
 
         let detectedPhone = null;
-        const phoneMatch = sms_body.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
+        // বিকাশ ও নগদের এসএমএস থেকে প্রেরকের নম্বর নিখুঁতভাবে শনাক্ত করা
+        const phoneMatch = sms_body.match(/(?:from|sender|number|fee\s*tk\s*[0-9.]+\s*from)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
         if (phoneMatch && phoneMatch[1]) {
-            detectedPhone = phoneMatch[1];
+            detectedPhone = phoneMatch[1].trim();
         } else if (sender) {
             let clean = sender.replace(/[^0-9]/g, '');
             if (clean.length >= 11) detectedPhone = clean.slice(-11);
-        }
-
-        if (detectedPhone) {
-            await ensureUser(detectedPhone, `Received Tk ${amount || '0'}`);
         }
 
         if (trxId && amount) {
@@ -219,7 +235,7 @@ app.post('/forward', async (req, res) => {
                 used: false,
                 receivedAt: Date.now()
             });
-            console.log(`[TRX SAVED] TrxID: ${trxId} | Amount: ${amount}`);
+            console.log(`[TRX SAVED] TrxID: ${trxId} | Amount: ${amount} | Sender Phone: ${detectedPhone || 'N/A'}`);
         }
 
         return res.status(200).json({ success: true, trxId, amount, user: detectedPhone });
@@ -228,8 +244,8 @@ app.post('/forward', async (req, res) => {
     }
 });
 
-// ২. মাইক্রোটিক হটস্পট লগইন পেজ থেকে TrxID ভেরিফিকেশন API
-app.post('/api/verify-trx', async (req, res) => {
+// ২. মাইক্রোটিক হটস্পট লগইন পেজ থেকে TrxID ভেরিফিকেশন API (নিরাপত্তা নিশ্চিত করা হয়েছে)
+app.post('/api/verify-trx', rateLimiter, async (req, res) => {
     try {
         const { username, trxId } = req.body;
 
@@ -238,44 +254,60 @@ app.post('/api/verify-trx', async (req, res) => {
         }
 
         const cleanTrx = trxId.trim().toUpperCase();
-        const cleanUser = username.trim();
+        let cleanUser = username.trim().replace(/[^0-9]/g, '');
+        if (cleanUser.length >= 11) cleanUser = cleanUser.slice(-11);
 
         const store = loadTransactions();
         const transaction = store[cleanTrx];
 
+        // ১. ট্রানজেকশন ডাটাবেজে আছে কি না
         if (!transaction) {
             return res.status(404).json({
                 success: false,
-                message: `TrxID (${cleanTrx}) পাওয়া যায়নি! টাকা পাঠানো হয়েছে কিনা নিশ্চিত করুন।`
+                message: `TrxID (${cleanTrx}) পাওয়া যায়নি! সঠিক TrxID দিন অথবা পেমেন্ট সম্পন্ন হয়েছে কি না নিশ্চিত করুন।`
             });
         }
 
+        // ২. আগেই ব্যবহার করা হয়েছে কি না (Replay Attack Prevention)
         if (transaction.used) {
             return res.status(400).json({
                 success: false,
-                message: 'এই TrxID দিয়ে আগেই প্যাকেজ নেওয়া হয়েছে।'
+                message: 'এই TrxID দিয়ে আগেই প্যাকেজ সক্রিয় করা হয়েছে।'
             });
         }
 
-        const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile - 1Hour';
+        // ৩. মোবাইল নম্বর ম্যাচিং (অন্যের TrxID চুরি রোধ)
+        if (transaction.phone) {
+            let expectedPhone = transaction.phone.trim().replace(/[^0-9]/g, '').slice(-11);
+            if (expectedPhone && expectedPhone !== cleanUser) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'ভুল মোবাইল নম্বর! যে নম্বর থেকে Send Money করেছেন সেই নম্বরটি প্রদান করুন।'
+                });
+            }
+        }
+
+        const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
         const commentText = `TrxID: ${cleanTrx} | Tk: ${transaction.amount}`;
 
-        // ১. আগে ইউজার তৈরি বা নিশ্চিত করা
+        // ইউজার নিশ্চিত ও তৈরি
         await ensureUser(cleanUser, commentText);
 
-        // ২. প্রোফাইল যুক্ত করা (সবার আগে প্রোফাইল অ্যাসাইন হবে)
+        // প্রোফাইল যুক্ত করা
         await attachProfile(cleanUser, profile);
 
-        // ৩. কমেন্ট আপডেট করা
+        // কমেন্ট আপডেট করা
         await updateUserComment(cleanUser, commentText);
 
+        // সাথে সাথে লক করে দেওয়া যাতে আর কেউ এটি ব্যবহার করতে না পারে
         transaction.used = true;
         transaction.activatedUser = cleanUser;
+        transaction.usedAt = Date.now();
         saveTransaction(cleanTrx, transaction);
 
         return res.status(200).json({
             success: true,
-            message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
+            message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
             username: cleanUser,
             password: cleanUser,
             profile: profile
