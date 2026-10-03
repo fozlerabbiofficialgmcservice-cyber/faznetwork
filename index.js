@@ -34,29 +34,57 @@ const PRICE_PROFILE_MAP = {
 
 const pendingOrders = new Map();
 
+async function safeWrite(conn, command, params = []) {
+    try {
+        return await conn.write(command, params);
+    } catch (err) {
+        // RouterOS v7 !empty বা unhandled reply ইগনোর করার জন্য
+        if (err.message && (err.message.includes('!empty') || err.message.includes('UNKNOWNREPLY'))) {
+            return [];
+        }
+        throw err;
+    }
+}
+
 async function assignUserProfile(username, profileName) {
     const conn = new RosApi(MIKROTIK_CONFIG);
     try {
         await conn.connect();
-        const existingUsers = await conn.write('/user-manager/user/print', [`?name=${username}`]);
+
+        // ইউজার আগে থেকেই আছে কিনা চেক
+        let existingUsers = [];
+        try {
+            existingUsers = await safeWrite(conn, '/user-manager/user/print', [`?name=${username}`]);
+        } catch (e) {
+            existingUsers = [];
+        }
+
         if (!existingUsers || existingUsers.length === 0) {
-            await conn.write('/user-manager/user/add', [`=name=${username}`, `=password=${username}`, `=disabled=no`]);
+            await safeWrite(conn, '/user-manager/user/add', [`=name=${username}`, `=password=${username}`, `=disabled=no`]);
             console.log(`[USER MANAGER] User ${username} created.`);
         } else {
             const uId = existingUsers[0]['.id'];
-            await conn.write('/user-manager/user/set', [`=.id=${uId}`, `=disabled=no`]);
+            await safeWrite(conn, '/user-manager/user/set', [`=.id=${uId}`, `=disabled=no`]);
             console.log(`[USER MANAGER] User ${username} enabled.`);
         }
 
-        await conn.write('/user-manager/user-profile/add', [`=user=${username}`, `=profile=${profileName}`]);
+        // প্রোফাইল যুক্ত করা
+        await safeWrite(conn, '/user-manager/user-profile/add', [`=user=${username}`, `=profile=${profileName}`]);
         console.log(`[USER MANAGER] Profile '${profileName}' assigned to ${username}`);
 
+        // পুরনো সেশন রিমুভ (যদি থাকে)
         try {
-            const activeSessions = await conn.write('/user-manager/session/print', [`?user=${username}`]);
-            for (const sess of activeSessions) {
-                await conn.write('/user-manager/session/remove', [`=.id=${sess['.id']}`]);
+            const activeSessions = await safeWrite(conn, '/user-manager/session/print', [`?user=${username}`]);
+            if (Array.isArray(activeSessions)) {
+                for (const sess of activeSessions) {
+                    if (sess && sess['.id']) {
+                        await safeWrite(conn, '/user-manager/session/remove', [`=.id=${sess['.id']}`]);
+                    }
+                }
             }
-        } catch (sessErr) {}
+        } catch (sessErr) {
+            console.log('[USER MANAGER] Session clean skip:', sessErr.message);
+        }
 
         await conn.close();
         return { success: true, message: `User ${username} activated with profile ${profileName}` };
@@ -91,7 +119,7 @@ app.post('/forward', async (req, res) => {
         console.log('[DEBUG] Received Body:', req.body);
         console.log('[DEBUG] Received Query:', req.query);
 
-        let sms_body = req.query.sms_body || req.body.sms_body || req.body.sms_message || req.body.message || '';
+        let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
         let sender = req.query.sender || req.body.sender || req.body.from || '';
 
         if (typeof req.body === 'string') {
@@ -103,19 +131,28 @@ app.post('/forward', async (req, res) => {
         let detectedUser = null;
         let amount = null;
 
-        // টাকা (Amount / Tk) বের করা
+        // টাকা (Tk / Amount) নিখুঁতভাবে বের করা
         const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
-        if (amountMatch) amount = Math.round(parseFloat(amountMatch[1])).toString();
+        if (amountMatch) {
+            amount = Math.floor(parseFloat(amountMatch[1])).toString();
+        }
 
-        // রেফারেন্স বের করার চেষ্টা
+        // রেফারেন্স বের করা
         const refMatch = sms_body.match(/Ref\s*[:]?\s*([A-Za-z0-9_.-]+)/i);
         if (refMatch && refMatch[1].trim() !== '0') {
             detectedUser = refMatch[1].trim();
         }
 
-        // যদি কোনো রেফারেন্স না থাকে বা Ref: 0 থাকে, তাহলে প্রেরকের মোবাইল নম্বরকে ইউজারনেম হিসেবে নেওয়া হবে
+        // bKash মেসেজ থেকে প্রেরকের ফোন নম্বর বের করা (e.g., from 01710415717)
+        if (!detectedUser) {
+            const phoneInMsg = sms_body.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
+            if (phoneInMsg && phoneInMsg[1]) {
+                detectedUser = phoneInMsg[1];
+            }
+        }
+
+        // যদি মেসেজে না পাওয়া যায় তবে কলার/সেন্ডার নম্বর নেওয়া
         if (!detectedUser && sender) {
-            // +88 বা 88 বাদ দিয়ে মূল নম্বর রাখা (যেমন: 01710415717)
             let cleanPhone = sender.replace(/[^0-9]/g, '');
             if (cleanPhone.startsWith('880')) {
                 cleanPhone = cleanPhone.substring(2);
@@ -124,26 +161,25 @@ app.post('/forward', async (req, res) => {
             }
             if (cleanPhone.length >= 10) {
                 detectedUser = cleanPhone;
-                console.log(`[INFO] Ref পাওয়া যায়নি, তাই প্রেরকের নম্বর (${detectedUser}) কে ইউজারনেম হিসেবে ব্যবহার করা হচ্ছে।`);
             }
         }
 
-        // ওয়েব ফর্মের পেন্ডিং রিকোয়েস্ট থেকে চেক
+        // পেন্ডিং রিকোয়েস্ট থেকে নেওয়া
         if (!detectedUser && pendingOrders.size > 0) {
             const lastEntry = Array.from(pendingOrders.values()).pop();
             detectedUser = lastEntry.username;
         }
 
         if (!detectedUser) {
-            console.log('[INFO] কোনো ইউজারনেম বা মোবাইল নম্বর খুঁজে পাওয়া যায়নি।');
+            console.log('[INFO] কোনো ইউজারনেম বা মোবাইল নম্বর পাওয়া যায়নি।');
             return res.status(200).json({ 
                 success: true, 
                 message: 'মেসেজ সার্ভারে এসেছে, তবে কোনো গ্রাহক নম্বর পাওয়া যায়নি।' 
             });
         }
 
-        // প্যাকেজ/প্রোফাইল নির্ধারণ (টাকা অনুযায়ী)
-        let selectedProfile = 'Profile - 1Day'; // ডিফল্ট প্রোফাইল
+        // প্যাকেজ নির্ধারণ
+        let selectedProfile = 'Profile - 1Hour';
         if (amount && PRICE_PROFILE_MAP[amount]) {
             selectedProfile = PRICE_PROFILE_MAP[amount];
         } else if (pendingOrders.has(detectedUser.toLowerCase())) {
