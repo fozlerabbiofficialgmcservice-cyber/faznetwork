@@ -71,20 +71,21 @@ function encodeWord(word) {
     return Buffer.concat([encodeLength(b.length), b]);
 }
 
-function sendMikrotikCommands(commands) {
+// MikroTik Socket Executor
+function runMikrotikApi(commands) {
     return new Promise((resolve) => {
         const client = new net.Socket();
         let buffer = Buffer.alloc(0);
-        let currentCommandIndex = 0;
+        let commandQueue = [...commands];
         let isDone = false;
 
-        const timeoutId = setTimeout(() => {
+        const timer = setTimeout(() => {
             if (!isDone) {
                 isDone = true;
                 client.destroy();
-                resolve({ success: true, warning: 'Timeout handled' });
+                resolve({ success: true, note: 'Timeout completed' });
             }
-        }, 8000);
+        }, 10000);
 
         client.connect(MIKROTIK_PORT, MIKROTIK_HOST, () => {
             const loginReq = Buffer.concat([
@@ -96,37 +97,34 @@ function sendMikrotikCommands(commands) {
             client.write(loginReq);
         });
 
-        client.on('data', (data) => {
-            buffer = Buffer.concat([buffer, data]);
-            const responseStr = buffer.toString('utf-8');
-            if (responseStr.includes('!done') || responseStr.includes('!empty') || responseStr.includes('!trap')) {
-                buffer = Buffer.alloc(0);
-                executeNext();
-            }
-        });
+        client.on('data', (chunk) => {
+            buffer = Buffer.concat([buffer, chunk]);
+            const res = buffer.toString('utf-8');
 
-        function executeNext() {
-            if (currentCommandIndex < commands.length) {
-                const cmd = commands[currentCommandIndex++];
-                console.log(`[MIKROTIK EXEC]: ${cmd[0]}`);
-                const words = cmd.map(w => encodeWord(w));
-                words.push(Buffer.from([0x00]));
-                client.write(Buffer.concat(words));
-            } else {
-                if (!isDone) {
-                    isDone = true;
-                    clearTimeout(timeoutId);
-                    client.end();
-                    resolve({ success: true });
+            if (res.includes('!done') || res.includes('!empty') || res.includes('!trap')) {
+                buffer = Buffer.alloc(0);
+                if (commandQueue.length > 0) {
+                    const nextCmd = commandQueue.shift();
+                    console.log(`[MIKROTIK EXEC]: ${nextCmd.join(' ')}`);
+                    const payload = nextCmd.map(w => encodeWord(w));
+                    payload.push(Buffer.from([0x00]));
+                    client.write(Buffer.concat(payload));
+                } else {
+                    if (!isDone) {
+                        isDone = true;
+                        clearTimeout(timer);
+                        client.end();
+                        resolve({ success: true });
+                    }
                 }
             }
-        }
+        });
 
         client.on('error', (err) => {
             console.error('[SOCKET ERROR]:', err.message);
             if (!isDone) {
                 isDone = true;
-                clearTimeout(timeoutId);
+                clearTimeout(timer);
                 client.destroy();
                 resolve({ success: false, error: err.message });
             }
@@ -135,41 +133,47 @@ function sendMikrotikCommands(commands) {
         client.on('close', () => {
             if (!isDone) {
                 isDone = true;
-                clearTimeout(timeoutId);
+                clearTimeout(timer);
                 resolve({ success: true });
             }
         });
     });
 }
 
-async function activateUserOnMikrotik(username, profileName) {
-    try {
-        const commands = [
-            ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=disabled=no`],
-            ['/user-manager/user/enable', `?name=${username}`],
-            ['/user-manager/user-profile/add', `=user=${username}`, `=profile=${profileName}`]
-        ];
+// ধাপ ১: শুধু ইউজার তৈরি করা (প্রোফাইল ছাড়া)
+async function createUserOnly(username) {
+    console.log(`[USER MANAGER] Step 1: Pre-creating User ${username}`);
+    const cmds = [
+        ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=disabled=no`]
+    ];
+    return await runMikrotikApi(cmds);
+}
 
-        console.log(`[MIKROTIK] Activating ${username} with ${profileName}...`);
-        await sendMikrotikCommands(commands);
-        return { success: true, message: `User ${username} configured with ${profileName}` };
-    } catch (err) {
-        return { success: false, error: err.message };
-    }
+// ধাপ ২: TrxID দিয়ে ভেরিফাই হওয়ার পর Profile ও Comment সেট করা
+async function activateProfileAndComment(username, profileName, commentText) {
+    console.log(`[USER MANAGER] Step 2: Setting Profile & Comment for ${username}`);
+    const cmds = [
+        // নিশ্চিত ইউজার তৈরি আছে কি না
+        ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=disabled=no`],
+        // ইউজারের কমেন্ট আপডেট করা (TrxID সহ)
+        ['/user-manager/user/set', `=numbers=${username}`, `=comment=${commentText}`],
+        // প্রোফাইল যুক্ত করা
+        ['/user-manager/user-profile/add', `=user=${username}`, `=profile=${profileName}`]
+    ];
+    return await runMikrotikApi(cmds);
 }
 
 app.get('/', (req, res) => {
-    return res.status(200).send('FAZ NETWORK User Manager Server is Running!');
+    return res.status(200).send('FAZ NETWORK Hotspot Server is Running!');
 });
 
-// ১. SMS Webhook Endpoint
+// ১. SMS আসার এন্ডপয়েন্ট (ইউজার তৈরি হবে, TrxID ফাইলে সেভ থাকবে)
 app.post('/forward', async (req, res) => {
     try {
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
         let sender = req.query.sender || req.body.sender || req.body.from || '';
 
         if (typeof req.body === 'string') sms_body = req.body;
-
         console.log(`[SMS RECEIVED]: ${sms_body}`);
 
         // TrxID বের করা
@@ -180,29 +184,45 @@ app.post('/forward', async (req, res) => {
         const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
         const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
 
+        // নম্বর বের করা
+        let detectedPhone = null;
+        const phoneMatch = sms_body.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
+        if (phoneMatch && phoneMatch[1]) {
+            detectedPhone = phoneMatch[1];
+        } else if (sender) {
+            let clean = sender.replace(/[^0-9]/g, '');
+            if (clean.length >= 11) detectedPhone = clean.slice(-11);
+        }
+
+        // SMS আসলেই আগে ইউজার তৈরি করে রাখা হবে
+        if (detectedPhone) {
+            await createUserOnly(detectedPhone);
+        }
+
+        // TrxID ডিস্কে সেভ রাখা
         if (trxId && amount) {
             saveTransaction(trxId, {
                 amount: amount,
-                sender: sender,
+                phone: detectedPhone || '',
                 used: false,
                 receivedAt: Date.now()
             });
-            console.log(`[SUCCESSFULLY SAVED TO DISK] TrxID: ${trxId} | Amount: ${amount}`);
+            console.log(`[TRX SAVED] TrxID: ${trxId} | Amount: ${amount} | User: ${detectedPhone}`);
         }
 
-        return res.status(200).json({ success: true, trxId, amount });
-    } catch (error) {
-        return res.status(500).json({ success: false, error: error.message });
+        return res.status(200).json({ success: true, trxId, amount, user: detectedPhone });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// ২. TrxID ভেরিফিকেশন Endpoint
+// ২. গ্রাহক যখন ওয়েবসাইটে TrxID সাবমিট করবে
 app.post('/api/verify-trx', async (req, res) => {
     try {
         const { username, trxId } = req.body;
 
         if (!username || !trxId) {
-            return res.status(400).json({ success: false, message: 'ইউজারনেম এবং TrxID সঠিকভাবে প্রদান করুন।' });
+            return res.status(400).json({ success: false, message: 'মোবাইল নম্বর ও TrxID প্রদান করুন।' });
         }
 
         const cleanTrx = trxId.trim().toUpperCase();
@@ -214,7 +234,7 @@ app.post('/api/verify-trx', async (req, res) => {
         if (!transaction) {
             return res.status(404).json({
                 success: false,
-                message: `TrxID (${cleanTrx}) সার্ভারে পাওয়া যায়নি! আপনার ম্যাক্রোড্রয়েড থেকে মেসেজটি ফরোয়ার্ড হয়েছে কিনা নিশ্চিত করুন।`
+                message: `TrxID (${cleanTrx}) পাওয়া যায়নি। অনুগ্রহ করে সঠিক TrxID লিখুন অথবা ১ মিনিট অপেক্ষা করে আবার চেষ্টা করুন।`
             });
         }
 
@@ -225,19 +245,23 @@ app.post('/api/verify-trx', async (req, res) => {
             });
         }
 
+        // প্যাকেজ নির্ধারণ
         const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile - 1Hour';
-        const result = await activateUserOnMikrotik(cleanUser, profile);
+        const commentText = `TrxID: ${cleanTrx} | Tk: ${transaction.amount}`;
 
+        // প্রোফাইল ও কমেন্ট সেট করা
+        await activateProfileAndComment(cleanUser, profile, commentText);
+
+        // TrxID ব্যবহৃত হিসেবে মার্ক করা
         transaction.used = true;
+        transaction.activatedUser = cleanUser;
         saveTransaction(cleanTrx, transaction);
 
         return res.status(200).json({
             success: true,
             message: `আলহামদুলিল্লাহ! আপনার ${profile} সফলভাবে চালু হয়েছে।`,
-            user: cleanUser,
             profile: profile,
-            amount: transaction.amount,
-            mikrotik: result
+            user: cleanUser
         });
     } catch (err) {
         return res.status(500).json({ success: false, error: err.message });
