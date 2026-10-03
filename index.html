@@ -3,23 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FAZ NETWORK - প্যাকেজ রিচার্জ ও ভেরিফিকেশন</title>
+    <title>FAZ NETWORK - হটস্পট রিচার্জ</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Hind+Siliguri:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #0a1118;
-            --card-bg: rgba(16, 26, 38, 0.85);
-            --card-border: rgba(45, 212, 191, 0.25);
-            --accent-mint: #2dd4bf;
-            --accent-gold: #fbbf24;
-            --accent-soft: #38bdf8;
-            --input-bg: rgba(255, 255, 255, 0.06);
-            --text-white: #f8fafc;
-            --text-muted: #94a3b8;
-            --success-color: #10b981;
-            --error-color: #ef4444;
+            --bg-color: #0b131e;
+            --card-bg: #132235;
+            --accent-green: #10b981;
+            --accent-gold: #f59e0b;
+            --text-main: #ffffff;
+            --text-sub: #cbd5e1;
         }
 
         * {
@@ -27,32 +22,26 @@
             margin: 0;
             padding: 0;
             font-family: 'Hind Siliguri', sans-serif;
-            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(circle at 50% 0%, rgba(45, 212, 191, 0.12) 0%, transparent 60%),
-                radial-gradient(circle at 100% 100%, rgba(251, 191, 36, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.08) 0%, transparent 50%);
+            background-color: var(--bg-color);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 16px;
-            color: var(--text-white);
+            padding: 14px;
+            color: var(--text-main);
         }
 
         .container {
             width: 100%;
-            max-width: 440px;
+            max-width: 420px;
             background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 24px;
-            padding: 24px 20px;
-            backdrop-filter: blur(14px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 2px solid #1e3a5f;
+            border-radius: 20px;
+            padding: 22px 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
 
         .bismillah {
@@ -60,221 +49,203 @@
             font-size: 24px;
             color: var(--accent-gold);
             text-align: center;
-            margin-bottom: 6px;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 8px rgba(251, 191, 36, 0.25);
+            margin-bottom: 4px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
-            padding-bottom: 14px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #1e3a5f;
+            padding-bottom: 12px;
         }
 
         .header h1 {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
-            color: var(--text-white);
+            color: #38bdf8;
             letter-spacing: 0.5px;
         }
 
         .header p {
             font-size: 13px;
-            color: var(--accent-mint);
-            margin-top: 3px;
+            color: var(--text-sub);
+            font-weight: 600;
         }
 
         .hadith-quote {
-            background: rgba(45, 212, 191, 0.07);
-            border-left: 3px solid var(--accent-mint);
-            padding: 10px 14px;
-            border-radius: 0 12px 12px 0;
-            font-size: 12.5px;
-            color: #cbd5e1;
-            margin-bottom: 20px;
+            background: #0f2d3d;
+            border-left: 4px solid var(--accent-green);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #e2e8f0;
+            margin-bottom: 18px;
             line-height: 1.5;
+            font-weight: 500;
         }
 
         .section-title {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 15px;
+            font-weight: 700;
             color: var(--accent-gold);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #334155;
+            padding-bottom: 4px;
         }
 
-        .section-title::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* প্যাকেজ গ্রিড */
+        /* স্পষ্ট প্যাকেজ কার্ড */
         .packages-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 8px;
-            margin-bottom: 22px;
+            margin-bottom: 18px;
         }
 
         .pkg-card {
-            background: var(--input-bg);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 10px 6px;
+            background: #1a2f4c;
+            border: 2px solid #294975;
+            border-radius: 12px;
+            padding: 10px 4px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.25s ease;
         }
 
-        .pkg-card:hover, .pkg-card.active {
-            border-color: var(--accent-mint);
-            background: rgba(45, 212, 191, 0.12);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 14px rgba(45, 212, 191, 0.2);
+        .pkg-card.active {
+            border-color: var(--accent-gold);
+            background: #23416a;
         }
 
         .pkg-title {
-            font-size: 11.5px;
-            color: var(--text-muted);
-            font-weight: 500;
+            font-size: 13px;
+            color: #ffffff;
+            font-weight: 700;
         }
 
         .pkg-price {
-            font-size: 17px;
-            font-weight: 700;
-            color: var(--accent-gold);
-            margin-top: 3px;
+            font-size: 18px;
+            font-weight: 800;
+            color: #facc15;
+            margin-top: 4px;
         }
 
         .pkg-price span {
             font-size: 12px;
-            font-weight: 500;
-            color: var(--text-white);
-        }
-
-        /* পেমেন্ট বিবরণ বক্স */
-        .bkash-guide {
-            background: rgba(226, 19, 110, 0.08);
-            border: 1px solid rgba(226, 19, 110, 0.25);
-            border-radius: 14px;
-            padding: 12px;
-            font-size: 13px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .bkash-guide span {
-            color: #f43f5e;
             font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        /* বিকাশ নম্বর বক্স */
+        .bkash-guide {
+            background: #2a1122;
+            border: 2px solid #e11d48;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 18px;
+        }
+
+        .bkash-guide-title {
+            font-size: 13px;
+            color: #fda4af;
+            font-weight: 700;
         }
 
         .bkash-num {
-            font-size: 16px;
-            font-weight: 700;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 4px 10px;
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+            background: #e11d48;
+            padding: 6px 12px;
             border-radius: 8px;
             display: inline-block;
-            width: fit-content;
-            margin-top: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            letter-spacing: 0.5px;
+            margin: 6px 0;
+            letter-spacing: 1px;
         }
 
-        /* ভেরিফিকেশন ফর্ম */
+        .bkash-note {
+            font-size: 12px;
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        /* ফর্ম ইনপুট */
         .form-group {
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         label {
             display: block;
-            font-size: 12.5px;
-            color: var(--text-muted);
+            font-size: 13px;
+            color: #ffffff;
+            font-weight: 700;
             margin-bottom: 6px;
-            font-weight: 500;
         }
 
         input[type="text"] {
             width: 100%;
-            background: var(--input-bg);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 12px;
-            padding: 12px 14px;
-            color: #fff;
-            font-size: 14px;
+            background: #0f1c2d;
+            border: 2px solid #294975;
+            border-radius: 10px;
+            padding: 12px;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
             outline: none;
-            transition: border-color 0.2s;
         }
 
         input[type="text"]:focus {
-            border-color: var(--accent-mint);
-            box-shadow: 0 0 10px rgba(45, 212, 191, 0.25);
+            border-color: var(--accent-green);
         }
 
         .btn-submit {
             width: 100%;
-            background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
-            color: #fff;
+            background: #059669;
+            color: #ffffff;
             border: none;
-            border-radius: 14px;
+            border-radius: 12px;
             padding: 14px;
-            font-size: 15px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(20, 184, 166, 0.3);
-            transition: all 0.25s ease;
             margin-top: 6px;
         }
 
-        .btn-submit:active {
-            transform: scale(0.98);
-        }
-
         .btn-submit:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+            background: #475569;
         }
 
-        /* অ্যালার্ট বার্তা */
         #statusMessage {
             display: none;
-            margin-top: 16px;
+            margin-top: 14px;
             padding: 12px;
-            border-radius: 12px;
-            font-size: 13px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
             line-height: 1.5;
             text-align: center;
         }
 
         .status-success {
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid rgba(16, 185, 129, 0.35);
-            color: #34d399;
+            background: #064e3b;
+            border: 2px solid #059669;
+            color: #6ee7b7;
         }
 
         .status-error {
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.35);
-            color: #f87171;
+            background: #4c0519;
+            border: 2px solid #e11d48;
+            color: #fca5a5;
         }
 
         .footer {
-            margin-top: 22px;
+            margin-top: 18px;
             text-align: center;
-            font-size: 11.5px;
-            color: #64748b;
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 600;
         }
 
         .footer b {
-            color: var(--accent-mint);
+            color: var(--accent-gold);
         }
     </style>
 </head>
@@ -291,8 +262,7 @@
         "যে ব্যক্তি মানুষের প্রতি কৃতজ্ঞতা প্রকাশ করে না, সে আল্লাহর প্রতিও কৃতজ্ঞ হয় না।" — <i>(সুনান তিরমিজি)</i>
     </div>
 
-    <!-- প্যাকেজ লিস্ট -->
-    <div class="section-title">প্যাকেজসমূহ</div>
+    <div class="section-title">প্যাকেজসমূহ নির্বাচন করুন</div>
     <div class="packages-grid">
         <div class="pkg-card" onclick="selectPkg('10')">
             <div class="pkg-title">১ ঘণ্টা</div>
@@ -319,7 +289,7 @@
             <div class="pkg-price">৯০ <span>টাকা</span></div>
         </div>
         <div class="pkg-card active" onclick="selectPkg('150')">
-            <div class="pkg-title">৩০ দিন (আনলিমিটেড)</div>
+            <div class="pkg-title">৩০ দিন আনলিমিটেড</div>
             <div class="pkg-price">১৫০ <span>টাকা</span></div>
         </div>
         <div class="pkg-card" onclick="selectPkg('200')">
@@ -332,15 +302,13 @@
         </div>
     </div>
 
-    <!-- পেমেন্ট তথ্য -->
     <div class="bkash-guide">
-        <div><span>পেমেন্ট নির্দেশনা:</span> বিকাশ থেকে Send Money করুন:</div>
+        <div class="bkash-guide-title">বিকাশ Send Money নম্বর:</div>
         <div class="bkash-num">01339932887</div>
-        <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 4px;">টাকা পাঠানোর পর বিকাশ থেকে পাওয়া TrxID নিচে লিখুন।</div>
+        <div class="bkash-note">টাকা পাঠানোর পর মেসেজে আসা TrxID নিচে লিখুন।</div>
     </div>
 
-    <!-- TrxID ভেরিফিকেশন ফর্ম -->
-    <div class="section-title">পেমেন্ট ভেরিফাই ও অ্যাক্টিভ</div>
+    <div class="section-title">পেমেন্ট ভেরিফাই ও অ্যাক্টিভেশন</div>
     <form id="verifyForm">
         <div class="form-group">
             <label for="username">আপনার মোবাইল নম্বর (ইউজার আইডি):</label>
@@ -358,7 +326,7 @@
     <div id="statusMessage"></div>
 
     <div class="footer">
-        কারিগরি সহায়তায়: <b>FAZ NETWORK</b> | হেল্পলাইন: 01339932887
+        কারিগরি সহায়তায়: <b>FAZ NETWORK</b> | হেল্পলাইন: <b>01339932887</b>
     </div>
 </div>
 
@@ -396,7 +364,7 @@
             statusMsg.style.display = 'block';
             if (response.ok && data.success) {
                 statusMsg.className = 'status-success';
-                statusMsg.innerHTML = `<b>আলহামদুলিল্লাহ!</b><br>${data.message}<br>আপনার প্যাকেজ: <b>${data.profile}</b>`;
+                statusMsg.innerHTML = `<b>আলহামদুলিল্লাহ!</b><br>${data.message}`;
                 form.reset();
             } else {
                 statusMsg.className = 'status-error';
@@ -405,7 +373,7 @@
         } catch (error) {
             statusMsg.style.display = 'block';
             statusMsg.className = 'status-error';
-            statusMsg.innerHTML = 'সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি। একটু পর আবার চেষ্টা করুন।';
+            statusMsg.innerHTML = 'সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি। একটু পর চেষ্টা করুন।';
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerText = 'ভেরিফাই করে ইন্টারনেট চালু করুন';
