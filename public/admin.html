@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAZ NETWORK - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <!-- Top Navbar -->
+    <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 text-white p-2.5 rounded-xl shadow-md">
+                <i class="fa-solid fa-network-wired text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-wide">FAZ NETWORK</h1>
+                <p class="text-xs text-slate-400">PPPoE & Hotspot Billing Control</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Router Connected
+            </span>
+            <button onclick="fetchAllData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-700">
+                <i class="fa-solid fa-arrows-rotate mr-1"></i> রিফ্রেশ
+            </button>
+        </div>
+    </header>
+
+    <div class="p-6 max-w-7xl mx-auto space-y-6">
+
+        <!-- Stat Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                <div class="flex justify-between items-center text-slate-400 mb-2">
+                    <span class="text-xs font-medium uppercase tracking-wider">Active PPPoE</span>
+                    <i class="fa-solid fa-users text-blue-500"></i>
+                </div>
+                <div class="text-2xl font-bold" id="stat-pppoe-count">0</div>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                <div class="flex justify-between items-center text-slate-400 mb-2">
+                    <span class="text-xs font-medium uppercase tracking-wider">Hotspot Users</span>
+                    <i class="fa-solid fa-wifi text-amber-500"></i>
+                </div>
+                <div class="text-2xl font-bold" id="stat-hotspot-count">0</div>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                <div class="flex justify-between items-center text-slate-400 mb-2">
+                    <span class="text-xs font-medium uppercase tracking-wider">আজকের ট্রানজেকশন</span>
+                    <i class="fa-solid fa-money-bill-wave text-emerald-500"></i>
+                </div>
+                <div class="text-2xl font-bold" id="stat-trx-count">0</div>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                <div class="flex justify-between items-center text-slate-400 mb-2">
+                    <span class="text-xs font-medium uppercase tracking-wider">মোট আদায়</span>
+                    <i class="fa-solid fa-bangladeshi-taka-sign text-indigo-500"></i>
+                </div>
+                <div class="text-2xl font-bold text-emerald-400" id="stat-total-amount">৳ 0</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-slate-800 gap-6 text-sm font-medium">
+            <button onclick="switchTab('pppoe')" id="tab-btn-pppoe" class="pb-3 text-blue-400 border-b-2 border-blue-500 flex items-center gap-2">
+                <i class="fa-solid fa-user-shield"></i> PPPoE সার্ভার
+            </button>
+            <button onclick="switchTab('hotspot')" id="tab-btn-hotspot" class="pb-3 text-slate-400 hover:text-slate-200 flex items-center gap-2">
+                <i class="fa-solid fa-ticket"></i> Hotspot ভাউচার ও ইউজার
+            </button>
+            <button onclick="switchTab('transactions')" id="tab-btn-transactions" class="pb-3 text-slate-400 hover:text-slate-200 flex items-center gap-2">
+                <i class="fa-solid fa-receipt"></i> পেমেন্ট হিস্ট্রি
+            </button>
+        </div>
+
+        <!-- Tab 1: PPPoE Management -->
+        <div id="tab-pppoe" class="space-y-4">
+            <div class="flex justify-between items-center bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                <input type="text" id="pppoe-search" placeholder="PPPoE ইউজারনেম দিয়ে খুঁজুন..." class="bg-slate-950 border border-slate-800 text-xs rounded-lg px-4 py-2.5 w-72 focus:outline-none focus:border-blue-500">
+                <button onclick="openAddPppoeModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2.5 rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus"></i> নতুন PPPoE ইউজার
+                </button>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-950/60 text-slate-400 uppercase border-b border-slate-800">
+                        <tr>
+                            <th class="p-4">ইউজারনেম</th>
+                            <th class="p-4">প্যাকেজ / প্রোফাইল</th>
+                            <th class="p-4">পাসওয়ার্ড</th>
+                            <th class="p-4">স্ট্যাটাস</th>
+                            <th class="p-4">কমেন্ট / নোট</th>
+                            <th class="p-4 text-center">অ্যাকশন</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pppoe-table-body" class="divide-y divide-slate-800 text-slate-300">
+                        <tr><td colspan="6" class="p-4 text-center text-slate-500">ডাটা লোড হচ্ছে...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 2: Hotspot Management -->
+        <div id="tab-hotspot" class="space-y-4 hidden">
+            <div class="flex justify-between items-center bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                <input type="text" id="hotspot-search" placeholder="হটস্পট ইউজার বা ফোন খুঁজুন..." class="bg-slate-950 border border-slate-800 text-xs rounded-lg px-4 py-2.5 w-72 focus:outline-none focus:border-amber-500">
+                <button onclick="openAddHotspotModal()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs px-4 py-2.5 rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> ম্যানুয়াল হটস্পট রিচার্জ
+                </button>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-950/60 text-slate-400 uppercase border-b border-slate-800">
+                        <tr>
+                            <th class="p-4">ইউজারনেম (ফোন)</th>
+                            <th class="p-4">গ্রুপ</th>
+                            <th class="p-4">কমেন্ট</th>
+                            <th class="p-4 text-center">অ্যাকশন</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hotspot-table-body" class="divide-y divide-slate-800 text-slate-300">
+                        <tr><td colspan="4" class="p-4 text-center text-slate-500">ডাটা লোড হচ্ছে...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 3: Transactions -->
+        <div id="tab-transactions" class="space-y-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-950/60 text-slate-400 uppercase border-b border-slate-800">
+                        <tr>
+                            <th class="p-4">TrxID</th>
+                            <th class="p-4">টাকার পরিমাণ</th>
+                            <th class="p-4">গ্রাহক নম্বর</th>
+                            <th class="p-4">স্ট্যাটাস</th>
+                            <th class="p-4">তারিখ ও সময়</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trx-table-body" class="divide-y divide-slate-800 text-slate-300">
+                        <tr><td colspan="5" class="p-4 text-center text-slate-500">ডাটা লোড হচ্ছে...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Add PPPoE Modal -->
+    <div id="modal-pppoe" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md space-y-4">
+            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <i class="fa-solid fa-user-plus text-blue-500"></i> নতুন PPPoE ইউজার তৈরি করুন
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">ইউজারনেম</label>
+                    <input type="text" id="new-pppoe-user" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">পাসওয়ার্ড</label>
+                    <input type="text" id="new-pppoe-pass" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">প্রোফাইল / প্যাকেজ</label>
+                    <input type="text" id="new-pppoe-profile" placeholder="default / 10Mbps" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">নোট / কাস্টমার মোবাইল</label>
+                    <input type="text" id="new-pppoe-comment" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeModal('modal-pppoe')" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs">বাতিল</button>
+                <button onclick="submitPppoeUser()" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold">সংরক্ষণ করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Functions -->
+    <script>
+        function switchTab(tab) {
+            ['pppoe', 'hotspot', 'transactions'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`tab-btn-${t}`).className = 'pb-3 text-slate-400 hover:text-slate-200 flex items-center gap-2';
+            });
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tab}`).className = 'pb-3 text-blue-400 border-b-2 border-blue-500 flex items-center gap-2';
+        }
+
+        function openAddPppoeModal() { document.getElementById('modal-pppoe').classList.remove('hidden'); document.getElementById('modal-pppoe').classList.add('flex'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+
+        async function fetchAllData() {
+            try {
+                // ১. ট্রানজেকশন তালিকা আনা
+                const trxRes = await fetch('/api/admin/transactions');
+                const trxData = await trxRes.json();
+                renderTransactions(trxData);
+
+                // ২. PPPoE ইউজার তালিকা আনা
+                const pppRes = await fetch('/api/admin/pppoe/list');
+                const pppData = await pppRes.json();
+                renderPppoe(pppData);
+
+                // ৩. হটস্পট ইউজার তালিকা আনা
+                const hsRes = await fetch('/api/admin/hotspot/list');
+                const hsData = await hsRes.json();
+                renderHotspot(hsData);
+            } catch (e) {
+                console.error('Fetch error:', e);
+            }
+        }
+
+        function renderTransactions(data) {
+            const tbody = document.getElementById('trx-table-body');
+            tbody.innerHTML = '';
+            let total = 0;
+            const keys = Object.keys(data);
+            document.getElementById('stat-trx-count').innerText = keys.length;
+
+            keys.reverse().forEach(trxId => {
+                const item = data[trxId];
+                total += parseFloat(item.amount || 0);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-4 font-mono text-blue-400 font-bold">${trxId}</td>
+                    <td class="p-4 font-semibold text-emerald-400">৳ ${item.amount}</td>
+                    <td class="p-4 font-mono">${item.phone || 'N/A'}</td>
+                    <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] ${item.used ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}">${item.used ? 'সক্রিয় হয়েছে' : 'পেন্ডিং'}</span></td>
+                    <td class="p-4 text-slate-400">${item.receivedAt ? new Date(item.receivedAt).toLocaleString('en-GB') : 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('stat-total-amount').innerText = `৳ ${total}`;
+        }
+
+        function renderPppoe(users) {
+            const tbody = document.getElementById('pppoe-table-body');
+            tbody.innerHTML = '';
+            document.getElementById('stat-pppoe-count').innerText = users.length;
+
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-slate-100">${u.name}</td>
+                    <td class="p-4"><span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">${u.profile || 'default'}</span></td>
+                    <td class="p-4 font-mono text-slate-400">${u.password}</td>
+                    <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] ${u.disabled === 'true' ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}">${u.disabled === 'true' ? 'Disabled' : 'Active'}</span></td>
+                    <td class="p-4 text-slate-400">${u.comment || '-'}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="togglePppoe('${u.name}', '${u.disabled}')" class="text-xs px-2.5 py-1 rounded ${u.disabled === 'true' ? 'bg-emerald-600' : 'bg-red-600'} text-white">
+                            ${u.disabled === 'true' ? 'Enable' : 'Disable'}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderHotspot(users) {
+            const tbody = document.getElementById('hotspot-table-body');
+            tbody.innerHTML = '';
+            document.getElementById('stat-hotspot-count').innerText = users.length;
+
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-4 font-mono font-medium text-amber-400">${u.name}</td>
+                    <td class="p-4 text-slate-300">${u.group || 'Hotspot'}</td>
+                    <td class="p-4 text-slate-400">${u.comment || '-'}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="renewHotspot('${u.name}')" class="bg-amber-600 hover:bg-amber-500 text-white text-xs px-2.5 py-1 rounded">
+                            রিনিউ
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function submitPppoeUser() {
+            const name = document.getElementById('new-pppoe-user').value.trim();
+            const password = document.getElementById('new-pppoe-pass').value.trim();
+            const profile = document.getElementById('new-pppoe-profile').value.trim() || 'default';
+            const comment = document.getElementById('new-pppoe-comment').value.trim();
+
+            if (!name || !password) return alert('ইউজারনেম ও পাসওয়ার্ড দিন');
+
+            const res = await fetch('/api/admin/pppoe/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, password, profile, comment })
+            });
+            const data = await res.json();
+            if (data.success) {
+                closeModal('modal-pppoe');
+                fetchAllData();
+            } else {
+                alert('ব্যর্থ হয়েছে: ' + data.error);
+            }
+        }
+
+        async function togglePppoe(username, currentStatus) {
+            const disable = currentStatus === 'true' ? 'no' : 'yes';
+            await fetch('/api/admin/pppoe/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, disable })
+            });
+            fetchAllData();
+        }
+
+        async function renewHotspot(username) {
+            const profile = prompt("কোন প্রোফাইল দিতে চান? (যেমন: Profile-30Day, Profile-1Day)", "Profile-30Day");
+            if (!profile) return;
+            await fetch('/api/admin/hotspot/renew', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, profile })
+            });
+            alert('সফলভাবে রিনিউ হয়েছে!');
+            fetchAllData();
+        }
+
+        // পেজ লোড হলে ডাটা আনা শুরু হবে
+        fetchAllData();
+    </script>
+</body>
+</html>
