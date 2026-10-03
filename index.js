@@ -23,20 +23,14 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use
-
-
-// index.js এর যেখানে app.use(...) শুরু হয়েছে তার ঠিক নিচে যোগ করুন:
-const adminRoutes = require('./admin-routes');
-app.use('/api/admin', adminRoutes);
-
-
-
-
-(express.json());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
+
+// অ্যাডমিন রাউট যুক্ত করা হলো
+const adminRoutes = require('./admin-routes');
+app.use('/api/admin', adminRoutes);
 
 // ফ্রড ও ব্রুট-ফোর্স রোধে সিম্পল মেমোরি রেট লিমিটার (প্রতি মিনিটে সর্বোচ্চ ১০টি ট্রাই)
 const requestTracker = {};
