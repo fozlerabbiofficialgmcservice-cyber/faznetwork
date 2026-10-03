@@ -23,7 +23,17 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.json());
+app.use
+
+
+// index.js এর যেখানে app.use(...) শুরু হয়েছে তার ঠিক নিচে যোগ করুন:
+const adminRoutes = require('./admin-routes');
+app.use('/api/admin', adminRoutes);
+
+
+
+
+(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
