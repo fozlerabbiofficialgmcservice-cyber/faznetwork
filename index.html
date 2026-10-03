@@ -1,508 +1,337 @@
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAZ NETWORK - Hotspot Portal</title>
-    <style>
-        :root {
-            --primary-islamic: #0a3d2e;
-            --accent-gold: #f59e0b;
-            --accent-glow: #10b981;
-            --bg-dark: #041812;
-            --card-bg: rgba(10, 35, 28, 0.92);
-            --text-main: #f0fdf4;
-            --text-muted: #94a3b8;
-            --bkash-color: #e2136e;
-            --nagad-color: #f7941d;
-        }
+const express = require('express');
+const net = require('net');
+const path = require('path');
+const fs = require('fs');
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-        }
+process.on('uncaughtException', (err) => {
+    console.error('[UNCAUGHT EXCEPTION SAFEGUARD]:', err.message);
+});
 
-        body {
-            background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.20) 0%, transparent 60%),
-                radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 0% 100%, rgba(6, 78, 59, 0.35) 0%, transparent 50%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px 14px;
-            color: var(--text-main);
-        }
+process.on('unhandledRejection', (reason) => {
+    console.error('[UNHANDLED REJECTION SAFEGUARD]:', reason);
+});
 
-        .glow-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 440px;
-            border-radius: 20px;
-            padding: 2px;
-            background: linear-gradient(60deg, #f59e0b, #10b981, #047857, #d97706, #10b981, #f59e0b);
-            background-size: 300% 300%;
-            animation: rgbFlow 6s ease-in-out infinite;
-            box-shadow: 0 0 25px rgba(16, 185, 129, 0.25), 0 15px 35px rgba(0, 0, 0, 0.7);
-        }
+const app = express();
+const PORT = process.env.PORT || 10000;
 
-        @keyframes rgbFlow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+// মাইক্রোটিক লগইন পেজ থেকে AJAX রিকোয়েস্ট আসার জন্য CORS অনুমতি
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
+});
 
-        .main-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: 18px;
-            padding: 22px 18px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
 
-        .bismillah {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--accent-gold);
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            text-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
-            font-family: 'Amiri', 'Traditional Arabic', 'Segoe UI', Tahoma, sans-serif;
-        }
-
-        .logo-box {
-            margin-bottom: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .logo-img {
-            max-width: 95px;
-            height: auto;
-            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.5));
-        }
-
-        .brand-title {
-            font-size: 22px;
-            font-weight: 900;
-            letter-spacing: 1.2px;
-            color: #ffffff;
-            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-        }
-
-        .brand-subtitle {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-        }
-
-        .tab-switcher {
-            display: flex;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            padding: 4px;
-            margin-bottom: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 9px;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            font-size: 13px;
-            font-weight: 700;
-            border-radius: 7px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-        }
-
-        .tab-btn.active {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-            color: #ffffff;
-            box-shadow: 0 2px 10px rgba(5, 150, 105, 0.4);
-        }
-
-        .payment-account-card {
-            background: rgba(0, 0, 0, 0.45);
-            border: 1px solid rgba(245, 158, 11, 0.4);
-            border-radius: 12px;
-            padding: 10px;
-            margin-bottom: 14px;
-            text-align: center;
-        }
-
-        .payment-account-title {
-            font-size: 12px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .badge-bkash {
-            background: var(--bkash-color);
-            color: #fff;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .badge-nagad {
-            background: var(--nagad-color);
-            color: #fff;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .account-number {
-            font-size: 18px;
-            font-weight: 800;
-            color: var(--accent-gold);
-            letter-spacing: 1.5px;
-            user-select: all;
-            display: inline-block;
-            background: rgba(245, 158, 11, 0.12);
-            padding: 3px 12px;
-            border-radius: 6px;
-            border: 1px dashed rgba(245, 158, 11, 0.5);
-        }
-
-        .send-money-alert {
-            font-size: 11px;
-            color: #a7f3d0;
-            font-weight: 600;
-            margin-top: 4px;
-        }
-
-        .packages-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-bottom: 14px;
-        }
-
-        .pkg-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(245, 158, 11, 0.25);
-            border-radius: 8px;
-            padding: 6px 4px;
-            text-align: center;
-        }
-
-        .pkg-time {
-            font-size: 11px;
-            font-weight: 600;
-            color: #ffffff;
-        }
-
-        .pkg-price {
-            font-size: 14px;
-            font-weight: 800;
-            color: var(--accent-gold);
-        }
-
-        .input-group {
-            margin-bottom: 12px;
-            text-align: left;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            color: #cbd5e1;
-            margin-bottom: 4px;
-        }
-
-        .input-box input {
-            width: 100%;
-            padding: 11px 12px;
-            background: rgba(3, 20, 15, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            font-size: 14px;
-            color: #ffffff;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        .input-box input:focus {
-            border-color: var(--accent-glow);
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-            background: rgba(3, 20, 15, 0.95);
-        }
-
-        .btn-action {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-            border: 1px solid #10b981;
-            color: #ffffff;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.35);
-            transition: all 0.25s ease;
-            margin-top: 4px;
-        }
-
-        .btn-action:hover {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            transform: translateY(-1px);
-        }
-
-        .alert-box {
-            display: none;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            margin-bottom: 12px;
-            text-align: left;
-        }
-
-        .alert-error {
-            background: rgba(220, 38, 38, 0.15);
-            border: 1px solid #ef4444;
-            color: #fca5a5;
-        }
-
-        .alert-success {
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid #10b981;
-            color: #6ee7b7;
-        }
-
-        .card-footer {
-            margin-top: 16px;
-            padding-top: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .helpline {
-            color: var(--accent-gold);
-            font-weight: 700;
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
-
-<div class="glow-wrapper">
-    <div class="main-card">
-        <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
-
-        <div class="logo-box">
-            <img src="logo-Faznetwork.png" alt="FAZ Network Logo" class="logo-img">
-        </div>
-
-        <div class="brand-title">FAZ NETWORK</div>
-        <div class="brand-subtitle">স্বয়ংক্রিয় হাই-স্পিড হটস্পট জোন</div>
-
-        <!-- Status Message Box -->
-        <div id="status-box" class="alert-box"></div>
-
-        <!-- Switch Tabs -->
-        <div class="tab-switcher">
-            <button type="button" class="tab-btn active" onclick="switchTab('existing')">বিদ্যমান গ্রাহক / ভাউচার</button>
-            <button type="button" class="tab-btn" onclick="switchTab('recharge')">নতুন প্যাকেজ / রিচার্জ</button>
-        </div>
-
-        <!-- 1. Existing Customer Tab (Single Phone/Voucher Field) -->
-        <div id="tab-existing-content">
-            <form name="login" action="$(link-login-only)" method="post" onsubmit="return fillExistingLogin()">
-                <input type="hidden" name="dst" value="$(link-orig)" />
-                <input type="hidden" name="popup" value="true" />
-
-                <!-- MikroTik Hidden Submission Fields -->
-                <input type="hidden" id="mt_user_hidden" name="username" />
-                <input type="hidden" id="mt_pass_hidden" name="password" />
-
-                <div class="input-group">
-                    <label for="existing_phone">মোবাইল নম্বর / ভাউচার কোড</label>
-                    <div class="input-box">
-                        <input 
-                            type="text" 
-                            id="existing_phone" 
-                            placeholder="017xxxxxxxx বা ভাউচার নম্বর" 
-                            required 
-                            autocomplete="tel"
-                        />
-                    </div>
-                </div>
-
-                <div style="font-size: 11px; color: #a7f3d0; margin-bottom: 12px; text-align: left; line-height: 1.4;">
-                    💡 <b>পরামর্শ:</b> পূর্বে প্যাকেজ কেনা থাকলে বা কার্ড থাকলে শুধু নম্বরটি দিয়ে সরাসরি চালু করুন।
-                </div>
-
-                <button type="submit" class="btn-action">ইন্টারনেট চালু করুন</button>
-            </form>
-        </div>
-
-        <!-- 2. New Recharge / Package Tab -->
-        <div id="tab-recharge-content" style="display: none;">
-            <div class="payment-account-card">
-                <div class="payment-account-title">
-                    <span class="badge-bkash">bKash</span>
-                    <span class="badge-nagad">Nagad</span>
-                    <span>Personal (Send Money)</span>
-                </div>
-                <div class="account-number">01339932887</div>
-                <div class="send-money-alert">★ প্যাকেজের সঠিক টাকা Send Money করুন ★</div>
-            </div>
-
-            <div class="packages-grid">
-                <div class="pkg-card"><div class="pkg-time">১ ঘণ্টা</div><div class="pkg-price">৳ ১০</div></div>
-                <div class="pkg-card"><div class="pkg-time">১২ ঘণ্টা</div><div class="pkg-price">৳ ১৫</div></div>
-                <div class="pkg-card"><div class="pkg-time">১ দিন</div><div class="pkg-price">৳ ২০</div></div>
-                <div class="pkg-card"><div class="pkg-time">৩ দিন</div><div class="pkg-price">৳ ৪০</div></div>
-                <div class="pkg-card"><div class="pkg-time">৭ দিন</div><div class="pkg-price">৳ ৬০</div></div>
-                <div class="pkg-card"><div class="pkg-time">৩০ দিন</div><div class="pkg-price">৳ ১৫০</div></div>
-            </div>
-
-            <div class="input-group">
-                <label for="cust_phone">যে নম্বর থেকে Send Money করেছেন</label>
-                <div class="input-box">
-                    <input type="tel" id="cust_phone" placeholder="017xxxxxxxx" maxlength="11" />
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label for="cust_trx">ফিরতি SMS-এর ট্রানজেকশন আইডি (TrxID)</label>
-                <div class="input-box">
-                    <input type="text" id="cust_trx" placeholder="যেমন: DJ38C3MQHG" style="text-transform: uppercase;" />
-                </div>
-            </div>
-
-            <button type="button" id="btn-activate" class="btn-action" onclick="handleVerification()">
-                প্যাকেজ চালু ও লগইন করুন
-            </button>
-        </div>
-
-        <div class="card-footer">
-            <span>হেল্পলাইন:</span>
-            <a href="tel:01339932887" class="helpline">01339932887</a>
-        </div>
-    </div>
-</div>
-
-<!-- Auto Login Form (Used after API TrxID verification) -->
-<form id="mikrotik-auto-login" action="$(link-login-only)" method="post" style="display:none;">
-    <input type="hidden" name="username" id="mt-user" />
-    <input type="hidden" name="password" id="mt-pass" />
-    <input type="hidden" name="dst" value="$(link-orig)" />
-    <input type="hidden" name="popup" value="true" />
-</form>
-
-<script>
-    const BACKEND_API_URL = 'https://faznetwork.onrender.com/api/verify-trx';
-
-    function switchTab(tab) {
-        const existingTab = document.getElementById('tab-existing-content');
-        const rechargeTab = document.getElementById('tab-recharge-content');
-        const buttons = document.querySelectorAll('.tab-btn');
-
-        if (tab === 'existing') {
-            existingTab.style.display = 'block';
-            rechargeTab.style.display = 'none';
-            buttons[0].classList.add('active');
-            buttons[1].classList.remove('active');
+// ফ্রড ও ব্রুট-ফোর্স রোধে সিম্পল মেমোরি রেট লিমিটার (প্রতি মিনিটে সর্বোচ্চ ১০টি ট্রাই)
+const requestTracker = {};
+function rateLimiter(req, res, next) {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+    if (!requestTracker[ip]) {
+        requestTracker[ip] = { count: 1, resetTime: now + 60000 };
+    } else {
+        if (now > requestTracker[ip].resetTime) {
+            requestTracker[ip] = { count: 1, resetTime: now + 60000 };
         } else {
-            existingTab.style.display = 'none';
-            rechargeTab.style.display = 'block';
-            buttons[0].classList.remove('active');
-            buttons[1].classList.add('active');
-        }
-    }
-
-    function showStatus(text, isError = false) {
-        const box = document.getElementById('status-box');
-        box.style.display = 'block';
-        box.className = 'alert-box ' + (isError ? 'alert-error' : 'alert-success');
-        box.innerText = text;
-    }
-
-    // Auto sets both username and password from the phone input
-    function fillExistingLogin() {
-        const inputVal = document.getElementById('existing_phone').value.trim();
-        if (!inputVal) {
-            showStatus('অনুগ্রহ করে মোবাইল নম্বর বা ভাউচার কোড দিন।', true);
-            return false;
-        }
-
-        document.getElementById('mt_user_hidden').value = inputVal;
-        document.getElementById('mt_pass_hidden').value = inputVal;
-        return true;
-    }
-
-    async function handleVerification() {
-        const phoneInput = document.getElementById('cust_phone').value.trim();
-        const trxInput = document.getElementById('cust_trx').value.trim().toUpperCase();
-        const btn = document.getElementById('btn-activate');
-
-        if (!phoneInput || phoneInput.length < 11) {
-            showStatus('অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন।', true);
-            return;
-        }
-
-        if (!trxInput || trxInput.length < 5) {
-            showStatus('অনুগ্রহ করে সঠিক TrxID প্রদান করুন।', true);
-            return;
-        }
-
-        btn.disabled = true;
-        btn.innerText = 'যাচাই করা হচ্ছে...';
-        showStatus('পেমেন্ট ও রাউটার ভেরিফাই করা হচ্ছে...');
-
-        try {
-            const response = await fetch(BACKEND_API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: phoneInput, trxId: trxInput })
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                showStatus('আলহামদুলিল্লাহ! সংযোগ চালু হচ্ছে...');
-                document.getElementById('mt-user').value = data.username;
-                document.getElementById('mt-pass').value = data.password;
-
-                setTimeout(() => {
-                    document.getElementById('mikrotik-auto-login').submit();
-                }, 800);
-            } else {
-                showStatus(data.message || 'ভেরিফিকেশন ব্যর্থ হয়েছে।', true);
-                btn.disabled = false;
-                btn.innerText = 'প্যাকেজ চালু ও লগইন করুন';
+            requestTracker[ip].count++;
+            if (requestTracker[ip].count > 10) {
+                return res.status(429).json({
+                    success: false,
+                    message: 'অতিরিক্ত চেষ্টা করা হয়েছে। অনুগ্রহ করে ১ মিনিট পর আবার চেষ্টা করুন।'
+                });
             }
-        } catch (err) {
-            showStatus('সার্ভারের সাথে সংযোগ করা যায়নি।', true);
-            btn.disabled = false;
-            btn.innerText = 'প্যাকেজ চালু ও লগইন করুন';
         }
     }
-</script>
+    next();
+}
 
-</body>
-</html>
+const MIKROTIK_HOST = process.env.MIKROTIK_HOST || '103.54.37.182';
+const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT) || 1126;
+const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
+const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
+
+// মাইক্রোটিকের হুবহু প্রোফাইল নাম
+const PRICE_PROFILE_MAP = {
+    '10': 'Profile-1Hour',
+    '15': 'Profile-12Hour',
+    '20': 'Profile-1Day',
+    '40': 'Profile-3Day',
+    '60': 'Profile-7Day',
+    '90': 'Profile-15Day',
+    '150': 'Profile-30Day',
+    '200': 'Profile-100GB',
+    '350': 'Profile-300GB'
+};
+
+const DB_FILE = path.join(__dirname, 'transactions.json');
+
+function loadTransactions() {
+    try {
+        if (!fs.existsSync(DB_FILE)) return {};
+        return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8') || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveTransaction(trxId, data) {
+    try {
+        const store = loadTransactions();
+        store[trxId] = data;
+        fs.writeFileSync(DB_FILE, JSON.stringify(store, null, 2));
+    } catch (e) {
+        console.error('File write error:', e);
+    }
+}
+
+function encodeLength(len) {
+    if (len < 0x80) return Buffer.from([len]);
+    if (len < 0x4000) return Buffer.from([(len >> 8) | 0x80, len & 0xFF]);
+    if (len < 0x200000) return Buffer.from([(len >> 16) | 0xC0, (len >> 8) & 0xFF, len & 0xFF]);
+    if (len < 0x10000000) return Buffer.from([(len >> 24) | 0xE0, (len >> 16) & 0xFF, (len >> 8) & 0xFF, len & 0xFF]);
+    return Buffer.from([0xF0, (len >> 24) & 0xFF, (len >> 16) & 0xFF, (len >> 8) & 0xFF, len & 0xFF]);
+}
+
+function encodeWord(word) {
+    const b = Buffer.from(word, 'utf-8');
+    return Buffer.concat([encodeLength(b.length), b]);
+}
+
+function executeSingleCommand(cmdWords) {
+    return new Promise((resolve) => {
+        const client = new net.Socket();
+        let buffer = Buffer.alloc(0);
+        let loggedIn = false;
+        let finished = false;
+
+        const timer = setTimeout(() => {
+            if (!finished) {
+                finished = true;
+                client.destroy();
+                resolve(false);
+            }
+        }, 6000);
+
+        client.connect(MIKROTIK_PORT, MIKROTIK_HOST, () => {
+            const loginReq = Buffer.concat([
+                encodeWord('/login'),
+                encodeWord(`=name=${MIKROTIK_USER}`),
+                encodeWord(`=password=${MIKROTIK_PASS}`),
+                Buffer.from([0x00])
+            ]);
+            client.write(loginReq);
+        });
+
+        client.on('data', (chunk) => {
+            buffer = Buffer.concat([buffer, chunk]);
+            const text = buffer.toString('utf-8');
+
+            if (!loggedIn && (text.includes('!done') || text.includes('!trap'))) {
+                loggedIn = true;
+                buffer = Buffer.alloc(0);
+                const payload = cmdWords.map(w => encodeWord(w));
+                payload.push(Buffer.from([0x00]));
+                client.write(Buffer.concat(payload));
+            } else if (loggedIn && (text.includes('!done') || text.includes('!trap') || text.includes('!empty'))) {
+                if (!finished) {
+                    finished = true;
+                    clearTimeout(timer);
+                    client.end();
+                    resolve(true);
+                }
+            }
+        });
+
+        client.on('error', (err) => {
+            console.error('[ROUTER SOCKET ERROR]:', err.message);
+            if (!finished) {
+                finished = true;
+                clearTimeout(timer);
+                client.destroy();
+                resolve(false);
+            }
+        });
+
+        client.on('close', () => {
+            if (!finished) {
+                finished = true;
+                clearTimeout(timer);
+                resolve(true);
+            }
+        });
+    });
+}
+
+// ইউজার আগে থেকে থাকলে যাতে ক্র্যাশ না করে, নিরাপদে অ্যাড করার ফাংশন
+async function ensureUser(username, comment = '') {
+    console.log(`[USER MANAGER] Ensuring user: ${username}`);
+    const cmd = [
+        '/user-manager/user/add',
+        `=name=${username}`,
+        `=password=${username}`,
+        `=group=Hotspot`
+    ];
+    if (comment) cmd.push(`=comment=${comment}`);
+    await executeSingleCommand(cmd);
+}
+
+// নতুন প্রোফাইল অ্যাসাইন করা (নতুন ও পুরাতন উভয় ইউজারের জন্য কাজ করবে)
+async function attachProfile(username, profileName) {
+    console.log(`[USER MANAGER] Attaching/Renewing profile: ${username} -> ${profileName}`);
+    const cmd = [
+        '/user-manager/user-profile/add',
+        `=user=${username}`,
+        `=profile=${profileName}`
+    ];
+    return await executeSingleCommand(cmd);
+}
+
+// ইউজারের কমেন্ট ও ট্রানজেকশন ট্র্যাকিং আপডেট
+async function updateUserComment(username, comment) {
+    const cmd = [
+        '/user-manager/user/set',
+        `=numbers=${username}`,
+        `=comment=${comment}`
+    ];
+    await executeSingleCommand(cmd);
+}
+
+app.get('/', (req, res) => {
+    return res.status(200).send('FAZ NETWORK Hotspot API is Running!');
+});
+
+// ১. SMS Webhook (MacroDroid থেকে এসএমএস রিসিভ ও ফিল্টার)
+app.post('/forward', async (req, res) => {
+    try {
+        let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
+        let sender = (req.query.sender || req.body.sender || req.body.from || '').trim().toLowerCase();
+
+        if (typeof req.body === 'string') sms_body = req.body;
+        console.log(`[INCOMING SMS RAW] Sender: ${sender} | Body: ${sms_body}`);
+
+        // সেন্ডার ও মেসেজ বডি ভ্যালিডেশন (শুধু বিকাশ এবং নগদ নিশ্চিতকরণ)
+        const isOfficialBkash = sender.includes('bkash') || sender.includes('16247') || /bkash/i.test(sms_body);
+        const isOfficialNagad = sender.includes('nagad') || sender.includes('16167') || /nagad/i.test(sms_body);
+
+        if (!isOfficialBkash && !isOfficialNagad) {
+            console.warn(`[REJECTED] Not an official bKash or Nagad SMS. Sender: ${sender}`);
+            return res.status(403).json({
+                success: false,
+                message: 'Rejected: SMS is not from official bKash or Nagad sender.'
+            });
+        }
+
+        const trxMatch = sms_body.match(/TrxID\s*[:]?\s*([A-Za-z0-9]+)/i);
+        const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
+
+        const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+        const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
+
+        let detectedPhone = null;
+        // বিকাশ ও নগদ মেসেজ থেকে কাস্টমারের নম্বর নিখুঁতভাবে বের করা
+        const phoneMatch = sms_body.match(/(?:from|sender|number|fee\s*tk\s*[0-9.]+\s*from)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
+        if (phoneMatch && phoneMatch[1]) {
+            detectedPhone = phoneMatch[1].trim();
+        }
+
+        if (trxId && amount) {
+            saveTransaction(trxId, {
+                amount: amount,
+                phone: detectedPhone || '',
+                used: false,
+                receivedAt: Date.now()
+            });
+            console.log(`[TRX SAVED] TrxID: ${trxId} | Amount: ${amount} | Sender Phone: ${detectedPhone || 'N/A'}`);
+            return res.status(200).json({ success: true, trxId, amount, user: detectedPhone });
+        } else {
+            console.warn('[REJECTED] Incomplete transaction data in SMS.');
+            return res.status(400).json({ success: false, message: 'Invalid SMS content, TrxID/Amount not found.' });
+        }
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ২. মাইক্রোটিক হটস্পট লগইন পেজ থেকে TrxID ভেরিফিকেশন API
+app.post('/api/verify-trx', rateLimiter, async (req, res) => {
+    try {
+        const { username, trxId } = req.body;
+
+        if (!username || !trxId) {
+            return res.status(400).json({ success: false, message: 'ইউজার আইডি ও TrxID দিন।' });
+        }
+
+        const cleanTrx = trxId.trim().toUpperCase();
+        let cleanUser = username.trim().replace(/[^0-9]/g, '');
+        if (cleanUser.length >= 11) cleanUser = cleanUser.slice(-11);
+
+        const store = loadTransactions();
+        const transaction = store[cleanTrx];
+
+        // ১. ট্রানজেকশন ডাটাবেজে আছে কি না
+        if (!transaction) {
+            return res.status(404).json({
+                success: false,
+                message: `TrxID (${cleanTrx}) পাওয়া যায়নি! সঠিক TrxID দিন অথবা পেমেন্ট সম্পন্ন হয়েছে কি না নিশ্চিত করুন।`
+            });
+        }
+
+        // ২. আগেই ব্যবহার করা হয়েছে কি না (Replay Attack Prevention)
+        if (transaction.used) {
+            return res.status(400).json({
+                success: false,
+                message: 'এই TrxID দিয়ে আগেই প্যাকেজ সক্রিয় করা হয়েছে।'
+            });
+        }
+
+        // ৩. মোবাইল নম্বর ম্যাচিং (অন্যের TrxID চুরি রোধ)
+        if (transaction.phone) {
+            let expectedPhone = transaction.phone.trim().replace(/[^0-9]/g, '').slice(-11);
+            if (expectedPhone && expectedPhone !== cleanUser) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'ভুল মোবাইল নম্বর! যে নম্বর থেকে টাকা পাঠিয়েছেন সেই নম্বরটি প্রদান করুন।'
+                });
+            }
+        }
+
+        const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
+        const commentText = `TrxID: ${cleanTrx} | Tk: ${transaction.amount} | Date: ${new Date().toLocaleDateString('en-GB')}`;
+
+        // ইউজার নিশ্চিত করা (ইউজার না থাকলে নতুন বানাবে, থাকলে স্কিপ করবে)
+        await ensureUser(cleanUser, commentText);
+
+        // প্রোফাইল যুক্ত/রিনিউ করা (পুরাতন বা নতুন উভয়ের মেয়াদ যুক্ত হবে)
+        await attachProfile(cleanUser, profile);
+
+        // ইউজারের কমেন্ট আপডেট করা
+        await updateUserComment(cleanUser, commentText);
+
+        // ট্রানজেকশন মার্ক করা যাতে পুনরায় ব্যবহৃত না হতে পারে
+        transaction.used = true;
+        transaction.activatedUser = cleanUser;
+        transaction.usedAt = Date.now();
+        saveTransaction(cleanTrx, transaction);
+
+        return res.status(200).json({
+            success: true,
+            message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
+            username: cleanUser,
+            password: cleanUser,
+            profile: profile
+        });
+    } catch (err) {
+        console.error('[VERIFY ERROR]:', err);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+});
