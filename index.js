@@ -139,7 +139,7 @@ function runMikrotikApi(commands) {
     });
 }
 
-// ধাপ ১: প্রাথমিক ইউজার তৈরি (গ্রুপ Hotspot নির্ধারণ করে রাখা)
+// ধাপ ১: শুধুমাত্র ইউজার তৈরি করা (Group: Hotspot)
 async function createUserOnly(username) {
     console.log(`[USER MANAGER] Step 1: Pre-creating User ${username} in Hotspot group`);
     const cmds = [
@@ -148,17 +148,17 @@ async function createUserOnly(username) {
     return await runMikrotikApi(cmds);
 }
 
-// ধাপ ২: TrxID দিয়ে ভেরিফাই হওয়ার পর Profile ও Comment সেট করা
+// ধাপ ২: TrxID দিয়ে ভেরিফাই হওয়ার পর Profile এবং Comment সেট করা
 async function activateProfileAndComment(username, profileName, commentText) {
-    console.log(`[USER MANAGER] Step 2: Setting Profile & Comment for ${username}`);
+    console.log(`[USER MANAGER] Step 2: Activating ${username} -> ${profileName}`);
+    
+    // RouterOS v7 এ add কমান্ড ফেইল করলেও যাতে profile যোগ হওয়া না আটকায়
     const cmds = [
-        // ১. যদি কোনো কারণে ইউজার আগে তৈরি না হয়ে থাকে তবে কমেন্ট ও গ্রুপ সহ তৈরি হবে
+        // ইউজার না থাকলে নতুন বানাবে (থাকলে এটি !trap দিবে কিন্তু থামবে না)
         ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=group=Hotspot`, `=comment=${commentText}`, `=disabled=no`],
-        
-        // ২. ইউজার যদি তৈরি থাকে তবে RouterOS v7 কমান্ড সিনট্যাক্স অনুযায়ী গ্রুপ ও কমেন্ট আপডেট করা
-        ['/user-manager/user/set', `?name=${username}`, `=group=Hotspot`, `=comment=${commentText}`, `=disabled=no`],
-        
-        // ৩. ইউজারের প্রোফাইল অ্যাসাইন করা
+        // ইউজারের কমেন্ট ও গ্রুপ আপডেট
+        ['/user-manager/user/set', `*${username}`, `=group=Hotspot`, `=comment=${commentText}`],
+        // প্রোফাইল সক্রিয় করা
         ['/user-manager/user-profile/add', `=user=${username}`, `=profile=${profileName}`]
     ];
     return await runMikrotikApi(cmds);
@@ -168,7 +168,7 @@ app.get('/', (req, res) => {
     return res.status(200).send('FAZ NETWORK Hotspot Server is Running!');
 });
 
-// ১. SMS Webhook
+// ১. SMS Webhook Endpoint
 app.post('/forward', async (req, res) => {
     try {
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
@@ -177,15 +177,15 @@ app.post('/forward', async (req, res) => {
         if (typeof req.body === 'string') sms_body = req.body;
         console.log(`[SMS RECEIVED]: ${sms_body}`);
 
-        // TrxID পার্স করা
+        // TrxID বের করা
         const trxMatch = sms_body.match(/TrxID\s*[:]?\s*([A-Za-z0-9]+)/i);
         const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
 
-        // টাকা পার্স করা
+        // টাকার পরিমাণ
         const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
         const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
 
-        // ফোন নম্বর পার্স করা
+        // নম্বর বের করা
         let detectedPhone = null;
         const phoneMatch = sms_body.match(/(?:from|sender)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
         if (phoneMatch && phoneMatch[1]) {
@@ -195,12 +195,12 @@ app.post('/forward', async (req, res) => {
             if (clean.length >= 11) detectedPhone = clean.slice(-11);
         }
 
-        // মেসেজ আসা মাত্রই Hotspot গ্রুপে ইউজার তৈরি
+        // এসএমএস পাওয়ার সাথে সাথে ইউজার তৈরি
         if (detectedPhone) {
             await createUserOnly(detectedPhone);
         }
 
-        // TrxID ডিস্কে জমা রাখা
+        // ট্রানজ্যাকশন ডাটা ডিস্কে জমা রাখা
         if (trxId && amount) {
             saveTransaction(trxId, {
                 amount: amount,
@@ -223,7 +223,7 @@ app.post('/api/verify-trx', async (req, res) => {
         const { username, trxId } = req.body;
 
         if (!username || !trxId) {
-            return res.status(400).json({ success: false, message: 'মোবাইল নম্বর ও TrxID সঠিকভাবে লিখুন।' });
+            return res.status(400).json({ success: false, message: 'মোবাইল নম্বর ও TrxID প্রদান করুন।' });
         }
 
         const cleanTrx = trxId.trim().toUpperCase();
@@ -235,7 +235,7 @@ app.post('/api/verify-trx', async (req, res) => {
         if (!transaction) {
             return res.status(404).json({
                 success: false,
-                message: `TrxID (${cleanTrx}) পাওয়া যায়নি। অনুগ্রহ করে সঠিক TrxID লিখুন অথবা ১ মিনিট অপেক্ষা করুন।`
+                message: `TrxID (${cleanTrx}) পাওয়া যায়নি। অনুগ্রহ করে সঠিক TrxID লিখুন অথবা ১ মিনিট অপেক্ষা করে আবার চেষ্টা করুন।`
             });
         }
 
@@ -246,10 +246,11 @@ app.post('/api/verify-trx', async (req, res) => {
             });
         }
 
+        // প্যাকেজ নির্ধারণ
         const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile - 1Hour';
         const commentText = `TrxID: ${cleanTrx} | Tk: ${transaction.amount}`;
 
-        // ইউজারকে Hotspot গ্রুপে সেট, কমেন্টে TrxID যোগ এবং প্রোফাইল সক্রিয় করা
+        // ইউজার প্রোফাইল ও কমেন্ট সেট করা
         await activateProfileAndComment(cleanUser, profile, commentText);
 
         transaction.used = true;
