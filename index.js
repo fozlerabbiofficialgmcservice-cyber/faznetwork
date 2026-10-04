@@ -168,7 +168,7 @@ function executeSingleCommand(cmdWords) {
     });
 }
 
-// ইউজার নিশ্চিত করা (আগে তৈরি থাকলে কোনো সমস্যা হবে না)
+// ইউজার নিশ্চিত করা
 async function ensureUser(username, comment = '') {
     console.log(`[USER MANAGER] Ensuring user: ${username}`);
     const cmd = [
@@ -206,7 +206,7 @@ app.get('/', (req, res) => {
     return res.status(200).send('FAZ NETWORK Hotspot API is Running!');
 });
 
-// ১. SMS Webhook (MacroDroid থেকে এসএমএস গ্রহণ এবং কঠোর সেন্ডার ফিল্টারিং)
+// ১. SMS Webhook (বিকাশের TrxID এবং নগদের TxnID উভয়ই সাপোর্ট করবে)
 app.post('/forward', async (req, res) => {
     try {
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
@@ -215,25 +215,24 @@ app.post('/forward', async (req, res) => {
         if (typeof req.body === 'string') sms_body = req.body;
         console.log(`[INCOMING SMS RAW] Sender: "${sender}" | Body: "${sms_body}"`);
 
-        // ১. সেন্ডার তথ্য অনুপস্থিত থাকলে সাথে সাথে বাতিল
+        // ১. সেন্ডার ফিল্টারিং
         if (!sender) {
             console.warn('[BLOCKED] Sender information is missing.');
             return res.status(400).json({ success: false, message: 'Sender information missing.' });
         }
 
-        // ২. প্রেরক শুধুমাত্র বিকাশ বা নগদের অফিশিয়াল নাম/শর্টকোড কি না যাচাই
         const isBkashSender = sender.includes('bkash') || sender.includes('16247');
         const isNagadSender = sender.includes('nagad') || sender.includes('16167');
 
         if (!isBkashSender && !isNagadSender) {
-            console.warn(`[FRAUD ALERT] Blocked fake SMS from non-official sender: ${sender}`);
+            console.warn(`[FRAUD ALERT] Blocked SMS from non-official sender: ${sender}`);
             return res.status(403).json({
                 success: false,
                 message: 'Rejected: SMS is not from official bKash or Nagad sender.'
             });
         }
 
-        // ৩. অফিশিয়াল এসএমএস ফরম্যাট যাচাই (ক্যাশ ইন বা পেমেন্ট রিসিভ)
+        // ২. বিকাশ ও নগদ মেসেজ প্যাটার্ন ভ্যালিডেশন
         const isBkashFormat = /You have received (?:Tk|deposit)|Cash In Tk/i.test(sms_body);
         const isNagadFormat = /Money Received|Cash In amount/i.test(sms_body);
 
@@ -242,14 +241,17 @@ app.post('/forward', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid payment SMS format.' });
         }
 
-        const trxMatch = sms_body.match(/TrxID\s*[:]?\s*([A-Za-z0-9]+)/i);
+        // ৩. বিকাশ (TrxID) এবং নগদ (TxnID) উভয়ই শনাক্তকরণ
+        const trxMatch = sms_body.match(/(?:TrxID|TxnID|TransID|TxId)\s*[:]?\s*([A-Za-z0-9]+)/i);
         const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
 
-        const amountMatch = sms_body.match(/(?:Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+        // ৪. অ্যামাউন্ট শনাক্তকরণ (যেমন: Tk 15.00 বা Amount: Tk 15.00)
+        const amountMatch = sms_body.match(/(?:Tk|Amount\s*[:]?\s*Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
         const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
 
+        // ৫. প্রেরক কাস্টমারের নম্বর শনাক্তকরণ (বিকাশ ও নগদের মেসেজ ফরম্যাট অনুযায়ী)
         let detectedPhone = null;
-        const phoneMatch = sms_body.match(/(?:from|sender|number|fee\s*tk\s*[0-9.]+\s*from)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
+        const phoneMatch = sms_body.match(/(?:Sender|from|number|fee\s*tk\s*[0-9.]+\s*from)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
         if (phoneMatch && phoneMatch[1]) {
             detectedPhone = phoneMatch[1].trim();
         }
@@ -258,74 +260,74 @@ app.post('/forward', async (req, res) => {
             saveTransaction(trxId, {
                 amount: amount,
                 phone: detectedPhone || '',
+                gateway: isNagadSender ? 'Nagad' : 'bKash',
                 used: false,
                 receivedAt: Date.now()
             });
-            console.log(`[TRX SAVED] TrxID: ${trxId} | Amount: ${amount} | Sender Phone: ${detectedPhone || 'N/A'}`);
+            console.log(`[TRX SAVED] Gateway: ${isNagadSender ? 'Nagad' : 'bKash'} | ID: ${trxId} | Amount: ${amount} Tk | Phone: ${detectedPhone || 'N/A'}`);
             return res.status(200).json({ success: true, trxId, amount, user: detectedPhone });
         } else {
             console.warn('[REJECTED] Incomplete transaction data in SMS.');
-            return res.status(400).json({ success: false, message: 'Invalid SMS content, TrxID/Amount not found.' });
+            return res.status(400).json({ success: false, message: 'Invalid SMS content, TrxID/TxnID or Amount not found.' });
         }
     } catch (err) {
         return res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// ২. মাইক্রোটিক হটস্পট লগইন পেজ থেকে TrxID ভেরিফিকেশন API
+// ২. মাইক্রোটিক হটস্পট লগইন পেজ থেকে TrxID / TxnID ভেরিফিকেশন API
 app.post('/api/verify-trx', rateLimiter, async (req, res) => {
     try {
         const { username, trxId } = req.body;
 
         if (!username || !trxId) {
-            return res.status(400).json({ success: false, message: 'ইউজার আইডি ও TrxID দিন।' });
+            return res.status(400).json({ success: false, message: 'ইউজার আইডি ও TrxID / TxnID দিন।' });
         }
 
         const cleanTrx = trxId.trim().toUpperCase();
-        // কাস্টমার যে নম্বরটি ফর্মে দেবে, সেটাই হবে তার হটস্পট ইউজারনেম
         let cleanUser = username.trim().replace(/[^0-9]/g, '');
         if (cleanUser.length >= 11) cleanUser = cleanUser.slice(-11);
 
         const store = loadTransactions();
         const transaction = store[cleanTrx];
 
-        // ১. ট্রানজেকশনটি সার্ভারে বিকাশ/নগদ থেকে এসে সংরক্ষিত আছে কি না
+        // ১. ট্রানজেকশন ডাটাবেজে আছে কি না
         if (!transaction) {
             return res.status(404).json({
                 success: false,
-                message: `TrxID (${cleanTrx}) পাওয়া যায়নি! পেমেন্ট সম্পন্ন হয়েছে কি না এবং TrxID সঠিক কি না যাচাই করুন।`
+                message: `ট্রানজেকশন আইডি (${cleanTrx}) পাওয়া যায়নি! বিকাশ বা নগদের সঠিক TrxID/TxnID দিন।`
             });
         }
 
-        // ২. TrxID আগে ব্যবহার হয়েছে কি না (রিপ্লে অ্যাটাক রোধ)
+        // ২. আগে ব্যবহার হয়েছে কি না
         if (transaction.used) {
             return res.status(400).json({
                 success: false,
-                message: 'এই TrxID দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।'
+                message: 'এই আইডি দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।'
             });
         }
 
-        // প্যাকেজ নির্ধারণ
         const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
         const senderInfo = transaction.phone ? ` | Payer: ${transaction.phone}` : '';
-        const commentText = `TrxID: ${cleanTrx} | Tk: ${transaction.amount}${senderInfo} | Date: ${new Date().toLocaleDateString('en-GB')}`;
+        const method = transaction.gateway || 'Pay';
+        const commentText = `${method}: ${cleanTrx} | Tk: ${transaction.amount}${senderInfo} | Date: ${new Date().toLocaleDateString('en-GB')}`;
 
-        // কাস্টমারের দেওয়া নম্বরে ইউজার নিশ্চিত করা
+        // ইউজারের অ্যাকাউন্ট নিশ্চিত করা
         await ensureUser(cleanUser, commentText);
 
-        // প্রোফাইল যুক্ত/রিনিউ করা (নতুন অথবা মেয়াদোত্তীর্ণ উভয় ইউজারে কাজ করবে)
+        // প্রোফাইল যুক্ত বা রিনিউ করা
         await attachProfile(cleanUser, profile);
 
-        // ইউজারের কমেন্ট আপডেট
+        // কমেন্ট আপডেট
         await updateUserComment(cleanUser, commentText);
 
-        // TrxID লক করা যাতে একই TrxID দিয়ে আর কেউ নেট চালু করতে না পারে
+        // ট্রানজেকশন লক করা
         transaction.used = true;
         transaction.activatedUser = cleanUser;
         transaction.usedAt = Date.now();
         saveTransaction(cleanTrx, transaction);
 
-        console.log(`[SUCCESS] User: ${cleanUser} recharged with TrxID: ${cleanTrx} (${transaction.amount} Tk)`);
+        console.log(`[SUCCESS] User: ${cleanUser} recharged via ${method} (${cleanTrx}) - ${transaction.amount} Tk`);
 
         return res.status(200).json({
             success: true,
