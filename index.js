@@ -14,7 +14,7 @@ process.on('unhandledRejection', (reason) => {
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// মাইক্রোটিক লগইন পেজ থেকে AJAX রিকোয়েস্ট আসার জন্য CORS অনুমতি
+// মাইক্রোটিক লগইন পেজ থেকে AJAX রিকোয়েস্ট আসার জন্য CORS হেডার
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-// ফ্রড ও ব্রুট-ফোর্স রোধে সিম্পল মেমোরি রেট লিমিটার (প্রতি মিনিটে সর্বোচ্চ ১০টি ট্রাই)
+// ফ্রড ও ব্রুট-ফোর্স রোধে সিম্পল মেমোরি রেট লিমিটার (প্রতি মিনিটে সর্বোচ্চ ১০টি রিকোয়েস্ট)
 const requestTracker = {};
 function rateLimiter(req, res, next) {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -168,7 +168,7 @@ function executeSingleCommand(cmdWords) {
     });
 }
 
-// ইউজার আগে থেকে থাকলে যেন এরর ছাড়া এক্সিকিউট হয়
+// ইউজার নিশ্চিত করা (আগে তৈরি থাকলে কোনো সমস্যা হবে না)
 async function ensureUser(username, comment = '') {
     console.log(`[USER MANAGER] Ensuring user: ${username}`);
     const cmd = [
@@ -181,7 +181,7 @@ async function ensureUser(username, comment = '') {
     await executeSingleCommand(cmd);
 }
 
-// প্রোফাইল যুক্ত/রিনিউ করা (নতুন ও পুরাতন উভয় ক্ষেত্রে কাজ করবে)
+// প্রোফাইল যুক্ত বা রিনিউ করা
 async function attachProfile(username, profileName) {
     console.log(`[USER MANAGER] Attaching/Renewing profile: ${username} -> ${profileName}`);
     const cmd = [
@@ -192,7 +192,7 @@ async function attachProfile(username, profileName) {
     return await executeSingleCommand(cmd);
 }
 
-// ইউজারের কমেন্ট ও রিচার্জ হিস্ট্রি আপডেট
+// ইউজারের কমেন্ট আপডেট
 async function updateUserComment(username, comment) {
     const cmd = [
         '/user-manager/user/set',
@@ -215,13 +215,13 @@ app.post('/forward', async (req, res) => {
         if (typeof req.body === 'string') sms_body = req.body;
         console.log(`[INCOMING SMS RAW] Sender: "${sender}" | Body: "${sms_body}"`);
 
-        // ১. সেন্ডার তথ্য না থাকলে বাতিল
+        // ১. সেন্ডার তথ্য অনুপস্থিত থাকলে সাথে সাথে বাতিল
         if (!sender) {
             console.warn('[BLOCKED] Sender information is missing.');
             return res.status(400).json({ success: false, message: 'Sender information missing.' });
         }
 
-        // ২. সেন্ডার শুধুমাত্র বিকাশ বা নগদের অফিশিয়াল নাম/শর্টকোড কিনা কঠোরভাবে যাচাই
+        // ২. প্রেরক শুধুমাত্র বিকাশ বা নগদের অফিশিয়াল নাম/শর্টকোড কি না যাচাই
         const isBkashSender = sender.includes('bkash') || sender.includes('16247');
         const isNagadSender = sender.includes('nagad') || sender.includes('16167');
 
@@ -233,7 +233,7 @@ app.post('/forward', async (req, res) => {
             });
         }
 
-        // ৩. মেসেজ বডির অফিসিয়াল কি-ওয়ার্ড প্যাটার্ন যাচাই (ক্যাশ ইন বা পেমেন্ট রিসিভ)
+        // ৩. অফিশিয়াল এসএমএস ফরম্যাট যাচাই (ক্যাশ ইন বা পেমেন্ট রিসিভ)
         const isBkashFormat = /You have received (?:Tk|deposit)|Cash In Tk/i.test(sms_body);
         const isNagadFormat = /Money Received|Cash In amount/i.test(sms_body);
 
@@ -249,7 +249,6 @@ app.post('/forward', async (req, res) => {
         const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
 
         let detectedPhone = null;
-        // মেসেজ থেকে প্রেরক কাস্টমারের ফোন নম্বর শনাক্তকরণ
         const phoneMatch = sms_body.match(/(?:from|sender|number|fee\s*tk\s*[0-9.]+\s*from)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
         if (phoneMatch && phoneMatch[1]) {
             detectedPhone = phoneMatch[1].trim();
@@ -283,56 +282,50 @@ app.post('/api/verify-trx', rateLimiter, async (req, res) => {
         }
 
         const cleanTrx = trxId.trim().toUpperCase();
+        // কাস্টমার যে নম্বরটি ফর্মে দেবে, সেটাই হবে তার হটস্পট ইউজারনেম
         let cleanUser = username.trim().replace(/[^0-9]/g, '');
         if (cleanUser.length >= 11) cleanUser = cleanUser.slice(-11);
 
         const store = loadTransactions();
         const transaction = store[cleanTrx];
 
-        // ১. ট্রানজেকশন ডাটাবেজে আছে কি না
+        // ১. ট্রানজেকশনটি সার্ভারে বিকাশ/নগদ থেকে এসে সংরক্ষিত আছে কি না
         if (!transaction) {
             return res.status(404).json({
                 success: false,
-                message: `TrxID (${cleanTrx}) পাওয়া যায়নি! সঠিক TrxID দিন অথবা পেমেন্ট সম্পন্ন হয়েছে কি না নিশ্চিত করুন।`
+                message: `TrxID (${cleanTrx}) পাওয়া যায়নি! পেমেন্ট সম্পন্ন হয়েছে কি না এবং TrxID সঠিক কি না যাচাই করুন।`
             });
         }
 
-        // ২. আগেই ব্যবহার করা হয়েছে কি না (Replay Attack রোধ)
+        // ২. TrxID আগে ব্যবহার হয়েছে কি না (রিপ্লে অ্যাটাক রোধ)
         if (transaction.used) {
             return res.status(400).json({
                 success: false,
-                message: 'এই TrxID দিয়ে আগেই প্যাকেজ সক্রিয় করা হয়েছে।'
+                message: 'এই TrxID দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।'
             });
         }
 
-        // ৩. মোবাইল নম্বর ম্যাচিং (অন্যের TrxID চুরি রোধ)
-        if (transaction.phone) {
-            let expectedPhone = transaction.phone.trim().replace(/[^0-9]/g, '').slice(-11);
-            if (expectedPhone && expectedPhone !== cleanUser) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'ভুল মোবাইল নম্বর! যে নম্বর থেকে টাকা পাঠিয়েছেন সেই নম্বরটি প্রদান করুন।'
-                });
-            }
-        }
-
+        // প্যাকেজ নির্ধারণ
         const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
-        const commentText = `TrxID: ${cleanTrx} | Tk: ${transaction.amount} | Date: ${new Date().toLocaleDateString('en-GB')}`;
+        const senderInfo = transaction.phone ? ` | Payer: ${transaction.phone}` : '';
+        const commentText = `TrxID: ${cleanTrx} | Tk: ${transaction.amount}${senderInfo} | Date: ${new Date().toLocaleDateString('en-GB')}`;
 
-        // ইউজার তৈরি নিশ্চিত করা (আগে থেকে থাকলে কোনো এরর হবে না)
+        // কাস্টমারের দেওয়া নম্বরে ইউজার নিশ্চিত করা
         await ensureUser(cleanUser, commentText);
 
         // প্রোফাইল যুক্ত/রিনিউ করা (নতুন অথবা মেয়াদোত্তীর্ণ উভয় ইউজারে কাজ করবে)
         await attachProfile(cleanUser, profile);
 
-        // ইউজারের কমেন্ট আপডেট করা
+        // ইউজারের কমেন্ট আপডেট
         await updateUserComment(cleanUser, commentText);
 
-        // TrxID লক করা
+        // TrxID লক করা যাতে একই TrxID দিয়ে আর কেউ নেট চালু করতে না পারে
         transaction.used = true;
         transaction.activatedUser = cleanUser;
         transaction.usedAt = Date.now();
         saveTransaction(cleanTrx, transaction);
+
+        console.log(`[SUCCESS] User: ${cleanUser} recharged with TrxID: ${cleanTrx} (${transaction.amount} Tk)`);
 
         return res.status(200).json({
             success: true,
