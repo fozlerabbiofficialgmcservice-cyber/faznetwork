@@ -52,7 +52,7 @@ function rateLimiter(req, res, next) {
 }
 
 const MIKROTIK_HOST = process.env.MIKROTIK_HOST || '103.54.37.182';
-const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT) || 1112;
+const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT) || 1126;
 const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
 const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 
