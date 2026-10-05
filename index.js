@@ -14,11 +14,11 @@ process.on('unhandledRejection', (reason) => {
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// মাইক্রোটিক লগইন পেজ থেকে AJAX রিকোয়েস্ট আসার জন্য CORS হেডার
+// মাইক্রোটিক লগইন পেজ ও বিভিন্ন ডিভাইস থেকে AJAX রিকোয়েস্টের জন্য CORS হেডার
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     if (req.method === 'OPTIONS') return res.sendStatus(200);
     next();
 });
@@ -168,17 +168,30 @@ function executeSingleCommand(cmdWords) {
     });
 }
 
-// ইউজার নিশ্চিত করা
-async function ensureUser(username, comment = '') {
-    console.log(`[USER MANAGER] Ensuring user: ${username}`);
-    const cmd = [
-        '/user-manager/user/add',
-        `=name=${username}`,
-        `=password=${username}`,
-        `=group=Hotspot`
+// ইউজার নিশ্চিত করা: Username = MAC এবং Password = Phone Number
+async function ensureUser(username, password, comment = '') {
+    console.log(`[USER MANAGER] Ensuring user: ${username} (Pass: ${password})`);
+    
+    // প্রথমে বিদ্যমান ইউজারের পাসওয়ার্ড ও কমেন্ট আপডেট করার চেষ্টা (যদি আগে থেকেই ম্যাক থাকে)
+    const setCmd = [
+        '/user-manager/user/set',
+        `=numbers=${username}`,
+        `=password=${password}`
     ];
-    if (comment) cmd.push(`=comment=${comment}`);
-    await executeSingleCommand(cmd);
+    if (comment) setCmd.push(`=comment=${comment}`);
+    const updated = await executeSingleCommand(setCmd);
+
+    // যদি ইউজার আগে না থাকে, তবে নতুন তৈরি করা
+    if (!updated) {
+        const addCmd = [
+            '/user-manager/user/add',
+            `=name=${username}`,
+            `=password=${password}`,
+            `=group=Hotspot`
+        ];
+        if (comment) addCmd.push(`=comment=${comment}`);
+        await executeSingleCommand(addCmd);
+    }
 }
 
 // প্রোফাইল যুক্ত বা রিনিউ করা
@@ -245,11 +258,11 @@ app.post('/forward', async (req, res) => {
         const trxMatch = sms_body.match(/(?:TrxID|TxnID|TransID|TxId)\s*[:]?\s*([A-Za-z0-9]+)/i);
         const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
 
-        // ৪. অ্যামাউন্ট শনাক্তকরণ (যেমন: Tk 15.00 বা Amount: Tk 15.00)
+        // ৪. অ্যামাউন্ট শনাক্তকরণ
         const amountMatch = sms_body.match(/(?:Tk|Amount\s*[:]?\s*Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
         const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
 
-        // ৫. প্রেরক কাস্টমারের নম্বর শনাক্তকরণ (বিকাশ ও নগদের মেসেজ ফরম্যাট অনুযায়ী)
+        // ৫. প্রেরক কাস্টমারের নম্বর শনাক্তকরণ
         let detectedPhone = null;
         const phoneMatch = sms_body.match(/(?:Sender|from|number|fee\s*tk\s*[0-9.]+\s*from)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
         if (phoneMatch && phoneMatch[1]) {
@@ -278,15 +291,26 @@ app.post('/forward', async (req, res) => {
 // ২. মাইক্রোটিক হটস্পট লগইন পেজ থেকে TrxID / TxnID ভেরিফিকেশন API
 app.post('/api/verify-trx', rateLimiter, async (req, res) => {
     try {
-        const { username, trxId } = req.body;
+        // নতুন login.html থেকে phone, trxId, এবং mac গ্রহণ
+        const phone = req.body.phone || req.body.username;
+        const trxId = req.body.trxId;
+        const mac = req.body.mac;
 
-        if (!username || !trxId) {
-            return res.status(400).json({ success: false, message: 'ইউজার আইডি ও TrxID / TxnID দিন।' });
+        if (!phone || !trxId) {
+            return res.status(400).json({ success: false, message: 'মোবাইল নম্বর ও TrxID দিন।' });
         }
 
         const cleanTrx = trxId.trim().toUpperCase();
-        let cleanUser = username.trim().replace(/[^0-9]/g, '');
-        if (cleanUser.length >= 11) cleanUser = cleanUser.slice(-11);
+        let cleanPhone = phone.trim().replace(/[^0-9]/g, '');
+        if (cleanPhone.length >= 11) cleanPhone = cleanPhone.slice(-11);
+
+        // MAC অ্যাড্রেস থাকলে তা ইউজারনেম হিসেবে সেট হবে, অন্যথায় ফোন নম্বর
+        let cleanUsername = cleanPhone;
+        if (mac && mac !== '$(mac)' && mac.trim().length >= 11) {
+            cleanUsername = mac.trim().toUpperCase();
+        }
+
+        const cleanPassword = cleanPhone;
 
         const store = loadTransactions();
         const transaction = store[cleanTrx];
@@ -295,7 +319,7 @@ app.post('/api/verify-trx', rateLimiter, async (req, res) => {
         if (!transaction) {
             return res.status(404).json({
                 success: false,
-                message: `ট্রানজেকশন আইডি (${cleanTrx}) পাওয়া যায়নি! বিকাশ বা নগদের সঠিক TrxID/TxnID দিন।`
+                message: `ট্রানজেকশন আইডি (${cleanTrx}) পাওয়া যায়নি! বিকাশ বা নগদের সঠিক TrxID দিন।`
             });
         }
 
@@ -303,37 +327,38 @@ app.post('/api/verify-trx', rateLimiter, async (req, res) => {
         if (transaction.used) {
             return res.status(400).json({
                 success: false,
-                message: 'এই আইডি দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।'
+                message: 'এই TrxID দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।'
             });
         }
 
         const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
         const senderInfo = transaction.phone ? ` | Payer: ${transaction.phone}` : '';
         const method = transaction.gateway || 'Pay';
-        const commentText = `${method}: ${cleanTrx} | Tk: ${transaction.amount}${senderInfo} | Date: ${new Date().toLocaleDateString('en-GB')}`;
+        const commentText = `${method}: ${cleanTrx} | Phone: ${cleanPhone} | Tk: ${transaction.amount}${senderInfo} | Date: ${new Date().toLocaleDateString('en-GB')}`;
 
-        // ইউজারের অ্যাকাউন্ট নিশ্চিত করা
-        await ensureUser(cleanUser, commentText);
+        // ইউজারের অ্যাকাউন্ট নিশ্চিত করা (Username = MAC, Password = Phone)
+        await ensureUser(cleanUsername, cleanPassword, commentText);
 
         // প্রোফাইল যুক্ত বা রিনিউ করা
-        await attachProfile(cleanUser, profile);
+        await attachProfile(cleanUsername, profile);
 
         // কমেন্ট আপডেট
-        await updateUserComment(cleanUser, commentText);
+        await updateUserComment(cleanUsername, commentText);
 
         // ট্রানজেকশন লক করা
         transaction.used = true;
-        transaction.activatedUser = cleanUser;
+        transaction.activatedUser = cleanUsername;
+        transaction.phone = cleanPhone;
         transaction.usedAt = Date.now();
         saveTransaction(cleanTrx, transaction);
 
-        console.log(`[SUCCESS] User: ${cleanUser} recharged via ${method} (${cleanTrx}) - ${transaction.amount} Tk`);
+        console.log(`[SUCCESS] User: ${cleanUsername} (Pass: ${cleanPassword}) recharged via ${method} (${cleanTrx}) - ${transaction.amount} Tk`);
 
         return res.status(200).json({
             success: true,
             message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
-            username: cleanUser,
-            password: cleanUser,
+            username: cleanUsername,
+            password: cleanPassword,
             profile: profile
         });
     } catch (err) {
