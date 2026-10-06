@@ -146,3 +146,85 @@
                     ip: c.ipAddress || '-',
                     mac: c.callerId || '-',
                     bytesIn: u.bytesIn || '0 B',
+                    bytesOut: u.bytesOut || '0 B',
+                    disabled: !!u.disabled,
+                    isOnline: u.uptime && u.uptime !== '0s' && u.uptime !== '-',
+                    expiryDate: c.expiryDate || '-',
+                    price: c.price || '-',
+                    lastPayment: c.lastPayment || '-'
+                };
+            });
+
+            fznRender();
+        } catch (err) {
+            console.error('Data error:', err);
+        } finally {
+            if (loading) loading.style.display = 'none';
+            if (tableArea) tableArea.style.display = 'block';
+        }
+    };
+
+    function fznRender() {
+        const tbody = document.getElementById('fznUserTbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (usersList.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px;">কোনো তথ্য পাওয়া যায়নি</td></tr>';
+            return;
+        }
+
+        usersList.forEach((u, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${u.username}</strong></td>
+                <td>${u.name}</td>
+                <td><span class="fzn-badge fzn-badge-offline">${u.profile}</span></td>
+                <td>
+                    ${u.disabled 
+                        ? '<span class="fzn-badge fzn-badge-disabled">Disabled</span>' 
+                        : (u.isOnline ? '<span class="fzn-badge fzn-badge-online">Online</span>' : '<span class="fzn-badge fzn-badge-offline">Offline</span>')}
+                </td>
+                <td>${u.uptime}</td>
+                <td>${u.ip}</td>
+                <td>
+                    <button class="fzn-btn fzn-btn-outline fzn-btn-sm" onclick="fznShowDetails(${i})">
+                        <i class="fa-solid fa-circle-info"></i> বিস্তারিত
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.fznShowDetails = function(i) {
+        const u = usersList[i];
+        if (!u) return;
+        document.getElementById('m_user').innerText = u.username;
+        document.getElementById('m_name').innerText = u.name;
+        document.getElementById('m_phone').innerText = u.phone;
+        document.getElementById('m_address').innerText = u.address;
+        document.getElementById('m_status').innerText = u.isOnline ? 'Online' : 'Offline';
+        document.getElementById('m_ip').innerText = u.ip;
+        document.getElementById('m_mac').innerText = u.mac;
+        document.getElementById('m_uptime').innerText = u.uptime;
+        document.getElementById('m_pkg').innerText = u.profile;
+        document.getElementById('m_price').innerText = u.price !== '-' ? u.price + ' ৳' : 'N/A';
+        document.getElementById('m_exp').innerText = u.expiryDate;
+        document.getElementById('m_down').innerText = u.bytesIn;
+        document.getElementById('m_up').innerText = u.bytesOut;
+        document.getElementById('m_pay').innerText = u.lastPayment !== '-' ? u.lastPayment + ' ৳' : 'N/A';
+
+        const modal = document.getElementById('fznModal');
+        if (modal) modal.style.display = 'flex';
+    };
+
+    window.fznCloseModal = function() {
+        const modal = document.getElementById('fznModal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    // Auto load
+    fznLoadUsers();
+})();
+</script>
