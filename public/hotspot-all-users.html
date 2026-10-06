@@ -41,12 +41,14 @@
         <button class="fzn-btn" onclick="fznLoadUsers()"><i class="fa-solid fa-rotate"></i> রিফ্রেশ</button>
     </div>
 
-    <div id="fznLoading" style="text-align: center; padding: 30px; color: #0ea5e9;">
+    <!-- লডিং ইন্ডিকেটর -->
+    <div id="fznLoading" style="display: none; text-align: center; padding: 25px; color: #0ea5e9;">
         <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
-        <div style="margin-top: 8px; font-size: 14px;">ডাটা লোড হচ্ছে...</div>
+        <div style="margin-top: 8px; font-size: 14px;">ডাটা প্রসেস হচ্ছে...</div>
     </div>
 
-    <div id="fznTableArea" style="display: none; overflow-x: auto;">
+    <!-- টেবিল এরিয়া -->
+    <div id="fznTableArea" style="overflow-x: auto;">
         <table class="fzn-table">
             <thead>
                 <tr>
@@ -73,7 +75,6 @@
         </div>
         <div class="fzn-modal-body">
             <div class="fzn-grid">
-                <!-- Basic Info -->
                 <div class="fzn-box">
                     <h4>বেসিক তথ্য</h4>
                     <div class="fzn-row"><span>ইউজারনেম:</span> <span id="m_user">-</span></div>
@@ -81,7 +82,6 @@
                     <div class="fzn-row"><span>মোবাইল:</span> <span id="m_phone">-</span></div>
                     <div class="fzn-row"><span>ঠিকানা:</span> <span id="m_address">-</span></div>
                 </div>
-                <!-- Connection -->
                 <div class="fzn-box">
                     <h4>কানেকশন</h4>
                     <div class="fzn-row"><span>স্ট্যাটাস:</span> <span id="m_status">-</span></div>
@@ -89,14 +89,12 @@
                     <div class="fzn-row"><span>ম্যাক:</span> <span id="m_mac">-</span></div>
                     <div class="fzn-row"><span>আপটাইম:</span> <span id="m_uptime">-</span></div>
                 </div>
-                <!-- Package -->
                 <div class="fzn-box">
                     <h4>প্যাকেজ ও মেয়াদ</h4>
                     <div class="fzn-row"><span>প্যাকেজ:</span> <span id="m_pkg">-</span></div>
                     <div class="fzn-row"><span>মূল্য:</span> <span id="m_price">-</span></div>
                     <div class="fzn-row"><span>মেয়াদ শেষ:</span> <span id="m_exp">-</span></div>
                 </div>
-                <!-- Usage & Payment -->
                 <div class="fzn-box">
                     <h4>ডেটা ও পেমেন্ট</h4>
                     <div class="fzn-row"><span>ডাউনলোড:</span> <span id="m_down">-</span></div>
@@ -116,26 +114,63 @@
 </div>
 
 <script>
-(function() {
-    let usersList = [];
+var usersList = [];
 
-    window.fznLoadUsers = async function() {
-        const loading = document.getElementById('fznLoading');
-        const tableArea = document.getElementById('fznTableArea');
-        if (loading) loading.style.display = 'block';
-        if (tableArea) tableArea.style.display = 'none';
+// ফাস্ট ফেচ উইথ শর্ট টাইমআউট
+function quickFetch(url, ms) {
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => resolve([]), ms);
+        fetch(url)
+            .then(res => res.ok ? res.json() : [])
+            .then(data => {
+                clearTimeout(timer);
+                resolve(data);
+            })
+            .catch(() => {
+                clearTimeout(timer);
+                resolve([]);
+            });
+    });
+}
 
-        try {
-            const [hsRes, custRes] = await Promise.allSettled([
-                fetch('/api/hotspot/users').then(r => r.json()),
-                fetch('/api/customers').then(r => r.json())
-            ]);
+window.fznLoadUsers = async function() {
+    var loading = document.getElementById('fznLoading');
+    var tableArea = document.getElementById('fznTableArea');
+    
+    if (loading) loading.style.display = 'block';
 
-            const hsData = hsRes.status === 'fulfilled' && Array.isArray(hsRes.value) ? hsRes.value : [];
-            const custData = custRes.status === 'fulfilled' && Array.isArray(custRes.value) ? custRes.value : [];
+    try {
+        // সর্বোচ্চ ২৫০০ms অপেক্ষা করবে, রাউটার স্লো হলেও পেজ হ্যাং হবে না
+        const results = await Promise.all([
+            quickFetch('/api/hotspot/users', 2500),
+            quickFetch('/api/customers', 2500)
+        ]);
 
+        var hsData = Array.isArray(results[0]) ? results[0] : [];
+        var custData = Array.isArray(results[1]) ? results[1] : [];
+
+        // যদি রাউটার লাইভ না দেয় তবে লোকাল কাস্টমার ডাটা দিয়ে প্রিফিল করবে
+        if (hsData.length === 0 && custData.length > 0) {
+            usersList = custData.map(c => ({
+                username: c.username || '-',
+                name: c.name || '-',
+                phone: c.phone || '-',
+                address: c.address || '-',
+                profile: c.package || 'Default',
+                uptime: c.uptime || 'Offline',
+                ip: c.ipAddress || '-',
+                mac: c.callerId || '-',
+                bytesIn: '0 B',
+                bytesOut: '0 B',
+                disabled: c.status === 'Disabled',
+                isOnline: c.onlineStatus === 'Online',
+                expiryDate: c.expiryDate || '-',
+                price: c.price || '-',
+                lastPayment: '-'
+            }));
+        } else {
             usersList = hsData.map(u => {
-                const c = custData.find(item => item.username === u.username) || {};
+                var c = custData.find(item => item.username === u.username) || {};
                 return {
                     username: u.username || u.name || '-',
                     name: c.name || u.comment || 'N/A',
@@ -154,77 +189,79 @@
                     lastPayment: c.lastPayment || '-'
                 };
             });
-
-            fznRender();
-        } catch (err) {
-            console.error('Data error:', err);
-        } finally {
-            if (loading) loading.style.display = 'none';
-            if (tableArea) tableArea.style.display = 'block';
-        }
-    };
-
-    function fznRender() {
-        const tbody = document.getElementById('fznUserTbody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        if (usersList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px;">কোনো তথ্য পাওয়া যায়নি</td></tr>';
-            return;
         }
 
-        usersList.forEach((u, i) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${u.username}</strong></td>
-                <td>${u.name}</td>
-                <td><span class="fzn-badge fzn-badge-offline">${u.profile}</span></td>
-                <td>
-                    ${u.disabled 
-                        ? '<span class="fzn-badge fzn-badge-disabled">Disabled</span>' 
-                        : (u.isOnline ? '<span class="fzn-badge fzn-badge-online">Online</span>' : '<span class="fzn-badge fzn-badge-offline">Offline</span>')}
-                </td>
-                <td>${u.uptime}</td>
-                <td>${u.ip}</td>
-                <td>
-                    <button class="fzn-btn fzn-btn-outline fzn-btn-sm" onclick="fznShowDetails(${i})">
-                        <i class="fa-solid fa-circle-info"></i> বিস্তারিত
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        fznRender();
+    } catch (err) {
+        console.error('Data error:', err);
+    } finally {
+        if (loading) loading.style.display = 'none';
+        if (tableArea) tableArea.style.display = 'block';
+    }
+};
+
+function fznRender() {
+    var tbody = document.getElementById('fznUserTbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (usersList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px; color:#64748b;">কোনো ইউজার ডাটা পাওয়া যায়নি। রিফ্রেশ করে আবার চেষ্টা করুন।</td></tr>';
+        return;
     }
 
-    window.fznShowDetails = function(i) {
-        const u = usersList[i];
-        if (!u) return;
-        document.getElementById('m_user').innerText = u.username;
-        document.getElementById('m_name').innerText = u.name;
-        document.getElementById('m_phone').innerText = u.phone;
-        document.getElementById('m_address').innerText = u.address;
-        document.getElementById('m_status').innerText = u.isOnline ? 'Online' : 'Offline';
-        document.getElementById('m_ip').innerText = u.ip;
-        document.getElementById('m_mac').innerText = u.mac;
-        document.getElementById('m_uptime').innerText = u.uptime;
-        document.getElementById('m_pkg').innerText = u.profile;
-        document.getElementById('m_price').innerText = u.price !== '-' ? u.price + ' ৳' : 'N/A';
-        document.getElementById('m_exp').innerText = u.expiryDate;
-        document.getElementById('m_down').innerText = u.bytesIn;
-        document.getElementById('m_up').innerText = u.bytesOut;
-        document.getElementById('m_pay').innerText = u.lastPayment !== '-' ? u.lastPayment + ' ৳' : 'N/A';
+    usersList.forEach((u, i) => {
+        var tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${u.username}</strong></td>
+            <td>${u.name}</td>
+            <td><span class="fzn-badge fzn-badge-offline">${u.profile}</span></td>
+            <td>
+                ${u.disabled 
+                    ? '<span class="fzn-badge fzn-badge-disabled">Disabled</span>' 
+                    : (u.isOnline ? '<span class="fzn-badge fzn-badge-online">Online</span>' : '<span class="fzn-badge fzn-badge-offline">Offline</span>')}
+            </td>
+            <td>${u.uptime}</td>
+            <td>${u.ip}</td>
+            <td>
+                <button class="fzn-btn fzn-btn-outline fzn-btn-sm" onclick="fznShowDetails(${i})">
+                    <i class="fa-solid fa-circle-info"></i> বিস্তারিত
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
-        const modal = document.getElementById('fznModal');
-        if (modal) modal.style.display = 'flex';
-    };
+window.fznShowDetails = function(i) {
+    var u = usersList[i];
+    if (!u) return;
+    document.getElementById('m_user').innerText = u.username;
+    document.getElementById('m_name').innerText = u.name;
+    document.getElementById('m_phone').innerText = u.phone;
+    document.getElementById('m_address').innerText = u.address;
+    document.getElementById('m_status').innerText = u.isOnline ? 'Online' : 'Offline';
+    document.getElementById('m_ip').innerText = u.ip;
+    document.getElementById('m_mac').innerText = u.mac;
+    document.getElementById('m_uptime').innerText = u.uptime;
+    document.getElementById('m_pkg').innerText = u.profile;
+    document.getElementById('m_price').innerText = u.price !== '-' ? u.price + ' ৳' : 'N/A';
+    document.getElementById('m_exp').innerText = u.expiryDate;
+    document.getElementById('m_down').innerText = u.bytesIn;
+    document.getElementById('m_up').innerText = u.bytesOut;
+    document.getElementById('m_pay').innerText = u.lastPayment !== '-' ? u.lastPayment + ' ৳' : 'N/A';
 
-    window.fznCloseModal = function() {
-        const modal = document.getElementById('fznModal');
-        if (modal) modal.style.display = 'none';
-    };
+    var modal = document.getElementById('fznModal');
+    if (modal) modal.style.display = 'flex';
+};
 
-    // Auto load
-    fznLoadUsers();
-})();
+window.fznCloseModal = function() {
+    var modal = document.getElementById('fznModal');
+    if (modal) modal.style.display = 'none';
+};
+
+// ইনিশিয়াল কল
+setTimeout(function() {
+    window.fznLoadUsers();
+}, 200);
 </script>
