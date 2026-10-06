@@ -44,7 +44,7 @@ function rateLimiter(req, res, next) {
             if (requestTracker[ip].count > 15) {
                 return res.status(429).json({
                     success: false,
-                    message: 'অতিরিক্ত চেষ্টা করা হয়েছে। ১ মিনিট পর আবার চেষ্টা করুন।'
+                    message: 'Too many requests. Please try again after 1 minute.'
                 });
             }
         }
@@ -121,7 +121,7 @@ function triggerPhoneSms(to, message) {
                 timeout: 8000
             }, (res) => {
                 let resData = '';
-                res.on('data', chunk => resData += chunk);
+                res.on('data', chunk => { resData += chunk; });
                 res.on('end', () => {
                     console.log(`[SMS SENT VIA PHONE] To: ${to} | Response:`, resData);
                     resolve({ success: true, response: resData });
@@ -281,14 +281,14 @@ app.post('/forward', async (req, res) => {
         if (trxId && amount) {
             const store = loadJson(DB_FILE, {});
             store[trxId] = {
-                amount,
+                amount: amount,
                 phone: detectedPhone || '',
                 gateway: isNagad ? 'Nagad' : 'bKash',
                 used: false,
                 receivedAt: Date.now()
             };
             saveJson(DB_FILE, store);
-            return res.status(200).json({ success: true, trxId, amount, user: detectedPhone });
+            return res.status(200).json({ success: true, trxId: trxId, amount: amount, user: detectedPhone });
         }
         return res.status(400).json({ success: false, message: 'TrxID or Amount not found.' });
     } catch (err) {
@@ -300,4 +300,131 @@ app.post('/forward', async (req, res) => {
 app.post('/api/verify-trx', rateLimiter, async (req, res) => {
     try {
         const { username, trxId } = req.body;
-        if (!username || !trxId) return res.status(40
+        if (!username || !trxId) return res.status(400).json({ success: false, message: 'Information missing.' });
+
+        const cleanTrx = trxId.trim().toUpperCase();
+        let cleanUser = username.trim().replace(/[^0-9]/g, '');
+        if (cleanUser.length >= 11) cleanUser = cleanUser.slice(-11);
+
+        const store = loadJson(DB_FILE, {});
+        const transaction = store[cleanTrx];
+
+        if (!transaction) return res.status(404).json({ success: false, message: 'Invalid or missing TrxID.' });
+        if (transaction.used) return res.status(400).json({ success: false, message: 'This TrxID has already been used.' });
+
+        const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
+        const commentText = `${transaction.gateway}: ${cleanTrx} | Tk: ${transaction.amount} | Date: ${new Date().toLocaleDateString('en-GB')}`;
+
+        await ensureUser(cleanUser, commentText);
+        await attachProfile(cleanUser, profile);
+        await updateUserComment(cleanUser, commentText);
+
+        transaction.used = true;
+        transaction.activatedUser = cleanUser;
+        transaction.usedAt = Date.now();
+        saveJson(DB_FILE, store);
+
+        // কাস্টমার ডেটাবেজে স্বয়ংক্রিয় সেভ
+        const customers = loadJson(CUSTOMERS_FILE, []);
+        const idx = customers.findIndex(c => c.username === cleanUser);
+        const custData = {
+            username: cleanUser,
+            name: cleanUser,
+            phone: cleanUser,
+            package: profile,
+            status: 'Active',
+            lastRecharge: new Date().toLocaleDateString('en-GB'),
+            balance: transaction.amount,
+            comment: commentText
+        };
+        if (idx !== -1) {
+            customers[idx] = Object.assign({}, customers[idx], custData);
+        } else {
+            customers.unshift(custData);
+        }
+        saveJson(CUSTOMERS_FILE, customers);
+
+        // গ্রাহককে স্বয়ংক্রিয় এসএমএস পাঠানো
+        triggerPhoneSms(cleanUser, `FAZ NETWORK: Package ${profile} activated successfully.`);
+
+        return res.status(200).json({ success: true, username: cleanUser, password: cleanUser, profile: profile });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ৩. সেটিংস: SMS Gateway Webhook সংরক্ষণ ও পড়া
+app.get('/api/settings', (req, res) => {
+    const settings = loadJson(SETTINGS_FILE, { smsGatewayUrl: '' });
+    res.json(settings);
+});
+
+app.post('/api/settings', (req, res) => {
+    const { smsGatewayUrl } = req.body;
+    saveJson(SETTINGS_FILE, { smsGatewayUrl: (smsGatewayUrl || '').trim() });
+    res.json({ success: true, message: 'SMS Gateway URL saved.' });
+});
+
+// ৪. কাস্টমার তালিকা API
+app.get('/api/customers', (req, res) => {
+    const customers = loadJson(CUSTOMERS_FILE, []);
+    res.json(customers);
+});
+
+// ৫. নির্দিষ্ট গ্রাহকের পূর্ণাঙ্গ তথ্য API
+app.get('/api/customer/:username', (req, res) => {
+    const customers = loadJson(CUSTOMERS_FILE, []);
+    const customer = customers.find(c => c.username === req.params.username);
+    if (!customer) return res.status(404).json({ success: false, message: 'Customer not found.' });
+    res.json({ success: true, customer: customer });
+});
+
+// ৬. ম্যানুয়ালি কাস্টমার যুক্ত / আপডেট
+app.post('/api/customers', (req, res) => {
+    const { username, name, phone, package: pkg, status, address } = req.body;
+    if (!username) return res.status(400).json({ success: false, message: 'Username is required.' });
+
+    const customers = loadJson(CUSTOMERS_FILE, []);
+    const idx = customers.findIndex(c => c.username === username);
+    const newCust = {
+        username: username,
+        name: name || username,
+        phone: phone || '',
+        package: pkg || 'Default',
+        status: status || 'Active',
+        address: address || '',
+        createdAt: new Date().toLocaleDateString('en-GB')
+    };
+
+    if (idx !== -1) {
+        customers[idx] = Object.assign({}, customers[idx], newCust);
+    } else {
+        customers.unshift(newCust);
+    }
+
+    saveJson(CUSTOMERS_FILE, customers);
+    res.json({ success: true, message: 'Customer saved successfully.' });
+});
+
+// ৭. প্যাকেজ লিস্ট পাওয়ার API
+app.get('/api/packages', (req, res) => {
+    const packages = Object.values(PRICE_PROFILE_MAP);
+    res.json({ success: true, packages: packages });
+});
+
+// ৮. ড্যাশবোর্ড থেকে SMS পাঠানো API
+app.post('/api/send-sms', async (req, res) => {
+    const { phone, message } = req.body;
+    if (!phone || !message) return res.status(400).json({ success: false, message: 'Phone and message required.' });
+
+    const result = await triggerPhoneSms(phone, message);
+    if (result.success) {
+        res.json({ success: true, message: 'SMS request sent successfully.' });
+    } else {
+        res.status(500).json({ success: false, message: 'Failed to send SMS.' });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+});
