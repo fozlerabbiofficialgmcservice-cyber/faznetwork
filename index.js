@@ -16,6 +16,7 @@ process.on('unhandledRejection', (reason) => {
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// CORS setup
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -29,13 +30,49 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-// MikroTik কানেকশন ডিটেইলস
+// Rate Limiter (Fraud & Brute Force protirodh)
+const requestTracker = {};
+function rateLimiter(req, res, next) {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+    if (!requestTracker[ip]) {
+        requestTracker[ip] = { count: 1, resetTime: now + 60000 };
+    } else {
+        if (now > requestTracker[ip].resetTime) {
+            requestTracker[ip] = { count: 1, resetTime: now + 60000 };
+        } else {
+            requestTracker[ip].count++;
+            if (requestTracker[ip].count > 10) {
+                return res.status(429).json({
+                    success: false,
+                    message: 'অতিরিক্ত চেষ্টা করা হয়েছে। অনুগ্রহ করে ১ মিনিট পর আবার চেষ্টা করুন।'
+                });
+            }
+        }
+    }
+    next();
+}
+
+// MikroTik connection credentials
 const MIKROTIK_HOST = process.env.MIKROTIK_HOST || '103.54.37.182';
 const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT) || 1126;
 const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
 const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 
-// প্যাকেজ প্রাইস ম্যাপিং
+// Hotspot Voucher / Recharge Profile Map
+const PRICE_PROFILE_MAP = {
+    '10': 'Profile-1Hour',
+    '15': 'Profile-12Hour',
+    '20': 'Profile-1Day',
+    '40': 'Profile-3Day',
+    '60': 'Profile-7Day',
+    '90': 'Profile-15Day',
+    '150': 'Profile-30Day',
+    '200': 'Profile-100GB',
+    '350': 'Profile-300GB'
+};
+
+// PPPoE Monthly Package Rate Map
 const PACKAGE_PRICE_MAP = {
     'FZN 10 Mbps': 400,
     'FZN 15 Mbps': 500,
@@ -46,13 +83,33 @@ const PACKAGE_PRICE_MAP = {
     'FZN 50 Mbps': 1200
 };
 
-// JSON ফাইল পাথসমূহ (পূর্বের কোনো ফাইল বা ডেটা মুছে যাবে না)
+// Database JSON file path shomuh
 const DB_FILE = path.join(__dirname, 'transactions.json');
 const CUSTOMERS_FILE = path.join(__dirname, 'customers.json');
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 const EXPENSES_FILE = path.join(__dirname, 'expenses.json');
 const TICKETS_FILE = path.join(__dirname, 'tickets.json');
 const EMPLOYEES_FILE = path.join(__dirname, 'employees.json');
+
+// File Helper Functions
+function loadTransactions() {
+    try {
+        if (!fs.existsSync(DB_FILE)) return {};
+        return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8') || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveTransaction(trxId, data) {
+    try {
+        const store = loadTransactions();
+        store[trxId] = data;
+        fs.writeFileSync(DB_FILE, JSON.stringify(store, null, 2));
+    } catch (e) {
+        console.error('File write error:', e);
+    }
+}
 
 function loadJson(file, defaultVal = {}) {
     try {
@@ -71,7 +128,7 @@ function saveJson(file, data) {
     }
 }
 
-// ======================== MIKROTIK PROTOCOL HELPERS ========================
+// RouterOS Protocol Encoders & Decoders
 function encodeLength(len) {
     if (len < 0x80) return Buffer.from([len]);
     if (len < 0x4000) return Buffer.from([(len >> 8) | 0x80, len & 0xFF]);
@@ -279,7 +336,38 @@ function executeSingleCommand(cmdWords) {
     });
 }
 
-// বাইটকে রিডেবল আকারে রূপান্তর (MB / GB)
+// User Manager Helper Functions
+async function ensureUser(username, comment = '') {
+    console.log(`[USER MANAGER] Ensuring user: ${username}`);
+    const cmd = [
+        '/user-manager/user/add',
+        `=name=${username}`,
+        `=password=${username}`,
+        `=group=Hotspot`
+    ];
+    if (comment) cmd.push(`=comment=${comment}`);
+    await executeSingleCommand(cmd);
+}
+
+async function attachProfile(username, profileName) {
+    console.log(`[USER MANAGER] Attaching/Renewing profile: ${username} -> ${profileName}`);
+    const cmd = [
+        '/user-manager/user-profile/add',
+        `=user=${username}`,
+        `=profile=${profileName}`
+    ];
+    return await executeSingleCommand(cmd);
+}
+
+async function updateUserComment(username, comment) {
+    const cmd = [
+        '/user-manager/user/set',
+        `=numbers=${username}`,
+        `=comment=${comment}`
+    ];
+    await executeSingleCommand(cmd);
+}
+
 function formatBytes(bytes) {
     const b = parseInt(bytes) || 0;
     if (b === 0) return '0 B';
@@ -289,16 +377,150 @@ function formatBytes(bytes) {
     return parseFloat((b / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// ======================== API ROUTES ========================
+// Root Route
+app.get('/', (req, res) => {
+    return res.status(200).send('FAZ NETWORK Hotspot & Billing API is Running!');
+});
 
-// ================= 1. DASHBOARD OVERVIEW =================
+// ======================== 1. RECHARGE & PAYMENT PIPELINE ========================
+
+// 1.1 SMS Webhook (bKash & Nagad send money via MacroDroid)
+app.post('/forward', async (req, res) => {
+    try {
+        let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
+        let sender = (req.query.sender || req.body.sender || req.body.from || '').trim().toLowerCase();
+
+        if (typeof req.body === 'string') sms_body = req.body;
+        console.log(`[INCOMING SMS RAW] Sender: "${sender}" | Body: "${sms_body}"`);
+
+        if (!sender) {
+            console.warn('[BLOCKED] Sender information is missing.');
+            return res.status(400).json({ success: false, message: 'Sender information missing.' });
+        }
+
+        const isBkashSender = sender.includes('bkash') || sender.includes('16247');
+        const isNagadSender = sender.includes('nagad') || sender.includes('16167');
+
+        if (!isBkashSender && !isNagadSender) {
+            console.warn(`[FRAUD ALERT] Blocked SMS from non-official sender: ${sender}`);
+            return res.status(403).json({
+                success: false,
+                message: 'Rejected: SMS is not from official bKash or Nagad sender.'
+            });
+        }
+
+        const isBkashFormat = /You have received (?:Tk|deposit)|Cash In Tk/i.test(sms_body);
+        const isNagadFormat = /Money Received|Cash In amount/i.test(sms_body);
+
+        if (!isBkashFormat && !isNagadFormat) {
+            console.warn('[REJECTED] SMS does not match official payment confirmation pattern.');
+            return res.status(400).json({ success: false, message: 'Invalid payment SMS format.' });
+        }
+
+        const trxMatch = sms_body.match(/(?:TrxID|TxnID|TransID|TxId)\s*[:]?\s*([A-Za-z0-9]+)/i);
+        const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
+
+        const amountMatch = sms_body.match(/(?:Tk|Amount\s*[:]?\s*Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+        const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
+
+        let detectedPhone = null;
+        const phoneMatch = sms_body.match(/(?:Sender|from|number|fee\s*tk\s*[0-9.]+\s*from)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
+        if (phoneMatch && phoneMatch[1]) {
+            detectedPhone = phoneMatch[1].trim();
+        }
+
+        if (trxId && amount) {
+            saveTransaction(trxId, {
+                amount: amount,
+                phone: detectedPhone || '',
+                gateway: isNagadSender ? 'Nagad' : 'bKash',
+                used: false,
+                receivedAt: Date.now()
+            });
+            console.log(`[TRX SAVED] Gateway: ${isNagadSender ? 'Nagad' : 'bKash'} | ID: ${trxId} | Amount: ${amount} Tk | Phone: ${detectedPhone || 'N/A'}`);
+            return res.status(200).json({ success: true, trxId, amount, user: detectedPhone });
+        } else {
+            console.warn('[REJECTED] Incomplete transaction data in SMS.');
+            return res.status(400).json({ success: false, message: 'Invalid SMS content, TrxID/TxnID or Amount not found.' });
+        }
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 1.2 Hotspot Login Page Recharge Verification (MikroTik User Manager recharge)
+app.post('/api/verify-trx', rateLimiter, async (req, res) => {
+    try {
+        const { username, trxId } = req.body;
+
+        if (!username || !trxId) {
+            return res.status(400).json({ success: false, message: 'ইউজার আইডি ও TrxID / TxnID দিন।' });
+        }
+
+        const cleanTrx = trxId.trim().toUpperCase();
+        let cleanUser = username.trim().replace(/[^0-9]/g, '');
+        if (cleanUser.length >= 11) cleanUser = cleanUser.slice(-11);
+
+        const store = loadTransactions();
+        const transaction = store[cleanTrx];
+
+        if (!transaction) {
+            return res.status(404).json({
+                success: false,
+                message: `ট্রানজেকশন আইডি (${cleanTrx}) পাওয়া যায়নি! বিকাশ বা নগদের সঠিক TrxID/TxnID দিন।`
+            });
+        }
+
+        if (transaction.used) {
+            return res.status(400).json({
+                success: false,
+                message: 'এই আইডি দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।'
+            });
+        }
+
+        const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
+        const senderInfo = transaction.phone ? ` | Payer: ${transaction.phone}` : '';
+        const method = transaction.gateway || 'Pay';
+        const commentText = `${method}: ${cleanTrx} | Tk: ${transaction.amount}${senderInfo} | Date: ${new Date().toLocaleDateString('en-GB')}`;
+
+        // MikroTik User Manager-e ensure kora
+        await ensureUser(cleanUser, commentText);
+
+        // User Manager profile attach kora
+        await attachProfile(cleanUser, profile);
+
+        // Comment update
+        await updateUserComment(cleanUser, commentText);
+
+        transaction.used = true;
+        transaction.activatedUser = cleanUser;
+        transaction.usedAt = Date.now();
+        saveTransaction(cleanTrx, transaction);
+
+        console.log(`[SUCCESS] User: ${cleanUser} recharged via ${method} (${cleanTrx}) - ${transaction.amount} Tk`);
+
+        return res.status(200).json({
+            success: true,
+            message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
+            username: cleanUser,
+            password: cleanUser,
+            profile: profile
+        });
+    } catch (err) {
+        console.error('[VERIFY ERROR]:', err);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ======================== 2. DASHBOARD OVERVIEW ========================
 app.get('/api/dashboard/stats', async (req, res) => {
     try {
-        const [pppActive, hsActive, pppSecrets, hsUsers] = await Promise.all([
+        const [pppActive, hsActive, pppSecrets, hsUsers, umUsers] = await Promise.all([
             runMikrotikApi(['/ppp/active/print']),
             runMikrotikApi(['/ip/hotspot/active/print']),
             runMikrotikApi(['/ppp/secret/print']),
-            runMikrotikApi(['/ip/hotspot/user/print'])
+            runMikrotikApi(['/ip/hotspot/user/print']),
+            runMikrotikApi(['/user-manager/user/print'])
         ]);
 
         res.json({
@@ -306,7 +528,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
             stats: {
                 totalCustomers: (pppSecrets || []).length,
                 onlinePppoe: (pppActive || []).length,
-                totalHotspotUsers: (hsUsers || []).length,
+                totalHotspotUsers: (hsUsers || []).length + (umUsers || []).length,
                 onlineHotspot: (hsActive || []).length
             }
         });
@@ -315,31 +537,57 @@ app.get('/api/dashboard/stats', async (req, res) => {
     }
 });
 
-// ================= 2. HOTSPOT SUITE (ALL SUB-MENUS) =================
-// 2.1 All Users
+// ======================== 3. HOTSPOT & USER MANAGER API ========================
+// 3.1 All Users (Hotspot native users + User Manager users)
 app.get('/api/hotspot/users', async (req, res) => {
     try {
-        const users = await runMikrotikApi(['/ip/hotspot/user/print']);
-        const formatted = (users || []).map(u => ({
-            id: u['.id'],
-            server: u.server || 'all',
-            name: u.name || '',
-            username: u.name || '',
-            profile: u.profile || 'default',
-            uptime: u.uptime || '0s',
-            limitUptime: u['limit-uptime'] || 'Unlimited',
-            bytesIn: formatBytes(u['bytes-in']),
-            bytesOut: formatBytes(u['bytes-out']),
-            comment: u.comment || '',
-            disabled: u.disabled === 'true' || u.disabled === 'yes'
-        }));
-        res.json(formatted);
+        const [hsUsers, umUsers] = await Promise.all([
+            runMikrotikApi(['/ip/hotspot/user/print']),
+            runMikrotikApi(['/user-manager/user/print'])
+        ]);
+
+        const list = [];
+        (hsUsers || []).forEach(u => {
+            list.push({
+                id: u['.id'],
+                server: u.server || 'all',
+                name: u.name || '',
+                username: u.name || '',
+                profile: u.profile || 'default',
+                uptime: u.uptime || '0s',
+                limitUptime: u['limit-uptime'] || 'Unlimited',
+                bytesIn: formatBytes(u['bytes-in']),
+                bytesOut: formatBytes(u['bytes-out']),
+                comment: u.comment || '',
+                source: 'Hotspot',
+                disabled: u.disabled === 'true' || u.disabled === 'yes'
+            });
+        });
+
+        (umUsers || []).forEach(u => {
+            list.push({
+                id: u['.id'],
+                server: 'User-Manager',
+                name: u.name || '',
+                username: u.name || '',
+                profile: u.group || u.profile || 'Hotspot',
+                uptime: u.uptime || '0s',
+                limitUptime: 'Managed',
+                bytesIn: '-',
+                bytesOut: '-',
+                comment: u.comment || '',
+                source: 'UserManager',
+                disabled: u.disabled === 'true' || u.disabled === 'yes'
+            });
+        });
+
+        res.json(list);
     } catch (err) {
         res.status(500).json([]);
     }
 });
 
-// 2.2 Add Hotspot User
+// 3.2 Add Hotspot User
 app.post('/api/hotspot/users', async (req, res) => {
     try {
         const { username, password, profile, server, limitUptime, comment } = req.body;
@@ -356,29 +604,33 @@ app.post('/api/hotspot/users', async (req, res) => {
         if (comment) cmd.push(`=comment=${comment}`);
 
         const result = await executeSingleCommand(cmd);
-        res.json({ success: result, message: result ? 'User created!' : 'Failed to create user on router' });
+        res.json({ success: result, message: result ? 'User created!' : 'Failed on router' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// 2.3 Delete Hotspot User
+// 3.3 Delete Hotspot / User Manager User
 app.delete('/api/hotspot/users/:name', async (req, res) => {
     try {
         const username = req.params.name;
-        const users = await runMikrotikApi(['/ip/hotspot/user/print', `?name=${username}`]);
-        if (!users || users.length === 0) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+        // Hotspot user theke remove
+        const hsUsers = await runMikrotikApi(['/ip/hotspot/user/print', `?name=${username}`]);
+        if (hsUsers && hsUsers.length > 0) {
+            await executeSingleCommand(['/ip/hotspot/user/remove', `=.id=${hsUsers[0]['.id']}`]);
         }
-        const id = users[0]['.id'];
-        const result = await executeSingleCommand(['/ip/hotspot/user/remove', `=.id=${id}`]);
-        res.json({ success: result });
+        // User manager thekeo remove
+        const umUsers = await runMikrotikApi(['/user-manager/user/print', `?name=${username}`]);
+        if (umUsers && umUsers.length > 0) {
+            await executeSingleCommand(['/user-manager/user/remove', `=.id=${umUsers[0]['.id']}`]);
+        }
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// 2.4 Active & Online Hotspot Users
+// 3.4 Active Hotspot Users
 app.get('/api/hotspot/active', async (req, res) => {
     try {
         const activeUsers = await runMikrotikApi(['/ip/hotspot/active/print']);
@@ -398,28 +650,41 @@ app.get('/api/hotspot/active', async (req, res) => {
     }
 });
 
-// 2.5 Hotspot Profiles
+// 3.5 Hotspot Profiles
 app.get('/api/hotspot/profiles', async (req, res) => {
     try {
-        const profiles = await runMikrotikApi(['/ip/hotspot/user/profile/print']);
-        res.json(profiles || []);
+        const [hsProfiles, umProfiles] = await Promise.all([
+            runMikrotikApi(['/ip/hotspot/user/profile/print']),
+            runMikrotikApi(['/user-manager/profile/print'])
+        ]);
+        const combinedProfiles = [];
+        (hsProfiles || []).forEach(p => combinedProfiles.push({ name: p.name, type: 'Hotspot' }));
+        (umProfiles || []).forEach(p => {
+            if (!combinedProfiles.some(cp => cp.name === p.name)) {
+                combinedProfiles.push({ name: p.name, type: 'User-Manager' });
+            }
+        });
+        res.json(combinedProfiles);
     } catch (err) {
         res.status(500).json([]);
     }
 });
 
-// 2.6 Hotspot Server Profiles
+// 3.6 Hotspot Server Profiles / Servers
 app.get('/api/hotspot/server-profiles', async (req, res) => {
     try {
-        const serverProfiles = await runMikrotikApi(['/ip/hotspot/profile/print']);
-        res.json(serverProfiles || []);
+        const servers = await runMikrotikApi(['/ip/hotspot/print']);
+        if (servers && servers.length > 0) {
+            res.json(servers.map(s => ({ name: s.name })));
+        } else {
+            res.json([{ name: 'all' }, { name: 'hotspot1' }]);
+        }
     } catch (err) {
-        res.status(500).json([]);
+        res.status(500).json([{ name: 'all' }]);
     }
 });
 
-// ================= 3. CUSTOMER & PPPOE (ALL SUB-MENUS) =================
-// 3.1 All Customers + Secret Info
+// ======================== 4. CUSTOMER & PPPOE ========================
 app.get('/api/customers', async (req, res) => {
     try {
         const [pppSecrets, pppActive] = await Promise.all([
@@ -467,7 +732,6 @@ app.get('/api/customers', async (req, res) => {
             };
         });
 
-        // লোকাল ডেটাবেজে অতিরিক্ত কেউ থাকলে যুক্ত করা
         for (const localCust of localCustomers) {
             if (localCust && localCust.username && !combined.some(c => c.username === localCust.username)) {
                 combined.push(localCust);
@@ -481,7 +745,6 @@ app.get('/api/customers', async (req, res) => {
     }
 });
 
-// 3.2 Add Customer (PPPoE + Local DB)
 app.post('/api/customers', async (req, res) => {
     try {
         const {
@@ -563,8 +826,7 @@ app.post('/api/customers', async (req, res) => {
     }
 });
 
-// ================= 4. CORE SYSTEM (POOLS, PACKAGES, DEVICES) =================
-// 4.1 PPP Profiles / Packages
+// ======================== 5. PACKAGES & CORE ROUTING ========================
 app.get('/api/packages', async (req, res) => {
     try {
         const profiles = await runMikrotikApi(['/ppp/profile/print']);
@@ -594,7 +856,6 @@ app.get('/api/packages', async (req, res) => {
     }
 });
 
-// 4.2 IP Pools
 app.get('/api/core/ip-pools', async (req, res) => {
     try {
         const pools = await runMikrotikApi(['/ip/pool/print']);
@@ -604,7 +865,6 @@ app.get('/api/core/ip-pools', async (req, res) => {
     }
 });
 
-// 4.3 Interfaces / Traffic Monitor
 app.get('/api/core/interfaces', async (req, res) => {
     try {
         const interfaces = await runMikrotikApi(['/interface/print']);
@@ -614,20 +874,23 @@ app.get('/api/core/interfaces', async (req, res) => {
     }
 });
 
-// ================= 5. PAYMENTS & TRANSACTIONS =================
+// ======================== 6. BILLING, EXPENSES, SUPPORT & HR ========================
 app.get('/api/payments', (req, res) => {
-    res.json(loadJson(DB_FILE, []));
+    const list = loadJson(DB_FILE, {});
+    // transactions.json object format theke array format-e dewa
+    if (Array.isArray(list)) return res.json(list);
+    const arr = Object.keys(list).map(k => ({ trxId: k, ...list[k] }));
+    res.json(arr);
 });
 
 app.post('/api/payments', (req, res) => {
-    const list = loadJson(DB_FILE, []);
-    const record = Object.assign({ id: Date.now(), date: new Date().toISOString() }, req.body);
-    list.unshift(record);
-    saveJson(DB_FILE, list);
-    res.json({ success: true, payment: record });
+    const { trxId, ...rest } = req.body;
+    if (trxId) {
+        saveTransaction(trxId, rest);
+    }
+    res.json({ success: true });
 });
 
-// ================= 6. EXPENSES, SUPPORT & HR =================
 app.get('/api/expenses', (req, res) => res.json(loadJson(EXPENSES_FILE, [])));
 app.post('/api/expenses', (req, res) => {
     const list = loadJson(EXPENSES_FILE, []);
@@ -653,7 +916,7 @@ app.post('/api/hr/employees', (req, res) => {
     res.json({ success: true });
 });
 
-// ================= 7. SETTINGS =================
+// ======================== 7. SETTINGS ========================
 app.get('/api/settings', (req, res) => {
     res.json(loadJson(SETTINGS_FILE, { smsGatewayUrl: '' }));
 });
@@ -663,7 +926,7 @@ app.post('/api/settings', (req, res) => {
     res.json({ success: true });
 });
 
-// সার্ভার স্টার্ট
+// Server Start
 app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
 });
