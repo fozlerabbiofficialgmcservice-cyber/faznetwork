@@ -11,7 +11,12 @@
             --primary-color: #0a3d2e;
             --sidebar-width: 260px;
         }
-        body { background-color: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { 
+            background-color: #f8fafc; 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 0;
+            padding: 0;
+        }
         
         .sidebar {
             width: var(--sidebar-width);
@@ -46,18 +51,23 @@
         .lang-switcher select {
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
-            border: none;
-            padding: 3px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
             border-radius: 5px;
-            font-size: 12px;
+            font-size: 13px;
             cursor: pointer;
+            outline: none;
         }
         .lang-switcher select option {
             background-color: var(--primary-color);
             color: #fff;
         }
 
-        .sidebar-menu { list-style: none; padding: 0; margin-top: 10px; }
+        .sidebar-menu { 
+            list-style: none; 
+            padding: 0; 
+            margin: 10px 0 30px 0; 
+        }
         .menu-item a, .menu-item .dropdown-toggle {
             color: #a7f3d0;
             padding: 12px 20px;
@@ -70,22 +80,38 @@
             background: transparent;
             width: 100%;
             text-align: left;
+            font-size: 14px;
         }
-        .menu-item a:hover, .menu-item a.active, .menu-item .dropdown-toggle:hover {
+        .menu-item a:hover, 
+        .menu-item a.active, 
+        .menu-item .dropdown-toggle:hover {
             background-color: rgba(16, 185, 129, 0.2);
             color: #fff;
         }
-        .menu-item i { margin-right: 15px; font-size: 18px; }
+        .menu-item i { margin-right: 12px; font-size: 17px; }
+        
+        /* Dropdown toggles reset */
+        .dropdown-toggle::after {
+            display: none;
+        }
         
         .submenu {
-            background-color: rgba(0, 0, 0, 0.2);
+            background-color: rgba(0, 0, 0, 0.25);
             list-style: none;
             padding: 0;
             display: none;
         }
         .submenu.show { display: block; }
-        .submenu a, .submenu button { padding-left: 55px; font-size: 14px; }
-        .submenu .submenu a { padding-left: 70px; font-size: 13px; }
+        .submenu a, .submenu button { 
+            padding-left: 48px; 
+            font-size: 13.5px; 
+        }
+        /* Nested Submenu styling */
+        .submenu .submenu a { 
+            padding-left: 65px; 
+            font-size: 13px; 
+            background-color: rgba(0, 0, 0, 0.15);
+        }
         
         .main-content {
             margin-left: var(--sidebar-width);
@@ -110,25 +136,28 @@
             </button>
         </div>
 
+        <!-- Language Switcher (Default: English USA) -->
         <div class="lang-switcher">
             <i class="bi bi-translate"></i>
-            <select id="langSelect" class="form-select-sm">
+            <select id="langSelect">
                 <option value="en" selected>English (USA)</option>
                 <option value="bn">বাংলা</option>
             </select>
         </div>
 
         <ul class="sidebar-menu">
+            <!-- Dashboard -->
             <li class="menu-item">
                 <a href="/dashboard" class="active">
                     <i class="bi bi-speedometer2"></i> <span data-key="dashboard">Dashboard</span>
                 </a>
             </li>
 
+            <!-- Customer -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-people"></i> <span data-key="customer">Customer</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/customers/all" data-key="all_customer">All Customer</a></li>
@@ -145,10 +174,11 @@
                 </ul>
             </li>
 
+            <!-- Report -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-file-earmark-text"></i> <span data-key="report">Report</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/report/collection-due" data-key="monthly_collection_due">Monthly Collection & Due</a></li>
@@ -157,10 +187,11 @@
                 </ul>
             </li>
 
+            <!-- Payments -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-credit-card"></i> <span data-key="payments">Payments</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/payments/pending-invoice" data-key="pending_invoice">Pending Invoice</a></li>
@@ -172,10 +203,11 @@
                 </ul>
             </li>
 
+            <!-- Hotspot -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-wifi"></i> <span data-key="hotspot">Hotspot</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/hotspot/dashboard" data-key="hotspot_dashboard">Dashboard</a></li>
@@ -187,18 +219,22 @@
                 </ul>
             </li>
 
+            <!-- Core System -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-gear-wide-connected"></i> <span data-key="core_system">Core System</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/core/pppoe" data-key="pppoe">PPPoE</a></li>
-                    <li><a href="/core/plans" data-key="plan_package">Plan & Package</a></li>
-                    <li><a href="/core/ip-pools" data-key="ip_pools">IP Pools</a></li>
                     <li><a href="/core/devices" data-key="devices">Devices</a></li>
+                    <li><a href="/core/plan-packages" data-key="plan_packages">Plan & Packages</a></li>
+                    <li><a href="/core/ip-pools" data-key="ip_pools">IP Pools</a></li>
                     <li><a href="/core/olt" data-key="olt_management">OLT Management</a></li>
-                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)"><span data-key="monitor">Monitor</span> <i class="bi bi-chevron-down ms-auto"></i></button>
+                    <li>
+                        <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                            <span data-key="monitor">Monitor</span> <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                        </button>
                         <ul class="submenu">
                             <li><a href="/core/monitor/usage" data-key="usage">Usage</a></li>
                             <li><a href="/core/monitor/online" data-key="online">Online</a></li>
@@ -208,10 +244,11 @@
                 </ul>
             </li>
 
+            <!-- General Setting -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-gear"></i> <span data-key="general_setting">General Setting</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/settings/website" data-key="website_setting">Website Setting</a></li>
@@ -220,32 +257,37 @@
                 </ul>
             </li>
 
+            <!-- VPN Server -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-shield-lock"></i> <span data-key="vpn_server">VPN Server</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li>
-                        <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                            <span data-key="vpn">VPN</span> <i class="bi bi-chevron-down ms-auto"></i>
+                        <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                            <span data-key="vpn">VPN</span> <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                         </button>
                         <ul class="submenu">
-                            <li><a href="/vpn/forwarding" data-key="vpn_port_forwarding">VPN Port Forwarding</a></li>
+                            <li><a href="/vpn/port-forwarding" data-key="vpn_port_forwarding">VPN Port Forwarding</a></li>
                         </ul>
                     </li>
                 </ul>
             </li>
 
+            <!-- Account & Support -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-headset"></i> <span data-key="account_support">Account & Support</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/support/dashboard" data-key="support_dashboard">Dashboard</a></li>
                     <li><a href="/support/manage" data-key="support_manage">Manage</a></li>
-                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)"><span data-key="support">Support</span> <i class="bi bi-chevron-down ms-auto"></i></button>
+                    <li>
+                        <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                            <span data-key="support">Support</span> <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                        </button>
                         <ul class="submenu">
                             <li><a href="/support/tickets" data-key="support_tickets">Support Tickets</a></li>
                             <li><a href="/support/software" data-key="software_support_tickets">Software Support Tickets</a></li>
@@ -255,10 +297,11 @@
                 </ul>
             </li>
 
+            <!-- Expenses -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-wallet2"></i> <span data-key="expenses">Expenses</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/expenses/add" data-key="add_expenses">Add Expenses</a></li>
@@ -267,10 +310,11 @@
                 </ul>
             </li>
 
+            <!-- Human Resource -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-person-badge"></i> <span data-key="human_resource">Human Resource</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/hr/department" data-key="department">Department</a></li>
@@ -279,26 +323,27 @@
                 </ul>
             </li>
 
+            <!-- Live Tracking -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-geo-alt"></i> <span data-key="live_tracking">Live Tracking</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/tracking/google-map" data-key="google_map">Google Map</a></li>
                 </ul>
             </li>
 
+            <!-- User & Reseller -->
             <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-person-plus"></i> <span data-key="user_reseller">User & Reseller</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
                     <li><a href="/user-reseller/sub-staff" data-key="sub_staff">Sub-Staff</a></li>
                 </ul>
             </li>
-
         </ul>
     </div>
 
@@ -360,9 +405,9 @@
                 'server_profile': 'Server Profile',
                 'core_system': 'Core System',
                 'pppoe': 'PPPoE',
-                'plan_package': 'Plan & Package',
-                'ip_pools': 'IP Pools',
                 'devices': 'Devices',
+                'plan_packages': 'Plan & Packages',
+                'ip_pools': 'IP Pools',
                 'olt_management': 'OLT Management',
                 'monitor': 'Monitor',
                 'usage': 'Usage',
@@ -431,9 +476,9 @@
                 'server_profile': 'সার্ভার প্রোফাইল',
                 'core_system': 'কোর সিস্টেম',
                 'pppoe': 'পিপি পিও ই',
-                'plan_package': 'প্ল্যান অ্যান্ড প্যাকেজ',
-                'ip_pools': 'আইপি পুলস',
                 'devices': 'ডিভাইসেস',
+                'plan_packages': 'প্ল্যান অ্যান্ড প্যাকেজ',
+                'ip_pools': 'আইপি পুলস',
                 'olt_management': 'ও এল টি ম্যানেজমেন্ট',
                 'monitor': 'মনিটর',
                 'usage': 'ইউজেস',
@@ -473,19 +518,27 @@
             document.getElementById('sidebar').classList.toggle('show');
         }
 
-        function toggleSubmenu(button) {
+        // Improved nested submenu handler
+        function toggleSubmenu(event, button) {
+            event.stopPropagation();
             const submenu = button.nextElementSibling;
-            const allSubmenus = button.closest('.sidebar-menu').querySelectorAll('.submenu');
-            allSubmenus.forEach(sm => {
-                if (sm !== submenu) sm.classList.remove('show');
-            });
-            const allToggles = button.closest('.sidebar-menu').querySelectorAll('.dropdown-toggle .bi-chevron-down');
-            allToggles.forEach(tog => {
-                if (tog !== button.querySelector('.bi-chevron-down')) tog.classList.remove('bi-chevron-up');
+            const parentList = button.closest('ul');
+            
+            // Close other sibling submenus at the same level
+            parentList.querySelectorAll(':scope > li > .submenu').forEach(sm => {
+                if (sm !== submenu) {
+                    sm.classList.remove('show');
+                    const icon = sm.previousElementSibling.querySelector('.arrow-icon');
+                    if (icon) icon.classList.remove('bi-chevron-up');
+                }
             });
 
-            button.querySelector('.bi-chevron-down').classList.toggle('bi-chevron-up');
+            // Toggle current submenu
             submenu.classList.toggle('show');
+            const arrow = button.querySelector('.arrow-icon');
+            if (arrow) {
+                arrow.classList.toggle('bi-chevron-up');
+            }
         }
 
         function updateLanguage(lang) {
@@ -497,11 +550,12 @@
                     el.innerText = translations[lang][key];
                 }
             });
-            localStorage.setItem('preferred_lang', lang);
+            localStorage.setItem('faz_preferred_lang', lang);
         }
 
         const langSelect = document.getElementById('langSelect');
-        const savedLang = localStorage.getItem('preferred_lang') || 'en';
+        // Default to English (USA)
+        const savedLang = localStorage.getItem('faz_preferred_lang') || 'en';
         langSelect.value = savedLang;
         updateLanguage(savedLang);
 
