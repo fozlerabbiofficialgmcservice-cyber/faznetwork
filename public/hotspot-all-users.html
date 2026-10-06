@@ -1,38 +1,148 @@
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ইউজার ম্যানেজার ও হটস্পট - FAZ NETWORK</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #1e293b;
-            --secondary: #0ea5e9;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --border: #e2e8f0;
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
-        }
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text-dark); padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; background: var(--card); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+<style>
+    .fzn-card { background: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 20px; margin-top: 15px; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    .fzn-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px; }
+    .fzn-header h2 { font-size: 1.25rem; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .fzn-btn { background: #0ea5e9; color: #fff; border: none; padding: 8px 14px; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    .fzn-btn:hover { opacity: 0.9; }
+    .fzn-btn-danger { background: #ef4444; }
+    .fzn-btn-warning { background: #f59e0b; color: #fff; }
+    .fzn-btn-success { background: #10b981; }
+    .fzn-btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #334155; }
+    .fzn-btn-sm { padding: 5px 8px; font-size: 12px; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 16px; margin-bottom: 20px; }
-        .header h1 { font-size: 1.5rem; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+    .fzn-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .fzn-table th, .fzn-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 13px; color: #334155; }
+    .fzn-table th { background: #f8fafc; font-weight: 600; color: #475569; }
+    .fzn-table tr:hover { background: #f1f5f9; }
 
-        .btn { background: var(--secondary); color: #fff; border: none; padding: 9px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; transition: 0.2s; }
-        .btn:hover { opacity: 0.9; }
-        .btn-sm { padding: 6px 10px; font-size: 12px; }
-        .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); }
-        .btn-warning { background: var(--warning); color: #fff; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dark); }
+    .fzn-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+    .fzn-badge-online { background: #dcfce7; color: #166534; }
+    .fzn-badge-offline { background: #f1f5f9; color: #64748b; }
+    .fzn-badge-disabled { background: #fee2e2; color: #991b1b; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: left
+    /* Modal Layout */
+    .fzn-modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 99999; align-items: center; justify-content: center; }
+    .fzn-modal-content { background: #fff; width: 90%; max-width: 800px; border-radius: 8px; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
+    .fzn-modal-header { padding: 15px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .fzn-modal-body { padding: 20px; overflow-y: auto; }
+    .fzn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
+    .fzn-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; }
+    .fzn-box h4 { font-size: 12px; text-transform: uppercase; color: #64748b; margin: 0 0 10px 0; border-bottom: 1px dashed #cbd5e1; padding-bottom: 5px; }
+    .fzn-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+    .fzn-row span:first-child { color: #64748b; }
+    .fzn-row span:last-child { font-weight: 600; color: #0f172a; }
+</style>
+
+<div class="fzn-card">
+    <div class="fzn-header">
+        <h2><i class="fa-solid fa-users"></i> হটস্পট ও ইউজার তালিকা</h2>
+        <button class="fzn-btn" onclick="fznLoadUsers()"><i class="fa-solid fa-rotate"></i> রিফ্রেশ</button>
+    </div>
+
+    <div id="fznLoading" style="text-align: center; padding: 30px; color: #0ea5e9;">
+        <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+        <div style="margin-top: 8px; font-size: 14px;">ডাটা লোড হচ্ছে...</div>
+    </div>
+
+    <div id="fznTableArea" style="display: none; overflow-x: auto;">
+        <table class="fzn-table">
+            <thead>
+                <tr>
+                    <th>ইউজারনেম</th>
+                    <th>নাম</th>
+                    <th>প্যাকেজ</th>
+                    <th>স্ট্যাটাস</th>
+                    <th>আপটাইম</th>
+                    <th>আইপি অ্যাড্রেস</th>
+                    <th>অ্যাকশন</th>
+                </tr>
+            </thead>
+            <tbody id="fznUserTbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="fznModal" class="fzn-modal">
+    <div class="fzn-modal-content">
+        <div class="fzn-modal-header">
+            <h3 style="margin:0; font-size:16px;"><i class="fa-solid fa-id-card"></i> ইউজার বিস্তারিত ও অ্যাকশন</h3>
+            <span onclick="fznCloseModal()" style="font-size:24px; cursor:pointer; color:#64748b;">&times;</span>
+        </div>
+        <div class="fzn-modal-body">
+            <div class="fzn-grid">
+                <!-- Basic Info -->
+                <div class="fzn-box">
+                    <h4>বেসিক তথ্য</h4>
+                    <div class="fzn-row"><span>ইউজারনেম:</span> <span id="m_user">-</span></div>
+                    <div class="fzn-row"><span>নাম:</span> <span id="m_name">-</span></div>
+                    <div class="fzn-row"><span>মোবাইল:</span> <span id="m_phone">-</span></div>
+                    <div class="fzn-row"><span>ঠিকানা:</span> <span id="m_address">-</span></div>
+                </div>
+                <!-- Connection -->
+                <div class="fzn-box">
+                    <h4>কানেকশন</h4>
+                    <div class="fzn-row"><span>স্ট্যাটাস:</span> <span id="m_status">-</span></div>
+                    <div class="fzn-row"><span>আইপি:</span> <span id="m_ip">-</span></div>
+                    <div class="fzn-row"><span>ম্যাক:</span> <span id="m_mac">-</span></div>
+                    <div class="fzn-row"><span>আপটাইম:</span> <span id="m_uptime">-</span></div>
+                </div>
+                <!-- Package -->
+                <div class="fzn-box">
+                    <h4>প্যাকেজ ও মেয়াদ</h4>
+                    <div class="fzn-row"><span>প্যাকেজ:</span> <span id="m_pkg">-</span></div>
+                    <div class="fzn-row"><span>মূল্য:</span> <span id="m_price">-</span></div>
+                    <div class="fzn-row"><span>মেয়াদ শেষ:</span> <span id="m_exp">-</span></div>
+                </div>
+                <!-- Usage & Payment -->
+                <div class="fzn-box">
+                    <h4>ডেটা ও পেমেন্ট</h4>
+                    <div class="fzn-row"><span>ডাউনলোড:</span> <span id="m_down">-</span></div>
+                    <div class="fzn-row"><span>আপলোড:</span> <span id="m_up">-</span></div>
+                    <div class="fzn-row"><span>শেষ পেমেন্ট:</span> <span id="m_pay">-</span></div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
+                <button class="fzn-btn fzn-btn-danger fzn-btn-sm" onclick="alert('Disconnected!')"><i class="fa-solid fa-power-off"></i> Disconnect</button>
+                <button class="fzn-btn fzn-btn-warning fzn-btn-sm" onclick="alert('Status Toggled!')"><i class="fa-solid fa-ban"></i> Enable / Disable</button>
+                <button class="fzn-btn fzn-btn-outline fzn-btn-sm" onclick="alert('Change Package')"><i class="fa-solid fa-arrow-right-arrow-left"></i> Change Package</button>
+                <button class="fzn-btn fzn-btn-success fzn-btn-sm" onclick="alert('User Renewed')"><i class="fa-solid fa-arrows-rotate"></i> Renew</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    let usersList = [];
+
+    window.fznLoadUsers = async function() {
+        const loading = document.getElementById('fznLoading');
+        const tableArea = document.getElementById('fznTableArea');
+        if (loading) loading.style.display = 'block';
+        if (tableArea) tableArea.style.display = 'none';
+
+        try {
+            const [hsRes, custRes] = await Promise.allSettled([
+                fetch('/api/hotspot/users').then(r => r.json()),
+                fetch('/api/customers').then(r => r.json())
+            ]);
+
+            const hsData = hsRes.status === 'fulfilled' && Array.isArray(hsRes.value) ? hsRes.value : [];
+            const custData = custRes.status === 'fulfilled' && Array.isArray(custRes.value) ? custRes.value : [];
+
+            usersList = hsData.map(u => {
+                const c = custData.find(item => item.username === u.username) || {};
+                return {
+                    username: u.username || u.name || '-',
+                    name: c.name || u.comment || 'N/A',
+                    phone: c.phone || '-',
+                    address: c.address || '-',
+                    profile: u.profile || c.package || 'Default',
+                    uptime: u.uptime || '-',
+                    ip: c.ipAddress || '-',
+                    mac: c.callerId || '-',
+                    bytesIn: u.bytesIn || '0 B',
