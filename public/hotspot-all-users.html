@@ -1,5 +1,4 @@
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
 /* =========================================================
@@ -233,10 +232,7 @@
 
 .fzn-users .filter-grid {
     display: grid;
-    grid-template-columns:
-        minmax(220px, 1.6fr)
-        repeat(3, minmax(130px, .7fr))
-        auto auto;
+    grid-template-columns: minmax(220px, 1.6fr) repeat(3, minmax(130px, .7fr)) auto auto;
     gap: 8px;
 }
 
@@ -624,681 +620,248 @@
 /* ================= RESPONSIVE ================= */
 
 @media (max-width: 1000px) {
-
-    .fzn-users .stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .fzn-users .filter-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
+    .fzn-users .stats { grid-template-columns: repeat(2, 1fr); }
+    .fzn-users .filter-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 650px) {
-
-    .fzn-users {
-        padding: 10px;
-    }
-
-    .fzn-users .page-header {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .fzn-users .header-actions {
-        width: 100%;
-    }
-
-    .fzn-users .header-actions .btn {
-        flex: 1;
-    }
-
-    .fzn-users .stats {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-    }
-
-    .fzn-users .stat {
-        padding: 12px;
-    }
-
-    .fzn-users .stat-number {
-        font-size: 20px;
-    }
-
-    .fzn-users .filter-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .fzn-users-modal {
-        padding: 10px;
-    }
-
-    .fzn-users-modal .detail-grid {
-        grid-template-columns: 1fr;
-    }
+    .fzn-users { padding: 10px; }
+    .fzn-users .page-header { align-items: flex-start; flex-direction: column; }
+    .fzn-users .header-actions { width: 100%; }
+    .fzn-users .header-actions .btn { flex: 1; }
+    .fzn-users .stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .fzn-users .stat { padding: 12px; }
+    .fzn-users .stat-number { font-size: 20px; }
+    .fzn-users .filter-grid { grid-template-columns: 1fr; }
+    .fzn-users-modal { padding: 10px; }
+    .fzn-users-modal .detail-grid { grid-template-columns: 1fr; }
 }
 </style>
 
-
-<!-- =========================================================
-     PAGE
-     ========================================================= -->
-
 <div class="fzn-users">
-
     <div class="container">
-
         <!-- HEADER -->
-
         <div class="page-header">
-
             <div class="title-area">
-
                 <div class="title-icon">
                     <i class="fa-solid fa-users"></i>
                 </div>
-
                 <div>
                     <h1>Hotspot Users</h1>
                     <div class="subtitle">
                         Manage all hotspot customers and connection accounts
                     </div>
                 </div>
-
             </div>
 
             <div class="header-actions">
-
                 <button class="btn" onclick="fznLoadUsers()">
                     <i class="fa-solid fa-rotate"></i>
                     Refresh
                 </button>
-
                 <button class="btn" onclick="fznExportCSV()">
                     <i class="fa-solid fa-file-csv"></i>
                     Export
                 </button>
-
-                <button class="btn btn-primary"
-                        onclick="fznAddUser()">
+                <button class="btn btn-primary" onclick="fznAddUser()">
                     <i class="fa-solid fa-plus"></i>
                     Add User
                 </button>
-
             </div>
-
         </div>
-
 
         <!-- STATISTICS -->
-
         <div class="stats">
-
             <div class="stat">
-
                 <div class="stat-top">
-
-                    <div class="stat-label">
-                        TOTAL USERS
-                    </div>
-
-                    <div class="stat-icon">
-                        <i class="fa-solid fa-users"></i>
-                    </div>
-
+                    <div class="stat-label">TOTAL USERS</div>
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
                 </div>
-
-                <div class="stat-number"
-                     id="statTotal">
-                    0
-                </div>
-
-                <div class="stat-note">
-                    Registered hotspot users
-                </div>
-
+                <div class="stat-number" id="statTotal">0</div>
+                <div class="stat-note">Registered hotspot users</div>
             </div>
 
-
             <div class="stat">
-
                 <div class="stat-top">
-
-                    <div class="stat-label">
-                        ONLINE NOW
-                    </div>
-
-                    <div class="stat-icon"
-                         style="color:#059669;background:#ecfdf5">
-                        <i class="fa-solid fa-wifi"></i>
-                    </div>
-
+                    <div class="stat-label">ONLINE NOW</div>
+                    <div class="stat-icon" style="color:#059669;background:#ecfdf5"><i class="fa-solid fa-wifi"></i></div>
                 </div>
-
-                <div class="stat-number"
-                     id="statOnline">
-                    0
-                </div>
-
-                <div class="stat-note">
-                    Currently connected
-                </div>
-
+                <div class="stat-number" id="statOnline">0</div>
+                <div class="stat-note">Currently connected</div>
             </div>
 
-
             <div class="stat">
-
                 <div class="stat-top">
-
-                    <div class="stat-label">
-                        OFFLINE
-                    </div>
-
-                    <div class="stat-icon">
-                        <i class="fa-solid fa-power-off"></i>
-                    </div>
-
+                    <div class="stat-label">OFFLINE</div>
+                    <div class="stat-icon"><i class="fa-solid fa-power-off"></i></div>
                 </div>
-
-                <div class="stat-number"
-                     id="statOffline">
-                    0
-                </div>
-
-                <div class="stat-note">
-                    Not currently connected
-                </div>
-
+                <div class="stat-number" id="statOffline">0</div>
+                <div class="stat-note">Not currently connected</div>
             </div>
 
-
             <div class="stat">
-
                 <div class="stat-top">
-
-                    <div class="stat-label">
-                        DISABLED / EXPIRED
-                    </div>
-
-                    <div class="stat-icon"
-                         style="color:#dc2626;background:#fef2f2">
-                        <i class="fa-solid fa-ban"></i>
-                    </div>
-
+                    <div class="stat-label">DISABLED / EXPIRED</div>
+                    <div class="stat-icon" style="color:#dc2626;background:#fef2f2"><i class="fa-solid fa-ban"></i></div>
                 </div>
-
-                <div class="stat-number"
-                     id="statDisabled">
-                    0
-                </div>
-
-                <div class="stat-note">
-                    Accounts requiring attention
-                </div>
-
+                <div class="stat-number" id="statDisabled">0</div>
+                <div class="stat-note">Accounts requiring attention</div>
             </div>
-
         </div>
-
 
         <!-- MAIN CARD -->
-
         <div class="card">
-
             <div class="card-header">
-
                 <div>
-
-                    <div class="card-title">
-                        All Hotspot Users
-                    </div>
-
-                    <div class="card-subtitle">
-                        Search, filter and manage customer accounts
-                    </div>
-
+                    <div class="card-title">All Hotspot Users</div>
+                    <div class="card-subtitle">Search, filter and manage customer accounts</div>
                 </div>
-
             </div>
-
 
             <!-- FILTERS -->
-
             <div class="filters">
-
                 <div class="filter-grid">
-
                     <div class="field">
-
                         <i class="fa-solid fa-magnifying-glass search-icon"></i>
-
-                        <input
-                            id="fznSearch"
-                            class="search"
-                            type="text"
-                            placeholder="Search username, name, phone, IP..."
-                        >
-
+                        <input id="fznSearch" class="search" type="text" placeholder="Search username, name, phone, IP...">
                     </div>
-
 
                     <select id="fznStatus">
-
-                        <option value="all">
-                            All Status
-                        </option>
-
-                        <option value="online">
-                            Online
-                        </option>
-
-                        <option value="offline">
-                            Offline
-                        </option>
-
-                        <option value="disabled">
-                            Disabled
-                        </option>
-
-                        <option value="expired">
-                            Expired
-                        </option>
-
+                        <option value="all">All Status</option>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="disabled">Disabled</option>
+                        <option value="expired">Expired</option>
                     </select>
-
 
                     <select id="fznPackage">
-
-                        <option value="all">
-                            All Packages
-                        </option>
-
+                        <option value="all">All Packages</option>
                     </select>
-
 
                     <select id="fznExpiry">
-
-                        <option value="all">
-                            All Expiry
-                        </option>
-
-                        <option value="today">
-                            Expire Today
-                        </option>
-
-                        <option value="soon">
-                            Expire Soon
-                        </option>
-
-                        <option value="valid">
-                            Valid
-                        </option>
-
-                        <option value="expired">
-                            Expired
-                        </option>
-
+                        <option value="all">All Expiry</option>
+                        <option value="today">Expire Today</option>
+                        <option value="soon">Expire Soon</option>
+                        <option value="valid">Valid</option>
+                        <option value="expired">Expired</option>
                     </select>
 
-
-                    <button class="btn btn-sm"
-                            onclick="fznApplyFilters()">
-
-                        <i class="fa-solid fa-filter"></i>
-                        Filter
-
+                    <button class="btn btn-sm" onclick="fznApplyFilters()">
+                        <i class="fa-solid fa-filter"></i> Filter
                     </button>
-
-
-                    <button class="btn btn-sm"
-                            onclick="fznResetFilters()">
-
-                        Reset
-
-                    </button>
-
+                    <button class="btn btn-sm" onclick="fznResetFilters()">Reset</button>
                 </div>
-
 
                 <div class="filter-info">
-
-                    <div>
-                        Showing
-                        <strong id="fznShowing">
-                            0
-                        </strong>
-                        users
-                    </div>
-
+                    <div>Showing <strong id="fznShowing">0</strong> users</div>
                     <label class="live">
-
-                        <input
-                            type="checkbox"
-                            id="fznAutoRefresh"
-                        >
-
-                        Auto refresh every 30 sec
-
+                        <input type="checkbox" id="fznAutoRefresh"> Auto refresh every 30 sec
                     </label>
-
                 </div>
-
             </div>
-
 
             <!-- TABLE -->
-
             <div class="table-wrap">
-
                 <table>
-
                     <thead>
-
                         <tr>
-
-                            <th>
-                                <input
-                                    class="check"
-                                    type="checkbox"
-                                    id="fznSelectAll"
-                                >
-                            </th>
-
-                            <th>
-                                User
-                            </th>
-
-                            <th>
-                                Package
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                            <th>
-                                IP Address
-                            </th>
-
-                            <th>
-                                MAC Address
-                            </th>
-
-                            <th>
-                                Usage
-                            </th>
-
-                            <th>
-                                Expiry
-                            </th>
-
-                            <th>
-                                Uptime
-                            </th>
-
-                            <th>
-                                Actions
-                            </th>
-
+                            <th><input class="check" type="checkbox" id="fznSelectAll"></th>
+                            <th>User</th>
+                            <th>Package</th>
+                            <th>Status</th>
+                            <th>IP Address</th>
+                            <th>MAC Address</th>
+                            <th>Usage</th>
+                            <th>Expiry</th>
+                            <th>Uptime</th>
+                            <th>Actions</th>
                         </tr>
-
                     </thead>
-
-
-                    <tbody id="fznUserTbody">
-
-                    </tbody>
-
+                    <tbody id="fznUserTbody"></tbody>
                 </table>
-
             </div>
-
 
             <!-- FOOTER -->
-
             <div class="table-footer">
-
-                <div class="page-info"
-                     id="fznPageInfo">
-                    0 users
-                </div>
-
+                <div class="page-info" id="fznPageInfo">0 users</div>
                 <div class="pagination">
-
-                    <button
-                        class="page-btn"
-                        onclick="fznPrevPage()">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-
-                    <button
-                        class="page-btn active"
-                        id="fznPageNumber">
-                        1
-                    </button>
-
-                    <button
-                        class="page-btn"
-                        onclick="fznNextPage()">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-
+                    <button class="page-btn" onclick="fznPrevPage()"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="page-btn active" id="fznPageNumber">1</button>
+                    <button class="page-btn" onclick="fznNextPage()"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
 </div>
-
 
 <!-- =========================================================
      USER DETAILS MODAL
      ========================================================= -->
-
-<div class="fzn-users-modal"
-     id="fznModal">
-
+<div class="fzn-users-modal" id="fznModal">
     <div class="modal">
-
         <div class="modal-header">
-
             <div class="modal-title">
-
-                <i class="fa-solid fa-id-card"
-                   style="color:#0f766e"></i>
-
-                User Details
-
+                <i class="fa-solid fa-id-card" style="color:#0f766e"></i> User Details
             </div>
-
-            <button class="close"
-                    onclick="fznCloseModal()">
-
-                &times;
-
-            </button>
-
+            <button class="close" onclick="fznCloseModal()">&times;</button>
         </div>
-
 
         <div class="modal-body">
-
             <div class="detail-grid">
-
-
                 <!-- BASIC -->
-
                 <div class="detail-box">
-
-                    <h4>
-                        <i class="fa-solid fa-user"></i>
-                        Basic Information
-                    </h4>
-
-                    <div class="detail-row">
-                        <span>Username</span>
-                        <span id="m_user">-</span>
-                    </div>
-
-                    <div class="detail-row">
-                        <span>Name</span>
-                        <span id="m_name">-</span>
-                    </div>
-
-                    <div class="detail-row">
-                        <span>Mobile</span>
-                        <span id="m_phone">-</span>
-                    </div>
-
-                    <div class="detail-row">
-                        <span>Address</span>
-                        <span id="m_address">-</span>
-                    </div>
-
+                    <h4><i class="fa-solid fa-user"></i> Basic Information</h4>
+                    <div class="detail-row"><span>Username</span><span id="m_user">-</span></div>
+                    <div class="detail-row"><span>Password</span><span id="m_pass">-</span></div>
+                    <div class="detail-row"><span>Name</span><span id="m_name">-</span></div>
+                    <div class="detail-row"><span>Mobile</span><span id="m_phone">-</span></div>
+                    <div class="detail-row"><span>Address</span><span id="m_address">-</span></div>
                 </div>
-
 
                 <!-- CONNECTION -->
-
                 <div class="detail-box">
-
-                    <h4>
-                        <i class="fa-solid fa-wifi"></i>
-                        Live Connection
-                    </h4>
-
-                    <div class="detail-row">
-                        <span>Status</span>
-                        <span id="m_status">-</span>
-                    </div>
-
-                    <div class="detail-row">
-                        <span>IP Address</span>
-                        <span id="m_ip">-</span>
-                    </div>
-
-                    <div class="detail-row">
-                        <span>MAC Address</span>
-                        <span id="m_mac">-</span>
-                    </div>
-
-                    <div class="detail-row">
-                        <span>Uptime</span>
-                        <span id="m_uptime">-</span>
-                    </div>
-
+                    <h4><i class="fa-solid fa-wifi"></i> Live Connection</h4>
+                    <div class="detail-row"><span>Status</span><span id="m_status">-</span></div>
+                    <div class="detail-row"><span>IP Address</span><span id="m_ip">-</span></div>
+                    <div class="detail-row"><span>MAC Address</span><span id="m_mac">-</span></div>
+                    <div class="detail-row"><span>Uptime</span><span id="m_uptime">-</span></div>
                 </div>
-
 
                 <!-- PACKAGE -->
-
                 <div class="detail-box">
-
-                    <h4>
-                        <i class="fa-solid fa-box"></i>
-                        Package & Validity
-                    </h4>
-
-                    <div class="detail-row">
-                        <span>Package</span>
-                        <span id="m_pkg">-</span>
-                    </div>
-
-                    <div class="detail-row">
-                        <span>Price</span>
-                        <span id="m_price">-</span>
-                    </div>
-
-                    <div class="detail-row">
-                        <span>Expiry Date</span>
-                        <span id="m_exp">-</span>
-                    </div>
-
+                    <h4><i class="fa-solid fa-box"></i> Package & Validity</h4>
+                    <div class="detail-row"><span>Package</span><span id="m_pkg">-</span></div>
+                    <div class="detail-row"><span>Price</span><span id="m_price">-</span></div>
+                    <div class="detail-row"><span>Expiry Date</span><span id="m_exp">-</span></div>
                 </div>
-
 
                 <!-- USAGE -->
-
                 <div class="detail-box">
-
-                    <h4>
-                        <i class="fa-solid fa-chart-line"></i>
-                        Usage & Payment
-                    </h4>
-
-                    <div class="detail-row">
-                        <span>Download</span>
-                        <span id="m_down">-</span>
-                    </div>
-
-                    <div class="detail-row">
-                        <span>Upload</span>
-                        <span id="m_up">-</span>
-                    </div>
-
-                    <div class="detail-row">
-                        <span>Last Payment</span>
-                        <span id="m_pay">-</span>
-                    </div>
-
+                    <h4><i class="fa-solid fa-chart-line"></i> Usage & Payment</h4>
+                    <div class="detail-row"><span>Download</span><span id="m_down">-</span></div>
+                    <div class="detail-row"><span>Upload</span><span id="m_up">-</span></div>
+                    <div class="detail-row"><span>Last Payment</span><span id="m_pay">-</span></div>
                 </div>
-
             </div>
-
 
             <!-- ACTIONS -->
-
             <div class="modal-actions">
-
-                <button class="btn btn-danger"
-                        onclick="fznDisconnect()">
-
-                    <i class="fa-solid fa-power-off"></i>
-                    Disconnect
-
+                <button class="btn btn-danger" onclick="fznDisconnect()">
+                    <i class="fa-solid fa-power-off"></i> Disconnect
                 </button>
-
-
-                <button class="btn btn-warning"
-                        onclick="fznToggleUser()">
-
-                    <i class="fa-solid fa-ban"></i>
-                    Enable / Disable
-
+                <button class="btn btn-warning" id="m_btn_toggle" onclick="fznToggleUser()">
+                    <i class="fa-solid fa-ban"></i> Enable / Disable
                 </button>
-
-
-                <button class="btn"
-                        onclick="fznChangePackage()">
-
-                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
-                    Change Package
-
+                <button class="btn" onclick="fznChangePackage()">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Change Package
                 </button>
-
-
-                <button class="btn btn-success"
-                        onclick="fznRenewUser()">
-
-                    <i class="fa-solid fa-arrows-rotate"></i>
-                    Renew
-
+                <button class="btn btn-success" onclick="fznRenewUser()">
+                    <i class="fa-solid fa-arrows-rotate"></i> Renew
                 </button>
-
             </div>
-
         </div>
-
     </div>
-
 </div>
-
 
 <script>
 /* =========================================================
@@ -1308,1699 +871,586 @@
 var fznUsers = [];
 var fznFiltered = [];
 var fznCurrentUser = null;
+var fznProfilesList = [];
 
 var fznPage = 1;
 var fznPerPage = 25;
 var fznRefreshTimer = null;
 
-
-/* =========================================================
-   SAFE FETCH
-   ========================================================= */
-
 function fznFetch(url, timeout) {
-
     timeout = timeout || 5000;
-
     return new Promise(function(resolve) {
-
         var finished = false;
-
         var timer = setTimeout(function() {
-
             if (!finished) {
                 finished = true;
                 resolve([]);
             }
-
         }, timeout);
 
-
-        fetch(url, {
-            cache: "no-store"
-        })
-
+        fetch(url, { cache: "no-store" })
         .then(function(res) {
-
-            if (!res.ok) {
-                throw new Error("HTTP " + res.status);
-            }
-
+            if (!res.ok) throw new Error("HTTP " + res.status);
             return res.json();
-
         })
-
         .then(function(data) {
-
             if (!finished) {
-
                 finished = true;
-
                 clearTimeout(timer);
-
-                resolve(
-                    Array.isArray(data)
-                        ? data
-                        : []
-                );
-
+                resolve(Array.isArray(data) ? data : (data.users || []));
             }
-
         })
-
         .catch(function() {
-
             if (!finished) {
-
                 finished = true;
-
                 clearTimeout(timer);
-
                 resolve([]);
-
             }
-
         });
-
     });
-
 }
 
-
 /* =========================================================
-   LOAD USERS
+   LOAD USERS & ACTIVE SESSIONS
    ========================================================= */
-
 window.fznLoadUsers = async function() {
-
-    var tbody =
-        document.getElementById("fznUserTbody");
-
-
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="10">
-
-                <div class="state">
-
-                    <i class="fa-solid fa-circle-notch fa-spin"></i>
-
-                    <strong>Loading users...</strong>
-
-                    <span>
-                        Connecting to hotspot server
-                    </span>
-
-                </div>
-
-            </td>
-        </tr>
-    `;
-
+    var tbody = document.getElementById("fznUserTbody");
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10">
+                    <div class="state">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                        <strong>Loading users...</strong>
+                        <span>Connecting to MikroTik router</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
 
     try {
-
         var results = await Promise.all([
-
-            fznFetch(
-                "/api/hotspot/users",
-                5000
-            ),
-
-            fznFetch(
-                "/api/customers",
-                5000
-            )
-
+            fznFetch("/api/hotspot/users", 5000),
+            fznFetch("/api/customers", 5000),
+            fznFetch("/api/hotspot/active", 5000),
+            fznFetch("/api/hotspot/profiles", 5000)
         ]);
 
+        var hotspotData = Array.isArray(results[0]) ? results[0] : [];
+        var customerData = Array.isArray(results[1]) ? results[1] : [];
+        var activeData = Array.isArray(results[2]) ? results[2] : [];
+        fznProfilesList = Array.isArray(results[3]) ? results[3] : [];
 
-        var hotspotData =
-            Array.isArray(results[0])
-                ? results[0]
-                : [];
-
-
-        var customerData =
-            Array.isArray(results[1])
-                ? results[1]
-                : [];
-
-
-        /*
-         * If MikroTik hotspot data exists,
-         * merge it with customer data.
-         */
+        // ১. default-trial বা ডিফল্ট সিস্টেম অ্যাকাউন্ট ফিল্টার করে বাদ দেওয়া
+        hotspotData = hotspotData.filter(function(u) {
+            var uname = String(u.username || u.name || "").toLowerCase();
+            return uname !== "default-trial" && uname !== "default";
+        });
 
         if (hotspotData.length > 0) {
-
             fznUsers = hotspotData.map(function(u) {
+                var uname = String(u.username || u.name || "");
+                
+                // Match customer DB
+                var customer = customerData.find(function(c) {
+                    return String(c.username || "").toLowerCase() === uname.toLowerCase();
+                }) || {};
 
-                var customer =
-                    customerData.find(function(c) {
+                // Match live active connection for IP & MAC
+                var active = activeData.find(function(a) {
+                    return String(a.user || a.username || "").toLowerCase() === uname.toLowerCase();
+                }) || {};
 
-                        return String(c.username || "")
-                            .toLowerCase()
-                            ===
-                            String(u.username || u.name || "")
-                            .toLowerCase();
-
-                    }) || {};
-
+                var isOnline = !!(active.user || (u.uptime && u.uptime !== "0s" && u.uptime !== "-"));
+                var liveIp = active.address || active.ip || u.ip || u.address || customer.ipAddress || "-";
+                var liveMac = active['mac-address'] || active.mac || u.mac || u['mac-address'] || customer.callerId || "-";
+                var liveUptime = active.uptime || u.uptime || "-";
 
                 return {
-
-                    username:
-                        u.username ||
-                        u.name ||
-                        "-",
-
-                    name:
-                        customer.name ||
-                        u.comment ||
-                        "-",
-
-                    phone:
-                        customer.phone ||
-                        "-",
-
-                    address:
-                        customer.address ||
-                        "-",
-
-                    profile:
-                        u.profile ||
-                        customer.package ||
-                        "Default",
-
-                    price:
-                        customer.price ||
-                        "-",
-
-                    uptime:
-                        u.uptime ||
-                        "-",
-
-                    ip:
-                        u.ip ||
-                        u.address ||
-                        customer.ipAddress ||
-                        "-",
-
-                    mac:
-                        u.mac ||
-                        u.callerId ||
-                        customer.callerId ||
-                        "-",
-
-                    bytesIn:
-                        u.bytesIn ||
-                        "0 B",
-
-                    bytesOut:
-                        u.bytesOut ||
-                        "0 B",
-
-                    disabled:
-                        !!u.disabled ||
-                        customer.status === "Disabled",
-
-                    isOnline:
-                        !!(
-                            u.uptime &&
-                            u.uptime !== "0s" &&
-                            u.uptime !== "-"
-                        ),
-
-                    expiryDate:
-                        customer.expiryDate ||
-                        u.expiryDate ||
-                        "-",
-
-                    lastPayment:
-                        customer.lastPayment ||
-                        "-"
-
+                    username: uname || "-",
+                    password: u.password || customer.password || "***",
+                    name: customer.name || u.comment || "-",
+                    phone: customer.phone || "-",
+                    address: customer.address || "-",
+                    profile: u.profile || customer.package || "Default",
+                    price: customer.price || "-",
+                    uptime: liveUptime,
+                    ip: liveIp,
+                    mac: liveMac,
+                    bytesIn: active['bytes-in-nice'] || u.bytesIn || "0 B",
+                    bytesOut: active['bytes-out-nice'] || u.bytesOut || "0 B",
+                    disabled: !!(u.disabled === true || u.disabled === 'true' || customer.status === "Disabled"),
+                    isOnline: isOnline,
+                    expiryDate: customer.expiryDate || u.expiryDate || "-",
+                    lastPayment: customer.lastPayment || "-"
                 };
-
             });
-
-        }
-
-        /*
-         * If hotspot API is empty,
-         * use customer database.
-         */
-
-        else {
-
-            fznUsers =
-                customerData.map(function(c) {
-
+        } else {
+            fznUsers = customerData
+                .filter(function(c) {
+                    var cname = String(c.username || "").toLowerCase();
+                    return cname !== "default-trial" && cname !== "default";
+                })
+                .map(function(c) {
                     return {
-
-                        username:
-                            c.username || "-",
-
-                        name:
-                            c.name || "-",
-
-                        phone:
-                            c.phone || "-",
-
-                        address:
-                            c.address || "-",
-
-                        profile:
-                            c.package || "Default",
-
-                        price:
-                            c.price || "-",
-
-                        uptime:
-                            c.uptime || "Offline",
-
-                        ip:
-                            c.ipAddress || "-",
-
-                        mac:
-                            c.callerId || "-",
-
-                        bytesIn:
-                            "0 B",
-
-                        bytesOut:
-                            "0 B",
-
-                        disabled:
-                            c.status === "Disabled",
-
-                        isOnline:
-                            c.onlineStatus === "Online",
-
-                        expiryDate:
-                            c.expiryDate || "-",
-
-                        lastPayment:
-                            c.lastPayment || "-"
-
+                        username: c.username || "-",
+                        password: c.password || "***",
+                        name: c.name || "-",
+                        phone: c.phone || "-",
+                        address: c.address || "-",
+                        profile: c.package || "Default",
+                        price: c.price || "-",
+                        uptime: c.uptime || "Offline",
+                        ip: c.ipAddress || "-",
+                        mac: c.callerId || "-",
+                        bytesIn: "0 B",
+                        bytesOut: "0 B",
+                        disabled: c.status === "Disabled",
+                        isOnline: c.onlineStatus === "Online",
+                        expiryDate: c.expiryDate || "-",
+                        lastPayment: c.lastPayment || "-"
                     };
-
                 });
-
         }
-
 
         fznBuildPackages();
-
         fznApplyFilters();
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Hotspot users error:",
-            error
-        );
-
+    } catch (error) {
+        console.error("Hotspot users error:", error);
         fznUsers = [];
-
         fznApplyFilters();
-
     }
-
 };
-
 
 /* =========================================================
    PACKAGE FILTER
    ========================================================= */
-
 function fznBuildPackages() {
-
-    var select =
-        document.getElementById("fznPackage");
-
+    var select = document.getElementById("fznPackage");
     if (!select) return;
-
-
-    var current =
-        select.value;
-
-
+    var current = select.value;
     var packages = [];
 
-
     fznUsers.forEach(function(u) {
-
-        if (
-            u.profile &&
-            u.profile !== "-"
-        ) {
-
-            if (
-                !packages.includes(
-                    u.profile
-                )
-            ) {
-
-                packages.push(
-                    u.profile
-                );
-
-            }
-
+        if (u.profile && u.profile !== "-" && !packages.includes(u.profile)) {
+            packages.push(u.profile);
         }
-
     });
-
 
     packages.sort();
-
-
-    select.innerHTML = `
-        <option value="all">
-            All Packages
-        </option>
-    `;
-
-
+    select.innerHTML = '<option value="all">All Packages</option>';
     packages.forEach(function(pkg) {
-
-        var option =
-            document.createElement("option");
-
+        var option = document.createElement("option");
         option.value = pkg;
-
         option.textContent = pkg;
-
         select.appendChild(option);
-
     });
 
-
-    if (
-        packages.includes(current)
-    ) {
-
-        select.value = current;
-
-    }
-
+    if (packages.includes(current)) select.value = current;
 }
 
-
 /* =========================================================
-   FILTER
+   FILTER & EXPIRY LOGIC
    ========================================================= */
-
 window.fznApplyFilters = function() {
+    var search = (document.getElementById("fznSearch")?.value || "").toLowerCase().trim();
+    var status = document.getElementById("fznStatus")?.value || "all";
+    var pkg = document.getElementById("fznPackage")?.value || "all";
+    var expiry = document.getElementById("fznExpiry")?.value || "all";
 
-    var search =
-        (
-            document.getElementById("fznSearch")
-                ?.value || ""
-        )
-        .toLowerCase()
-        .trim();
+    fznFiltered = fznUsers.filter(function(u) {
+        var searchable = [u.username, u.name, u.phone, u.ip, u.mac, u.profile].join(" ").toLowerCase();
+        if (search && !searchable.includes(search)) return false;
 
+        var actualStatus = u.disabled ? "disabled" : (fznIsExpired(u.expiryDate) ? "expired" : (u.isOnline ? "online" : "offline"));
+        if (status !== "all" && status !== actualStatus) return false;
+        if (pkg !== "all" && u.profile !== pkg) return false;
+        if (expiry !== "all" && !fznExpiryMatch(u.expiryDate, expiry)) return false;
 
-    var status =
-        document.getElementById("fznStatus")
-            ?.value || "all";
-
-
-    var pkg =
-        document.getElementById("fznPackage")
-            ?.value || "all";
-
-
-    var expiry =
-        document.getElementById("fznExpiry")
-            ?.value || "all";
-
-
-    fznFiltered =
-        fznUsers.filter(function(u) {
-
-
-            /* SEARCH */
-
-            var searchable = [
-
-                u.username,
-                u.name,
-                u.phone,
-                u.ip,
-                u.mac,
-                u.profile
-
-            ]
-            .join(" ")
-            .toLowerCase();
-
-
-            if (
-                search &&
-                !searchable.includes(search)
-            ) {
-
-                return false;
-
-            }
-
-
-            /* STATUS */
-
-            var actualStatus =
-                u.disabled
-                    ? "disabled"
-                    : fznIsExpired(u.expiryDate)
-                        ? "expired"
-                        : u.isOnline
-                            ? "online"
-                            : "offline";
-
-
-            if (
-                status !== "all" &&
-                status !== actualStatus
-            ) {
-
-                return false;
-
-            }
-
-
-            /* PACKAGE */
-
-            if (
-                pkg !== "all" &&
-                u.profile !== pkg
-            ) {
-
-                return false;
-
-            }
-
-
-            /* EXPIRY */
-
-            if (
-                expiry !== "all" &&
-                !fznExpiryMatch(
-                    u.expiryDate,
-                    expiry
-                )
-            ) {
-
-                return false;
-
-            }
-
-
-            return true;
-
-        });
-
+        return true;
+    });
 
     fznPage = 1;
-
     fznRender();
-
 };
 
-
-/* =========================================================
-   EXPIRY
-   ========================================================= */
-
 function fznIsExpired(dateValue) {
-
-    if (
-        !dateValue ||
-        dateValue === "-"
-    ) {
-
-        return false;
-
-    }
-
-
-    var date =
-        new Date(dateValue);
-
-
-    if (
-        isNaN(date.getTime())
-    ) {
-
-        return false;
-
-    }
-
-
+    if (!dateValue || dateValue === "-") return false;
+    var date = new Date(dateValue);
+    if (isNaN(date.getTime())) return false;
     return date < new Date();
-
 }
 
+function fznExpiryMatch(dateValue, type) {
+    if (!dateValue || dateValue === "-") return false;
+    var date = new Date(dateValue);
+    if (isNaN(date.getTime())) return false;
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    var days = Math.ceil((target - today) / 86400000);
 
-function fznExpiryMatch(
-    dateValue,
-    type
-) {
-
-    if (
-        !dateValue ||
-        dateValue === "-"
-    ) {
-
-        return false;
-
-    }
-
-
-    var date =
-        new Date(dateValue);
-
-
-    if (
-        isNaN(date.getTime())
-    ) {
-
-        return false;
-
-    }
-
-
-    var now =
-        new Date();
-
-
-    var today =
-        new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate()
-        );
-
-
-    var target =
-        new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate()
-        );
-
-
-    var days =
-        Math.ceil(
-            (
-                target - today
-            ) /
-            86400000
-        );
-
-
-    if (type === "expired")
-        return days < 0;
-
-    if (type === "today")
-        return days === 0;
-
-    if (type === "soon")
-        return days >= 0 && days <= 7;
-
-    if (type === "valid")
-        return days > 7;
-
+    if (type === "expired") return days < 0;
+    if (type === "today") return days === 0;
+    if (type === "soon") return days >= 0 && days <= 7;
+    if (type === "valid") return days > 7;
     return true;
-
 }
-
 
 /* =========================================================
-   RENDER
+   RENDER TABLE
    ========================================================= */
-
 function fznRender() {
-
-    var tbody =
-        document.getElementById(
-            "fznUserTbody"
-        );
-
-
+    var tbody = document.getElementById("fznUserTbody");
     if (!tbody) return;
-
-
     tbody.innerHTML = "";
 
-
-    var total =
-        fznFiltered.length;
-
-
-    var start =
-        (fznPage - 1) *
-        fznPerPage;
-
-
-    var end =
-        start +
-        fznPerPage;
-
-
-    var pageUsers =
-        fznFiltered.slice(
-            start,
-            end
-        );
-
+    var start = (fznPage - 1) * fznPerPage;
+    var end = start + fznPerPage;
+    var pageUsers = fznFiltered.slice(start, end);
 
     if (!pageUsers.length) {
-
         tbody.innerHTML = `
             <tr>
                 <td colspan="10">
-
                     <div class="state">
-
                         <i class="fa-solid fa-users-slash"></i>
-
-                        <strong>
-                            No users found
-                        </strong>
-
-                        <span>
-                            Try changing your search or filters.
-                        </span>
-
+                        <strong>No users found</strong>
+                        <span>Try changing your search or filters.</span>
                     </div>
-
                 </td>
             </tr>
         `;
-
     }
-
 
     pageUsers.forEach(function(u, index) {
-
-        var realIndex =
-            start + index;
-
-
-        var statusHTML =
-            fznStatusHTML(u);
-
-
-        var expiryClass =
-            fznExpiryClass(
-                u.expiryDate
-            );
-
-
-        var avatar =
-            (
-                u.name ||
-                u.username ||
-                "U"
-            )
-            .charAt(0)
-            .toUpperCase();
-
-
-        var tr =
-            document.createElement("tr");
-
+        var realIndex = start + index;
+        var statusHTML = fznStatusHTML(u);
+        var expiryClass = fznExpiryClass(u.expiryDate);
+        var avatar = (u.name || u.username || "U").charAt(0).toUpperCase();
+        var tr = document.createElement("tr");
 
         tr.innerHTML = `
-
+            <td><input class="check fzn-user-check" type="checkbox" data-index="${realIndex}"></td>
             <td>
-
-                <input
-                    class="check fzn-user-check"
-                    type="checkbox"
-                    data-index="${realIndex}"
-                >
-
-            </td>
-
-
-            <td>
-
                 <div class="user-cell">
-
-                    <div class="avatar">
-                        ${fznEscape(avatar)}
-                    </div>
-
+                    <div class="avatar">${fznEscape(avatar)}</div>
                     <div>
-
-                        <div class="username">
-                            ${fznEscape(u.username)}
-                        </div>
-
-                        <div class="user-meta">
-                            ${fznEscape(u.name)}
-                            ${u.phone !== "-" ? " • " + fznEscape(u.phone) : ""}
-                        </div>
-
+                        <div class="username">${fznEscape(u.username)}</div>
+                        <div class="user-meta">${fznEscape(u.name)}${u.phone !== "-" ? " • " + fznEscape(u.phone) : ""}</div>
                     </div>
-
                 </div>
-
             </td>
-
-
             <td>
-
-                <div class="package-name">
-                    ${fznEscape(u.profile)}
-                </div>
-
-                <div class="package-price">
-                    ${u.price !== "-" ? "৳" + fznEscape(u.price) : "—"}
-                </div>
-
+                <div class="package-name">${fznEscape(u.profile)}</div>
+                <div class="package-price">${u.price !== "-" ? "৳" + fznEscape(u.price) : "—"}</div>
             </td>
-
-
+            <td>${statusHTML}</td>
+            <td><code>${fznEscape(u.ip)}</code></td>
+            <td><code>${fznEscape(u.mac)}</code></td>
             <td>
-                ${statusHTML}
+                <div>↓ ${fznEscape(u.bytesIn)}</div>
+                <div style="color:#94a3b8;font-size:10px">↑ ${fznEscape(u.bytesOut)}</div>
             </td>
-
-
+            <td class="${expiryClass}">${fznEscape(u.expiryDate)}</td>
+            <td>${fznEscape(u.uptime)}</td>
             <td>
-                ${fznEscape(u.ip)}
-            </td>
-
-
-            <td>
-                ${fznEscape(u.mac)}
-            </td>
-
-
-            <td>
-
-                <div>
-                    ↓ ${fznEscape(u.bytesIn)}
-                </div>
-
-                <div style="color:#94a3b8;font-size:10px">
-                    ↑ ${fznEscape(u.bytesOut)}
-                </div>
-
-            </td>
-
-
-            <td class="${expiryClass}">
-                ${fznEscape(u.expiryDate)}
-            </td>
-
-
-            <td>
-                ${fznEscape(u.uptime)}
-            </td>
-
-
-            <td>
-
                 <div class="actions">
-
-                    <button
-                        class="action-btn action-view"
-                        title="View details"
-                        onclick="fznShowDetails(${realIndex})">
-
+                    <button class="action-btn action-view" title="View details" onclick="fznShowDetails(${realIndex})">
                         <i class="fa-solid fa-eye"></i>
-
                     </button>
-
-
-                    <button
-                        class="action-btn"
-                        title="Disconnect"
-                        onclick="fznDisconnect(${realIndex})">
-
+                    <button class="action-btn" title="Disconnect" onclick="fznDisconnect(${realIndex})">
                         <i class="fa-solid fa-power-off"></i>
-
                     </button>
-
                 </div>
-
             </td>
-
         `;
-
-
         tbody.appendChild(tr);
-
     });
 
-
     fznUpdateStats();
-
     fznUpdatePagination();
-
 }
-
-
-/* =========================================================
-   STATUS HTML
-   ========================================================= */
 
 function fznStatusHTML(u) {
-
-    if (u.disabled) {
-
-        return `
-            <span class="status disabled">
-                <span class="dot"></span>
-                Disabled
-            </span>
-        `;
-
-    }
-
-
-    if (fznIsExpired(u.expiryDate)) {
-
-        return `
-            <span class="status expired">
-                <span class="dot"></span>
-                Expired
-            </span>
-        `;
-
-    }
-
-
-    if (u.isOnline) {
-
-        return `
-            <span class="status online">
-                <span class="dot"></span>
-                Online
-            </span>
-        `;
-
-    }
-
-
-    return `
-        <span class="status offline">
-            <span class="dot"></span>
-            Offline
-        </span>
-    `;
-
+    if (u.disabled) return `<span class="status disabled"><span class="dot"></span>Disabled</span>`;
+    if (fznIsExpired(u.expiryDate)) return `<span class="status expired"><span class="dot"></span>Expired</span>`;
+    if (u.isOnline) return `<span class="status online"><span class="dot"></span>Online</span>`;
+    return `<span class="status offline"><span class="dot"></span>Offline</span>`;
 }
-
-
-/* =========================================================
-   EXPIRY CLASS
-   ========================================================= */
 
 function fznExpiryClass(dateValue) {
-
-    if (
-        !dateValue ||
-        dateValue === "-"
-    ) {
-
-        return "";
-
-    }
-
-
-    var date =
-        new Date(dateValue);
-
-
-    if (
-        isNaN(date.getTime())
-    ) {
-
-        return "";
-
-    }
-
-
-    var days =
-        Math.ceil(
-            (
-                date -
-                new Date()
-            ) /
-            86400000
-        );
-
-
-    if (days < 0)
-        return "expiry-warning";
-
-    if (days <= 7)
-        return "expiry-warning";
-
-    return "";
-
+    if (!dateValue || dateValue === "-") return "";
+    var date = new Date(dateValue);
+    if (isNaN(date.getTime())) return "";
+    var days = Math.ceil((date - new Date()) / 86400000);
+    return days <= 7 ? "expiry-warning" : "";
 }
-
-
-/* =========================================================
-   STATISTICS
-   ========================================================= */
 
 function fznUpdateStats() {
-
-    var total =
-        fznUsers.length;
-
-
-    var online =
-        fznUsers.filter(function(u) {
-
-            return !u.disabled &&
-                   u.isOnline;
-
-        }).length;
-
-
-    var offline =
-        fznUsers.filter(function(u) {
-
-            return !u.disabled &&
-                   !u.isOnline &&
-                   !fznIsExpired(
-                       u.expiryDate
-                   );
-
-        }).length;
-
-
-    var disabled =
-        fznUsers.filter(function(u) {
-
-            return u.disabled ||
-                   fznIsExpired(
-                       u.expiryDate
-                   );
-
-        }).length;
-
-
-    document.getElementById(
-        "statTotal"
-    ).textContent = total;
-
-
-    document.getElementById(
-        "statOnline"
-    ).textContent = online;
-
-
-    document.getElementById(
-        "statOffline"
-    ).textContent = offline;
-
-
-    document.getElementById(
-        "statDisabled"
-    ).textContent = disabled;
-
-
-    document.getElementById(
-        "fznShowing"
-    ).textContent =
-        fznFiltered.length;
-
-
+    document.getElementById("statTotal").textContent = fznUsers.length;
+    document.getElementById("statOnline").textContent = fznUsers.filter(u => !u.disabled && u.isOnline).length;
+    document.getElementById("statOffline").textContent = fznUsers.filter(u => !u.disabled && !u.isOnline && !fznIsExpired(u.expiryDate)).length;
+    document.getElementById("statDisabled").textContent = fznUsers.filter(u => u.disabled || fznIsExpired(u.expiryDate)).length;
+    document.getElementById("fznShowing").textContent = fznFiltered.length;
 }
-
-
-/* =========================================================
-   PAGINATION
-   ========================================================= */
 
 function fznUpdatePagination() {
-
-    var totalPages =
-        Math.max(
-            1,
-            Math.ceil(
-                fznFiltered.length /
-                fznPerPage
-            )
-        );
-
-
-    document.getElementById(
-        "fznPageNumber"
-    ).textContent =
-        fznPage;
-
-
-    document.getElementById(
-        "fznPageInfo"
-    ).textContent =
-        "Page " +
-        fznPage +
-        " of " +
-        totalPages +
-        " • " +
-        fznFiltered.length +
-        " users";
-
+    var totalPages = Math.max(1, Math.ceil(fznFiltered.length / fznPerPage));
+    document.getElementById("fznPageNumber").textContent = fznPage;
+    document.getElementById("fznPageInfo").textContent = "Page " + fznPage + " of " + totalPages + " • " + fznFiltered.length + " users";
 }
 
-
-window.fznPrevPage = function() {
-
-    if (fznPage > 1) {
-
-        fznPage--;
-
-        fznRender();
-
-    }
-
-};
-
-
-window.fznNextPage = function() {
-
-    var totalPages =
-        Math.max(
-            1,
-            Math.ceil(
-                fznFiltered.length /
-                fznPerPage
-            )
-        );
-
-
-    if (
-        fznPage < totalPages
-    ) {
-
-        fznPage++;
-
-        fznRender();
-
-    }
-
-};
-
+window.fznPrevPage = function() { if (fznPage > 1) { fznPage--; fznRender(); } };
+window.fznNextPage = function() { var totalPages = Math.max(1, Math.ceil(fznFiltered.length / fznPerPage)); if (fznPage < totalPages) { fznPage++; fznRender(); } };
 
 /* =========================================================
-   USER DETAILS
+   USER DETAILS MODAL
    ========================================================= */
-
 window.fznShowDetails = function(index) {
-
-    var u =
-        fznFiltered[index];
-
-    /*
-     * If pagination is active,
-     * index belongs to filtered list.
-     */
-
+    var u = fznFiltered[index];
     if (!u) {
-
-        var start =
-            (fznPage - 1) *
-            fznPerPage;
-
-        u =
-            fznFiltered[
-                start + index
-            ];
-
+        var start = (fznPage - 1) * fznPerPage;
+        u = fznFiltered[start + index];
     }
-
-
     if (!u) return;
-
 
     fznCurrentUser = u;
 
+    document.getElementById("m_user").textContent = u.username || "-";
+    document.getElementById("m_pass").textContent = u.password || "***";
+    document.getElementById("m_name").textContent = u.name || "-";
+    document.getElementById("m_phone").textContent = u.phone || "-";
+    document.getElementById("m_address").textContent = u.address || "-";
+    document.getElementById("m_status").innerHTML = fznStatusHTML(u);
+    document.getElementById("m_ip").textContent = u.ip || "-";
+    document.getElementById("m_mac").textContent = u.mac || "-";
+    document.getElementById("m_uptime").textContent = u.uptime || "-";
+    document.getElementById("m_pkg").textContent = u.profile || "-";
+    document.getElementById("m_price").textContent = u.price !== "-" ? "৳" + u.price : "-";
+    document.getElementById("m_exp").textContent = u.expiryDate || "-";
+    document.getElementById("m_down").textContent = u.bytesIn || "0 B";
+    document.getElementById("m_up").textContent = u.bytesOut || "0 B";
+    document.getElementById("m_pay").textContent = u.lastPayment !== "-" ? "৳" + u.lastPayment : "-";
 
-    document.getElementById(
-        "m_user"
-    ).textContent =
-        u.username || "-";
+    var toggleBtn = document.getElementById("m_btn_toggle");
+    if (toggleBtn) {
+        toggleBtn.innerHTML = u.disabled 
+            ? '<i class="fa-solid fa-check"></i> Enable User'
+            : '<i class="fa-solid fa-ban"></i> Disable User';
+    }
 
-
-    document.getElementById(
-        "m_name"
-    ).textContent =
-        u.name || "-";
-
-
-    document.getElementById(
-        "m_phone"
-    ).textContent =
-        u.phone || "-";
-
-
-    document.getElementById(
-        "m_address"
-    ).textContent =
-        u.address || "-";
-
-
-    document.getElementById(
-        "m_status"
-    ).innerHTML =
-        fznStatusHTML(u);
-
-
-    document.getElementById(
-        "m_ip"
-    ).textContent =
-        u.ip || "-";
-
-
-    document.getElementById(
-        "m_mac"
-    ).textContent =
-        u.mac || "-";
-
-
-    document.getElementById(
-        "m_uptime"
-    ).textContent =
-        u.uptime || "-";
-
-
-    document.getElementById(
-        "m_pkg"
-    ).textContent =
-        u.profile || "-";
-
-
-    document.getElementById(
-        "m_price"
-    ).textContent =
-        u.price !== "-"
-            ? "৳" + u.price
-            : "-";
-
-
-    document.getElementById(
-        "m_exp"
-    ).textContent =
-        u.expiryDate || "-";
-
-
-    document.getElementById(
-        "m_down"
-    ).textContent =
-        u.bytesIn || "0 B";
-
-
-    document.getElementById(
-        "m_up"
-    ).textContent =
-        u.bytesOut || "0 B";
-
-
-    document.getElementById(
-        "m_pay"
-    ).textContent =
-        u.lastPayment !== "-"
-            ? "৳" + u.lastPayment
-            : "-";
-
-
-    document.getElementById(
-        "fznModal"
-    ).classList.add("show");
-
+    document.getElementById("fznModal").classList.add("show");
 };
-
 
 window.fznCloseModal = function() {
-
-    document.getElementById(
-        "fznModal"
-    ).classList.remove("show");
-
+    document.getElementById("fznModal").classList.remove("show");
     fznCurrentUser = null;
-
 };
 
-
-/* Close by clicking overlay */
-
-document.getElementById(
-    "fznModal"
-).addEventListener(
-    "click",
-    function(e) {
-
-        if (
-            e.target === this
-        ) {
-
-            fznCloseModal();
-
-        }
-
-    }
-);
-
-
-/* ESC */
-
-document.addEventListener(
-    "keydown",
-    function(e) {
-
-        if (
-            e.key === "Escape"
-        ) {
-
-            fznCloseModal();
-
-        }
-
-    }
-);
-
+document.getElementById("fznModal").addEventListener("click", function(e) { if (e.target === this) fznCloseModal(); });
+document.addEventListener("keydown", function(e) { if (e.key === "Escape") fznCloseModal(); });
 
 /* =========================================================
-   ACTIONS
+   REAL BACKEND ACTIONS (CONNECTING API)
    ========================================================= */
 
-window.fznDisconnect = function(index) {
-
-    var u =
-        typeof index === "number"
-            ? fznFiltered[index]
-            : fznCurrentUser;
-
-
+// ১. Disconnect User
+window.fznDisconnect = async function(index) {
+    var u = (typeof index === "number") ? fznFiltered[index] : fznCurrentUser;
     if (!u) return;
 
+    if (!confirm("Are you sure you want to disconnect user " + u.username + "?")) return;
 
-    if (
-        !confirm(
-            "Disconnect user " +
-            u.username +
-            "?"
-        )
-    ) return;
-
-
-    /*
-     * Connect your real MikroTik
-     * disconnect endpoint here.
-     *
-     * Example:
-     *
-     * fetch('/api/hotspot/disconnect', {
-     *   method:'POST',
-     *   headers:{'Content-Type':'application/json'},
-     *   body:JSON.stringify({
-     *      username:u.username
-     *   })
-     * });
-     */
-
-    alert(
-        "Disconnect action ready for API: " +
-        u.username
-    );
-
+    try {
+        const res = await fetch("/api/hotspot/active/remove", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: u.username })
+        });
+        const data = await res.json();
+        if (data.success || res.ok) {
+            alert("User " + u.username + " disconnected successfully!");
+            fznCloseModal();
+            fznLoadUsers();
+        } else {
+            alert("Failed to disconnect: " + (data.message || "Unknown error"));
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Server error disconnecting user.");
+    }
 };
 
+// ২. Enable / Disable User
+window.fznToggleUser = async function() {
+    if (!fznCurrentUser) return;
+    var targetStatus = !fznCurrentUser.disabled;
+    var actionText = targetStatus ? "disable" : "enable";
 
-window.fznToggleUser = function() {
+    if (!confirm("Do you want to " + actionText + " user " + fznCurrentUser.username + "?")) return;
 
-    if (!fznCurrentUser)
-        return;
-
-
-    alert(
-        "Enable / Disable API ready for: " +
-        fznCurrentUser.username
-    );
-
+    try {
+        const res = await fetch("/api/hotspot/users/status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                username: fznCurrentUser.username, 
+                disabled: targetStatus 
+            })
+        });
+        const data = await res.json();
+        if (data.success || res.ok) {
+            alert("User status updated successfully!");
+            fznCloseModal();
+            fznLoadUsers();
+        } else {
+            alert("Failed to update status: " + (data.message || "Unknown error"));
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Server communication error.");
+    }
 };
 
+// ৩. Change Package (Profile)
+window.fznChangePackage = async function() {
+    if (!fznCurrentUser) return;
 
-window.fznChangePackage = function() {
+    var options = fznProfilesList.map(p => p.name || p).filter(p => p && p !== "default");
+    var promptMsg = "Current Package: " + fznCurrentUser.profile + "\n";
+    if (options.length > 0) {
+        promptMsg += "Available: " + options.join(", ") + "\n";
+    }
+    promptMsg += "Enter new package name:";
 
-    if (!fznCurrentUser)
-        return;
+    var newPkg = prompt(promptMsg, fznCurrentUser.profile);
+    if (!newPkg || newPkg === fznCurrentUser.profile) return;
 
-
-    alert(
-        "Change Package action ready for: " +
-        fznCurrentUser.username
-    );
-
+    try {
+        const res = await fetch("/api/hotspot/users/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                username: fznCurrentUser.username,
+                profile: newPkg
+            })
+        });
+        const data = await res.json();
+        if (data.success || res.ok) {
+            alert("Package updated to " + newPkg);
+            fznCloseModal();
+            fznLoadUsers();
+        } else {
+            alert("Failed to change package: " + (data.message || "Router rejected"));
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Error connecting to server.");
+    }
 };
 
+// ৪. Renew User
+window.fznRenewUser = async function() {
+    if (!fznCurrentUser) return;
 
-window.fznRenewUser = function() {
+    var days = prompt("Renew user " + fznCurrentUser.username + " for how many days?", "30");
+    if (!days) return;
 
-    if (!fznCurrentUser)
-        return;
-
-
-    alert(
-        "Renew action ready for: " +
-        fznCurrentUser.username
-    );
-
+    try {
+        const res = await fetch("/api/customers/renew", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                username: fznCurrentUser.username,
+                days: parseInt(days)
+            })
+        });
+        const data = await res.json();
+        if (data.success || res.ok) {
+            alert("User renewed successfully!");
+            fznCloseModal();
+            fznLoadUsers();
+        } else {
+            alert("Renew failed: " + (data.message || "Error"));
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Error connecting to renew API.");
+    }
 };
-
 
 window.fznAddUser = function() {
-
-    /*
-     * Connect this button to your
-     * Add Hotspot User page/modal.
-     */
-
-    alert(
-        "Add User page can be connected here."
-    );
-
+    var addModal = document.getElementById("addUserModal") || document.getElementById("userModal");
+    if (addModal) {
+        addModal.style.display = "flex";
+    } else {
+        window.location.hash = "#add-user";
+    }
 };
 
-
 /* =========================================================
-   EXPORT CSV
+   EXPORT CSV & FILTERS
    ========================================================= */
-
 window.fznExportCSV = function() {
-
     if (!fznFiltered.length) {
-
-        alert(
-            "No users available to export."
-        );
-
+        alert("No users available to export.");
         return;
-
     }
 
-
-    var headers = [
-
-        "Username",
-        "Name",
-        "Phone",
-        "Package",
-        "Status",
-        "IP Address",
-        "MAC Address",
-        "Download",
-        "Upload",
-        "Expiry",
-        "Uptime"
-
-    ];
-
-
-    var rows =
-        fznFiltered.map(function(u) {
-
-            var status =
-                u.disabled
-                    ? "Disabled"
-                    : fznIsExpired(
-                        u.expiryDate
-                    )
-                        ? "Expired"
-                        : u.isOnline
-                            ? "Online"
-                            : "Offline";
-
-
-            return [
-
-                u.username,
-                u.name,
-                u.phone,
-                u.profile,
-                status,
-                u.ip,
-                u.mac,
-                u.bytesIn,
-                u.bytesOut,
-                u.expiryDate,
-                u.uptime
-
-            ]
-            .map(function(v) {
-
-                return '"' +
-                    String(v || "")
-                        .replace(
-                            /"/g,
-                            '""'
-                        ) +
-                    '"';
-
-            })
+    var headers = ["Username", "Name", "Phone", "Package", "Status", "IP Address", "MAC Address", "Download", "Upload", "Expiry", "Uptime"];
+    var rows = fznFiltered.map(function(u) {
+        var status = u.disabled ? "Disabled" : (fznIsExpired(u.expiryDate) ? "Expired" : (u.isOnline ? "Online" : "Offline"));
+        return [u.username, u.name, u.phone, u.profile, status, u.ip, u.mac, u.bytesIn, u.bytesOut, u.expiryDate, u.uptime]
+            .map(function(v) { return '"' + String(v || "").replace(/"/g, '""') + '"'; })
             .join(",");
+    });
 
-        });
-
-
-    var csv =
-        [
-            headers.join(",")
-        ]
-        .concat(rows)
-        .join("\n");
-
-
-    var blob =
-        new Blob(
-            [csv],
-            {
-                type:
-                    "text/csv;charset=utf-8;"
-            }
-        );
-
-
-    var url =
-        URL.createObjectURL(blob);
-
-
-    var a =
-        document.createElement("a");
-
-
+    var csv = [headers.join(",")].concat(rows).join("\n");
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
     a.href = url;
-
-    a.download =
-        "faz-network-hotspot-users.csv";
-
-
+    a.download = "faz-network-hotspot-users.csv";
     document.body.appendChild(a);
-
     a.click();
-
     a.remove();
-
     URL.revokeObjectURL(url);
-
 };
-
-
-/* =========================================================
-   RESET
-   ========================================================= */
 
 window.fznResetFilters = function() {
-
-    document.getElementById(
-        "fznSearch"
-    ).value = "";
-
-
-    document.getElementById(
-        "fznStatus"
-    ).value = "all";
-
-
-    document.getElementById(
-        "fznPackage"
-    ).value = "all";
-
-
-    document.getElementById(
-        "fznExpiry"
-    ).value = "all";
-
-
+    document.getElementById("fznSearch").value = "";
+    document.getElementById("fznStatus").value = "all";
+    document.getElementById("fznPackage").value = "all";
+    document.getElementById("fznExpiry").value = "all";
     fznApplyFilters();
-
 };
 
+document.getElementById("fznSelectAll").addEventListener("change", function() {
+    var checked = this.checked;
+    document.querySelectorAll(".fzn-user-check").forEach(function(c) { c.checked = checked; });
+});
 
-/* =========================================================
-   SELECT ALL
-   ========================================================= */
+document.getElementById("fznSearch").addEventListener("input", fznApplyFilters);
+document.getElementById("fznStatus").addEventListener("change", fznApplyFilters);
+document.getElementById("fznPackage").addEventListener("change", fznApplyFilters);
+document.getElementById("fznExpiry").addEventListener("change", fznApplyFilters);
 
-document.getElementById(
-    "fznSelectAll"
-).addEventListener(
-    "change",
-    function() {
-
-        var checked =
-            this.checked;
-
-
-        document
-            .querySelectorAll(
-                ".fzn-user-check"
-            )
-            .forEach(function(c) {
-
-                c.checked =
-                    checked;
-
-            });
-
+document.getElementById("fznAutoRefresh").addEventListener("change", function() {
+    if (this.checked) {
+        if (fznRefreshTimer) clearInterval(fznRefreshTimer);
+        fznRefreshTimer = setInterval(function() { fznLoadUsers(); }, 30000);
+    } else {
+        if (fznRefreshTimer) { clearInterval(fznRefreshTimer); fznRefreshTimer = null; }
     }
-);
-
-
-/* =========================================================
-   SEARCH EVENTS
-   ========================================================= */
-
-document.getElementById(
-    "fznSearch"
-).addEventListener(
-    "input",
-    function() {
-
-        fznApplyFilters();
-
-    }
-);
-
-
-document.getElementById(
-    "fznStatus"
-).addEventListener(
-    "change",
-    fznApplyFilters
-);
-
-
-document.getElementById(
-    "fznPackage"
-).addEventListener(
-    "change",
-    fznApplyFilters
-);
-
-
-document.getElementById(
-    "fznExpiry"
-).addEventListener(
-    "change",
-    fznApplyFilters
-);
-
-
-/* =========================================================
-   AUTO REFRESH
-   ========================================================= */
-
-document.getElementById(
-    "fznAutoRefresh"
-).addEventListener(
-    "change",
-    function() {
-
-        if (this.checked) {
-
-            if (fznRefreshTimer) {
-
-                clearInterval(
-                    fznRefreshTimer
-                );
-
-            }
-
-
-            fznRefreshTimer =
-                setInterval(
-                    function() {
-
-                        fznLoadUsers();
-
-                    },
-                    30000
-                );
-
-        }
-
-        else {
-
-            if (fznRefreshTimer) {
-
-                clearInterval(
-                    fznRefreshTimer
-                );
-
-                fznRefreshTimer =
-                    null;
-
-            }
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   ESCAPE HTML
-   ========================================================= */
+});
 
 function fznEscape(value) {
-
-    var div =
-        document.createElement("div");
-
-    div.textContent =
-        value == null
-            ? ""
-            : String(value);
-
+    var div = document.createElement("div");
+    div.textContent = value == null ? "" : String(value);
     return div.innerHTML;
-
 }
 
-
-/* =========================================================
-   INITIAL LOAD
-   ========================================================= */
-
-setTimeout(
-    function() {
-
-        fznLoadUsers();
-
-    },
-    150
-);
-
+setTimeout(function() { fznLoadUsers(); }, 150);
 </script>
