@@ -2,7 +2,7 @@
     <div class="card-custom-header d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-people-fill text-success fs-5"></i>
-            <span class="fs-5 fw-semibold" data-key="all_user">All Users</span>
+            <span class="fs-5 fw-semibold" data-key="all_user">Hotspot Users (MikroTik Live)</span>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-sm btn-outline-success" onclick="fetchHotspotUsers()">
@@ -19,7 +19,7 @@
         <div class="p-3 border-bottom bg-light d-flex flex-wrap gap-2 justify-content-between align-items-center">
             <div class="input-group" style="max-width: 320px;">
                 <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                <input type="text" id="userSearchInput" class="form-control" placeholder="Search user..." onkeyup="filterUsers()">
+                <input type="text" id="userSearchInput" class="form-control" placeholder="Search user / profile..." onkeyup="filterUsers()">
             </div>
             <div class="text-muted small">
                 Total Users: <span id="totalUserCount" class="fw-bold text-dark">0</span>
@@ -34,15 +34,18 @@
                         <th class="ps-4">Server</th>
                         <th>Username</th>
                         <th>Profile</th>
-                        <th>Uptime / Limit</th>
-                        <th>Bytes In / Out</th>
+                        <th>Limit Uptime</th>
+                        <th>Uptime</th>
+                        <th>Traffic (In / Out)</th>
+                        <th>Comment</th>
                         <th class="text-end pe-4">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="userTableBody">
                     <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">
-                            ডাটা লোড করার জন্য অপেক্ষা করুন...
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                            <span class="ms-2">MikroTik থেকে লাইভ ডাটা লোড হচ্ছে...</span>
                         </td>
                     </tr>
                 </tbody>
@@ -51,42 +54,85 @@
     </div>
 </div>
 
+<!-- Add Hotspot User Modal -->
+<div class="modal fade" id="addHotspotUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Add MikroTik Hotspot User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="hotspotAddUserForm">
+                    <div class="mb-3">
+                        <label class="form-label">Username *</label>
+                        <input type="text" id="newHsUser" class="form-control" required placeholder="e.g. user01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="newHsPass" class="form-control" placeholder="Optional or PIN">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Profile</label>
+                        <input type="text" id="newHsProfile" class="form-control" placeholder="default" value="default">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Server</label>
+                        <input type="text" id="newHsServer" class="form-control" placeholder="all" value="all">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Limit Uptime (Optional)</label>
+                        <input type="text" id="newHsLimitUptime" class="form-control" placeholder="e.g. 1d, 12h, 30d">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Comment</label>
+                        <input type="text" id="newHsComment" class="form-control" placeholder="Voucher info or client name">
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-theme text-white">Save to MikroTik</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    // ডামি/টেস্ট ডাটা বা MikroTik API ফেচ ফাংশন
     let hotspotUsersList = [];
 
+    // MikroTik থেকে লাইভ ইউজার ফেচ করা
     function fetchHotspotUsers() {
         const tableBody = document.getElementById('userTableBody');
         tableBody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center py-4">
+                <td colspan="8" class="text-center py-4">
                     <div class="spinner-border spinner-border-sm text-success" role="status"></div>
-                    <span class="ms-2">MikroTik থেকে রিয়েল-টাইম ডাটা ফেচ করা হচ্ছে...</span>
+                    <span class="ms-2">MikroTik RouterOS থেকে লাইভ ইউজার লোড হচ্ছে...</span>
                 </td>
             </tr>
         `;
 
-        // আপনার ব্যাকএন্ড API endpoint (প্রয়োজনে URL পরিবর্তন করে নিন)
         fetch('/api/hotspot/users')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('API request failed');
-                }
-                return response.json();
+            .then(res => {
+                if (!res.ok) throw new Error('সার্ভার থেকে রেসপন্স পাওয়া যায়নি');
+                return res.json();
             })
             .then(data => {
-                hotspotUsersList = data;
-                renderUserTable(data);
-            })
-            .catch(error => {
-                // API এখনো যুক্ত না থাকলে ডেমো হিসেবে কিছু ডাটা শো করানো
-                console.warn('API Error, rendering demo hotspot users:', error);
-                hotspotUsersList = [
-                    { server: 'all', name: 'user01', profile: '10Mbps-30Days', limitUptime: '30d', bytesIn: '1.2 GB', bytesOut: '5.8 GB' },
-                    { server: 'hotspot1', name: 'faz_wifi_02', profile: '5Mbps-Regular', limitUptime: '15d', bytesIn: '450 MB', bytesOut: '2.1 GB' },
-                    { server: 'all', name: 'guest_user', profile: '1Mbps-Trial', limitUptime: '1h', bytesIn: '50 MB', bytesOut: '120 MB' }
-                ];
+                hotspotUsersList = Array.isArray(data) ? data : [];
                 renderUserTable(hotspotUsersList);
+            })
+            .catch(err => {
+                console.error('MikroTik API Fetch Error:', err);
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-danger">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            MikroTik-এর সাথে সংযোগ করা যায়নি বা কোনো ডাটা পাওয়া যায়নি। (${err.message})
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('totalUserCount').innerText = '0';
             });
     }
 
@@ -100,8 +146,8 @@
         if (users.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">
-                        কোনো ইউজার পাওয়া যায়নি।
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        MikroTik হটস্পটে কোনো ইউজার তৈরি করা নেই।
                     </td>
                 </tr>
             `;
@@ -112,15 +158,17 @@
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="ps-4"><span class="badge bg-secondary">${user.server || 'all'}</span></td>
-                <td class="fw-semibold text-dark">${user.name || user.username}</td>
+                <td class="fw-semibold text-dark">
+                    ${user.name}
+                    ${user.disabled ? '<span class="badge bg-danger ms-1">Disabled</span>' : ''}
+                </td>
                 <td><span class="badge bg-info text-dark">${user.profile || 'default'}</span></td>
-                <td>${user.limitUptime || user.uptime || 'Unlimited'}</td>
-                <td class="small text-muted">${user.bytesIn || '0'} / ${user.bytesOut || '0'}</td>
+                <td>${user.limitUptime || 'Unlimited'}</td>
+                <td><span class="small text-muted">${user.uptime || '0s'}</span></td>
+                <td class="small text-muted">${user.bytesIn || '0 B'} / ${user.bytesOut || '0 B'}</td>
+                <td class="small text-secondary">${user.comment || '-'}</td>
                 <td class="text-end pe-4">
-                    <button class="btn btn-sm btn-outline-primary me-1" title="Edit" onclick="editUser('${user.name || user.username}')">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" title="Remove" onclick="deleteUser('${user.name || user.username}')">
+                    <button class="btn btn-sm btn-outline-danger" title="Delete from MikroTik" onclick="deleteHotspotUser('${user.name}')">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -132,28 +180,78 @@
     function filterUsers() {
         const query = document.getElementById('userSearchInput').value.toLowerCase();
         const filtered = hotspotUsersList.filter(user => {
-            const username = (user.name || user.username || '').toLowerCase();
+            const username = (user.name || '').toLowerCase();
             const profile = (user.profile || '').toLowerCase();
-            return username.includes(query) || profile.includes(query);
+            const comment = (user.comment || '').toLowerCase();
+            return username.includes(query) || profile.includes(query) || comment.includes(query);
         });
         renderUserTable(filtered);
     }
 
-    function editUser(username) {
-        alert('Edit user: ' + username);
-    }
-
-    function deleteUser(username) {
-        if (confirm(`আপনি কি নিশ্চিত যে ইউজার "${username}" রিমুভ করবেন?`)) {
-            alert('User ' + username + ' deleted');
-            // ব্যাকএন্ড ডিলিট API কল এখানে বসবে
+    // MikroTik থেকে ইউজার সরাসরি ডিলিট করা
+    function deleteHotspotUser(username) {
+        if (!confirm(`আপনি কি নিশ্চিত যে MikroTik থেকে "${username}" ইউজারটি ডিলিট করতে চান?`)) {
+            return;
         }
+
+        fetch(`/api/hotspot/users/${encodeURIComponent(username)}`, {
+            method: 'DELETE'
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                alert(`User ${username} সফলভাবে রিমুভ করা হয়েছে।`);
+                fetchHotspotUsers();
+            } else {
+                alert(`ডিলিট করা যায়নি: ${result.message || 'ত্রুটি ঘটেছে'}`);
+            }
+        })
+        .catch(err => alert('সার্ভারে যোগাযোগ করা যায়নি: ' + err.message));
     }
 
     function openAddUserModal() {
-        alert('Add User modal or redirect action');
+        const modalEl = document.getElementById('addHotspotUserModal');
+        if (window.bootstrap && bootstrap.Modal) {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        } else {
+            alert('Bootstrap Modal পাওয়া যায়নি');
+        }
     }
 
-    // পেজ লোড হওয়ার সাথে সাথে ফেচ কল হবে
+    // নতুন ইউজার সরাসরি MikroTik-এ সংরক্ষণ
+    document.getElementById('hotspotAddUserForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const payload = {
+            username: document.getElementById('newHsUser').value.trim(),
+            password: document.getElementById('newHsPass').value.trim(),
+            profile: document.getElementById('newHsProfile').value.trim(),
+            server: document.getElementById('newHsServer').value.trim(),
+            limitUptime: document.getElementById('newHsLimitUptime').value.trim(),
+            comment: document.getElementById('newHsComment').value.trim()
+        };
+
+        fetch('/api/hotspot/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                alert('ইউজার সফলভাবে MikroTik-এ তৈরি হয়েছে!');
+                const modalEl = document.getElementById('addHotspotUserModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                document.getElementById('hotspotAddUserForm').reset();
+                fetchHotspotUsers();
+            } else {
+                alert('ব্যর্থ হয়েছে: ' + (res.message || 'MikroTik ত্রুটি'));
+            }
+        })
+        .catch(err => alert('API রিকোয়েস্টে সমস্যা: ' + err.message));
+    });
+
+    // ইনিশিয়াল লোড
     fetchHotspotUsers();
 </script>
