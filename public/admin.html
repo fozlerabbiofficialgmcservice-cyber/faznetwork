@@ -13,7 +13,6 @@
         }
         body { background-color: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif; }
         
-        /* Sidebar Styles */
         .sidebar {
             width: var(--sidebar-width);
             background-color: var(--primary-color);
@@ -36,7 +35,6 @@
             align-items: center;
         }
         
-        /* Language Switcher */
         .lang-switcher {
             padding: 10px 20px;
             font-size: 13px;
@@ -75,7 +73,6 @@
         }
         .menu-item i { margin-right: 15px; font-size: 18px; }
         
-        /* Submenu */
         .submenu {
             background-color: rgba(0, 0, 0, 0.2);
             list-style: none;
@@ -85,7 +82,6 @@
         .submenu.show { display: block; }
         .submenu a { padding-left: 55px; font-size: 14px; }
         
-        /* Main Content */
         .main-content {
             margin-left: var(--sidebar-width);
             transition: all 0.3s ease;
@@ -101,218 +97,201 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <span>FAZ NETWORK</span>
+            <span data-key="brand">FAZ NETWORK</span>
             <button class="btn btn-link text-white d-md-none" onclick="toggleSidebar()">
                 <i class="bi bi-x"></i>
             </button>
         </div>
 
-        <!-- Language Switcher -->
         <div class="lang-switcher">
             <i class="bi bi-translate"></i>
             <select id="langSelect" class="form-select-sm">
-                <option value="en" selected>English (USA)</option>
-                <option value="bn">বাংলা</option>
+                <option value="en">English (USA)</option>
+                <option value="bn" selected>বাংলা</option>
             </select>
         </div>
 
         <ul class="sidebar-menu">
-            <!-- Dashboard -->
             <li class="menu-item">
                 <a href="/dashboard" class="active">
-                    <i class="bi bi-speedometer2"></i> ড্যাশবোর্ড
+                    <i class="bi bi-speedometer2"></i> <span data-key="dashboard">ড্যাশবোর্ড</span>
                 </a>
             </li>
 
-            <!-- Customer Management -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-people"></i> কাস্টমার
+                    <i class="bi bi-people"></i> <span data-key="customer">কাস্টমার</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/customers/all">অল কাস্টমার</a></li>
-                    <li><a href="/customers/add">অ্যাড কাস্টমার</a></li>
-                    <li><a href="/customers/online">অনলাইন কাস্টমার</a></li>
-                    <li><a href="/customers/offline">অফলাইন কাস্টমার</a></li>
-                    <li><a href="/customers/active">অ্যাক্টিভ কাস্টমার</a></li>
-                    <li><a href="/customers/left">লেফট কাস্টমার</a></li>
-                    <li><a href="/customers/expire">এক্সপায়ার কাস্টমার</a></li>
-                    <li><a href="/customers/expire-today-yesterday">এক্সপায়ার ইন টুডে অ্যান্ড ইয়েস্টারডে</a></li>
-                    <li><a href="/customers/expire-7-days">এক্সপায়ার ইন সেভেন ডেস</a></li>
-                    <li><a href="/customers/new">নিউ কাস্টমার</a></li>
-                    <li><a href="/customers/due-collection">ডিউ কালেকশন</a></li>
+                    <li><a href="/customers/all" data-key="all_customer">অল কাস্টমার</a></li>
+                    <li><a href="/customers/add" data-key="add_customer">অ্যাড কাস্টমার</a></li>
+                    <li><a href="/customers/online" data-key="online_customer">অনলাইন কাস্টমার</a></li>
+                    <li><a href="/customers/offline" data-key="offline_customer">অফলাইন কাস্টমার</a></li>
+                    <li><a href="/customers/active" data-key="active_customer">অ্যাক্টিভ কাস্টমার</a></li>
+                    <li><a href="/customers/left" data-key="left_customer">লেফট কাস্টমার</a></li>
+                    <li><a href="/customers/expire" data-key="expire_customer">এক্সপায়ার কাস্টমার</a></li>
+                    <li><a href="/customers/expire-today-yesterday" data-key="expire_today_yesterday">এক্সপায়ার ইন টুডে অ্যান্ড ইয়েস্টারডে</a></li>
+                    <li><a href="/customers/expire-7-days" data-key="expire_7_days">এক্সপায়ার ইন সেভেন ডেস</a></li>
+                    <li><a href="/customers/new" data-key="new_customer">নিউ কাস্টমার</a></li>
+                    <li><a href="/customers/due-collection" data-key="due_collection">ডিউ কালেকশন</a></li>
                 </ul>
             </li>
 
-            <!-- Report -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-file-earmark-text"></i> রিপোর্ট
+                    <i class="bi bi-file-earmark-text"></i> <span data-key="report">রিপোর্ট</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/report/collection-due">মান্থলি কালেকশন অ্যান্ড ডিউ</a></li>
-                    <li><a href="/report/sales">মান্থলি সেল</a></li>
-                    <li><a href="/report/invoice">ইনভয়েস রিপোর্ট</a></li>
+                    <li><a href="/report/collection-due" data-key="monthly_collection_due">মান্থলি কালেকশন অ্যান্ড ডিউ</a></li>
+                    <li><a href="/report/sales" data-key="monthly_sales">মান্থলি সেল</a></li>
+                    <li><a href="/report/invoice" data-key="invoice_report">ইনভয়েস রিপোর্ট</a></li>
                 </ul>
             </li>
 
-            <!-- Payments -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-credit-card"></i> পেমেন্টস
+                    <i class="bi bi-credit-card"></i> <span data-key="payments">পেমেন্টস</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/payments/pending-invoice">পেন্ডিং ইনভয়েস</a></li>
-                    <li><a href="/payments/all">অল পেমেন্টস</a></li>
-                    <li><a href="/payments/request">পেমেন্ট রিকোয়েস্ট</a></li>
-                    <li><a href="/payments/bkash">বিকাশ পেমেন্টস</a></li>
-                    <li><a href="/payments/nagad">নগদ পেমেন্টস</a></li>
-                    <li><a href="/payments/rocket">রকেট পেমেন্টস</a></li>
+                    <li><a href="/payments/pending-invoice" data-key="pending_invoice">পেন্ডিং ইনভয়েস</a></li>
+                    <li><a href="/payments/all" data-key="all_payments">অল পেমেন্টস</a></li>
+                    <li><a href="/payments/request" data-key="payment_request">পেমেন্ট রিকোয়েস্ট</a></li>
+                    <li><a href="/payments/bkash" data-key="bkash_payments">বিকাশ পেমেন্টস</a></li>
+                    <li><a href="/payments/nagad" data-key="nagad_payments">নগদ পেমেন্টস</a></li>
+                    <li><a href="/payments/rocket" data-key="rocket_payments">রকেট পেমেন্টস</a></li>
                 </ul>
             </li>
 
-            <!-- Hotspot -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-wifi"></i> হটস্পট
+                    <i class="bi bi-wifi"></i> <span data-key="hotspot">হটস্পট</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/hotspot/dashboard">ড্যাশবোর্ড</a></li>
-                    <li><a href="/hotspot/all-user">অল ইউজার</a></li>
-                    <li><a href="/hotspot/active-user">অ্যাক্টিভ ইউজার</a></li>
-                    <li><a href="/hotspot/online-user">অনলাইন ইউজার</a></li>
-                    <li><a href="/hotspot/profile">প্রোফাইল</a></li>
-                    <li><a href="/hotspot/server-profile">সার্ভার প্রোফাইল</a></li>
+                    <li><a href="/hotspot/dashboard" data-key="hotspot_dashboard">ড্যাশবোর্ড</a></li>
+                    <li><a href="/hotspot/all-user" data-key="all_user">অল ইউজার</a></li>
+                    <li><a href="/hotspot/active-user" data-key="active_user">অ্যাক্টিভ ইউজার</a></li>
+                    <li><a href="/hotspot/online-user" data-key="online_user">অনলাইন ইউজার</a></li>
+                    <li><a href="/hotspot/profile" data-key="hotspot_profile">প্রোফাইল</a></li>
+                    <li><a href="/hotspot/server-profile" data-key="server_profile">সার্ভার প্রোফাইল</a></li>
                 </ul>
             </li>
 
-            <!-- Core System -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-gear-wide-connected"></i> কোর সিস্টেম
+                    <i class="bi bi-gear-wide-connected"></i> <span data-key="core_system">কোর সিস্টেম</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/core/pppoe">পিপি পিও ই</a></li>
-                    <li><a href="/core/devices">ডিভাইসেস</a></li>
-                    <li><a href="/core/olt">ও এল টি ম্যানেজমেন্ট</a></li>
-                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)">মনিটর <i class="bi bi-chevron-down ms-auto"></i></button>
+                    <li><a href="/core/pppoe" data-key="pppoe">পিপি পিও ই</a></li>
+                    <li><a href="/core/devices" data-key="devices">ডিভাইসেস</a></li>
+                    <li><a href="/core/olt" data-key="olt_management">ও এল টি ম্যানেজমেন্ট</a></li>
+                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)"><span data-key="monitor">মনিটর</span> <i class="bi bi-chevron-down ms-auto"></i></button>
                         <ul class="submenu">
-                            <li><a href="/core/monitor/usage">ইউজেস</a></li>
-                            <li><a href="/core/monitor/online">অনলাইন</a></li>
+                            <li><a href="/core/monitor/usage" data-key="usage">ইউজেস</a></li>
+                            <li><a href="/core/monitor/online" data-key="online">অনলাইন</a></li>
                         </ul>
                     </li>
-                    <li><a href="/core/diagram">নেটওয়ার্ক ডায়াগ্রাম</a></li>
+                    <li><a href="/core/diagram" data-key="network_diagram">নেটওয়ার্ক ডায়াগ্রাম</a></li>
                 </ul>
             </li>
 
-            <!-- General Setting -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-gear"></i> জেনারেল সেটিং
+                    <i class="bi bi-gear"></i> <span data-key="general_setting">জেনারেল সেটিং</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/settings/website">ওয়েবসাইট সেটিং</a></li>
-                    <li><a href="/settings/sms">এসএমএস সেটিং</a></li>
-                    <li><a href="/settings/backup">ব্যাকআপ অ্যান্ড রিস্টোর</a></li>
+                    <li><a href="/settings/website" data-key="website_setting">ওয়েবসাইট সেটিং</a></li>
+                    <li><a href="/settings/sms" data-key="sms_setting">এসএমএস সেটিং</a></li>
+                    <li><a href="/settings/backup" data-key="backup_restore">ব্যাকআপ অ্যান্ড রিস্টোর</a></li>
                 </ul>
             </li>
 
-            <!-- VPN Server -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-shield-lock"></i> ভিপিএন সার্ভার
+                    <i class="bi bi-shield-lock"></i> <span data-key="vpn_server">ভিপিএন সার্ভার</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)">ভিপিএন <i class="bi bi-chevron-down ms-auto"></i></button>
+                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)"><span data-key="vpn">ভিপিএন</span> <i class="bi bi-chevron-down ms-auto"></i></button>
                         <ul class="submenu">
-                            <li><a href="/vpn/forwarding">ভিপিএন পোর্ট ফরওয়ার্ডিং</a></li>
+                            <li><a href="/vpn/forwarding" data-key="vpn_port_forwarding">ভিপিএন পোর্ট ফরওয়ার্ডিং</a></li>
                         </ul>
                     </li>
                 </ul>
             </li>
 
-            <!-- Account & Support -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-headset"></i> অ্যাকাউন্ট অ্যান্ড সাপোর্ট
+                    <i class="bi bi-headset"></i> <span data-key="account_support">অ্যাকাউন্ট অ্যান্ড সাপোর্ট</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/support/dashboard">ড্যাশবোর্ড</a></li>
-                    <li><a href="/support/manage">ম্যানেজ</a></li>
-                    <li><a href="/support/tickets">সাপোর্ট টিকিটস</a></li>
-                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)">সাপোর্ট <i class="bi bi-chevron-down ms-auto"></i></button>
+                    <li><a href="/support/dashboard" data-key="support_dashboard">ড্যাশবোর্ড</a></li>
+                    <li><a href="/support/manage" data-key="support_manage">ম্যানেজ</a></li>
+                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)"><span data-key="support">সাপোর্ট</span> <i class="bi bi-chevron-down ms-auto"></i></button>
                         <ul class="submenu">
-                            <li><a href="/support/tickets">সাপোর্ট টিকিটস</a></li>
-                            <li><a href="/support/software">সফটওয়্যার সাপোর্ট টিকিটস</a></li>
-                            <li><a href="/support/website">ওয়েবসাইট সাপোর্ট টিকিটস</a></li>
+                            <li><a href="/support/tickets" data-key="support_tickets">সাপোর্ট টিকিটস</a></li>
+                            <li><a href="/support/software" data-key="software_support_tickets">সফটওয়্যার সাপোর্ট টিকিটস</a></li>
+                            <li><a href="/support/website" data-key="website_support_tickets">ওয়েবসাইট সাপোর্ট টিকিটস</a></li>
                         </ul>
                     </li>
                 </ul>
             </li>
 
-            <!-- Expenses -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-wallet2"></i> এক্সপেন্সেস
+                    <i class="bi bi-wallet2"></i> <span data-key="expenses">এক্সপেন্সেস</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/expenses/add">অ্যাড এক্সপেন্সেস</a></li>
-                    <li><a href="/expenses/all">অল এক্সপেন্সেস</a></li>
-                    <li><a href="/expenses/report">এক্সপেন্সেস রিপোর্ট</a></li>
+                    <li><a href="/expenses/add" data-key="add_expenses">অ্যাড এক্সপেন্সেস</a></li>
+                    <li><a href="/expenses/all" data-key="all_expenses">অল এক্সপেন্সেস</a></li>
+                    <li><a href="/expenses/report" data-key="expenses_report">এক্সপেন্সেস রিপোর্ট</a></li>
                 </ul>
             </li>
 
-            <!-- Human Resource -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-person-badge"></i> হিউম্যান রিসোর্স
+                    <i class="bi bi-person-badge"></i> <span data-key="human_resource">হিউম্যান রিসোর্স</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/hr/department">ডিপার্টমেন্ট</a></li>
-                    <li><a href="/hr/employees">অল এমপ্লয়ি</a></li>
-                    <li><a href="/hr/add-employee">অ্যাডড এমপ্লয়ি</a></li>
+                    <li><a href="/hr/department" data-key="department">ডিপার্টমেন্ট</a></li>
+                    <li><a href="/hr/employees" data-key="all_employee">অল এমপ্লয়ি</a></li>
+                    <li><a href="/hr/add-employee" data-key="added_employee">অ্যাডড এমপ্লয়ি</a></li>
                 </ul>
             </li>
 
-            <!-- Live Tracking -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-geo-alt"></i> লাইভ ট্র্যাকিং
+                    <i class="bi bi-geo-alt"></i> <span data-key="live_tracking">লাইভ ট্র্যাকিং</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/tracking/google-map">গুগল ম্যাপ</a></li>
+                    <li><a href="/tracking/google-map" data-key="google_map">গুগল ম্যাপ</a></li>
                 </ul>
             </li>
 
-            <!-- User & Reseller -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                    <i class="bi bi-person-plus"></i> ইউজার অ্যান্ড রিসেলার
+                    <i class="bi bi-person-plus"></i> <span data-key="user_reseller">ইউজার অ্যান্ড রিসেলার</span>
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/user-reseller/sub-staff">সাব-স্টাফ</a></li>
+                    <li><a href="/user-reseller/sub-staff" data-key="sub_staff">সাব-স্টাফ</a></li>
                 </ul>
             </li>
 
         </ul>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content" id="mainContent">
         <nav class="navbar navbar-expand-lg navbar-light bg-white rounded shadow-sm mb-4 p-2">
             <div class="container-fluid">
@@ -328,20 +307,159 @@
         </nav>
         
         <div class="container-fluid">
-            <!-- Content will be rendered here -->
-            <h3>স্বাগতম, FAZ NETWORK অ্যাডমিন প্যানেল</h3>
+            <h3 data-key="welcome_msg">স্বাগতম, FAZ NETWORK অ্যাডমিন প্যানেল</h3>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const translations = {
+            'en': {
+                'brand': 'FAZ NETWORK',
+                'dashboard': 'Dashboard',
+                'customer': 'Customer',
+                'all_customer': 'All Customer',
+                'add_customer': 'Add Customer',
+                'online_customer': 'Online Customer',
+                'offline_customer': 'Offline Customer',
+                'active_customer': 'Active Customer',
+                'left_customer': 'Left Customer',
+                'expire_customer': 'Expire Customer',
+                'expire_today_yesterday': 'Expire Today & Yesterday',
+                'expire_7_days': 'Expire in 7 Days',
+                'new_customer': 'New Customer',
+                'due_collection': 'Due Collection',
+                'report': 'Report',
+                'monthly_collection_due': 'Monthly Collection & Due',
+                'monthly_sales': 'Monthly Sales',
+                'invoice_report': 'Invoice Report',
+                'payments': 'Payments',
+                'pending_invoice': 'Pending Invoice',
+                'all_payments': 'All Payments',
+                'payment_request': 'Payment Request',
+                'bkash_payments': 'bKash Payments',
+                'nagad_payments': 'Nagad Payments',
+                'rocket_payments': 'Rocket Payments',
+                'hotspot': 'Hotspot',
+                'hotspot_dashboard': 'Dashboard',
+                'all_user': 'All Users',
+                'active_user': 'Active Users',
+                'online_user': 'Online Users',
+                'hotspot_profile': 'Profile',
+                'server_profile': 'Server Profile',
+                'core_system': 'Core System',
+                'pppoe': 'PPPoE',
+                'devices': 'Devices',
+                'olt_management': 'OLT Management',
+                'monitor': 'Monitor',
+                'usage': 'Usage',
+                'online': 'Online',
+                'network_diagram': 'Network Diagram',
+                'general_setting': 'General Setting',
+                'website_setting': 'Website Setting',
+                'sms_setting': 'SMS Setting',
+                'backup_restore': 'Backup & Restore',
+                'vpn_server': 'VPN Server',
+                'vpn': 'VPN',
+                'vpn_port_forwarding': 'VPN Port Forwarding',
+                'account_support': 'Account & Support',
+                'support_dashboard': 'Dashboard',
+                'support_manage': 'Manage',
+                'support': 'Support',
+                'support_tickets': 'Support Tickets',
+                'software_support_tickets': 'Software Support Tickets',
+                'website_support_tickets': 'Website Support Tickets',
+                'expenses': 'Expenses',
+                'add_expenses': 'Add Expenses',
+                'all_expenses': 'All Expenses',
+                'expenses_report': 'Expenses Report',
+                'human_resource': 'Human Resource',
+                'department': 'Department',
+                'all_employee': 'All Employees',
+                'added_employee': 'Added Employees',
+                'live_tracking': 'Live Tracking',
+                'google_map': 'Google Map',
+                'user_reseller': 'User & Reseller',
+                'sub_staff': 'Sub-Staff',
+                'welcome_msg': 'Welcome to FAZ NETWORK Admin Panel'
+            },
+            'bn': {
+                'brand': 'FAZ NETWORK',
+                'dashboard': 'ড্যাশবোর্ড',
+                'customer': 'কাস্টমার',
+                'all_customer': 'অল কাস্টমার',
+                'add_customer': 'অ্যাড কাস্টমার',
+                'online_customer': 'অনলাইন কাস্টমার',
+                'offline_customer': 'অফলাইন কাস্টমার',
+                'active_customer': 'অ্যাক্টিভ কাস্টমার',
+                'left_customer': 'লেফট কাস্টমার',
+                'expire_customer': 'এক্সপায়ার কাস্টমার',
+                'expire_today_yesterday': 'এক্সপায়ার ইন টুডে অ্যান্ড ইয়েস্টারডে',
+                'expire_7_days': 'এক্সপায়ার ইন সেভেন ডেস',
+                'new_customer': 'নিউ কাস্টমার',
+                'due_collection': 'ডিউ কালেকশন',
+                'report': 'রিপোর্ট',
+                'monthly_collection_due': 'মান্থলি কালেকশন অ্যান্ড ডিউ',
+                'monthly_sales': 'মান্থলি সেল',
+                'invoice_report': 'ইনভয়েস রিপোর্ট',
+                'payments': 'পেমেন্টস',
+                'pending_invoice': 'পেন্ডিং ইনভয়েস',
+                'all_payments': 'অল পেমেন্টস',
+                'payment_request': 'পেমেন্ট রিকোয়েস্ট',
+                'bkash_payments': 'বিকাশ পেমেন্টস',
+                'nagad_payments': 'নগদ পেমেন্টস',
+                'rocket_payments': 'রকেট পেমেন্টস',
+                'hotspot': 'হটস্পট',
+                'hotspot_dashboard': 'ড্যাশবোর্ড',
+                'all_user': 'অল ইউজার',
+                'active_user': 'অ্যাক্টিভ ইউজার',
+                'online_user': 'অনলাইন ইউজার',
+                'hotspot_profile': 'প্রোফাইল',
+                'server_profile': 'সার্ভার প্রোফাইল',
+                'core_system': 'কোর সিস্টেম',
+                'pppoe': 'পিপি পিও ই',
+                'devices': 'ডিভাইসেস',
+                'olt_management': 'ও এল টি ম্যানেজমেন্ট',
+                'monitor': 'মনিটর',
+                'usage': 'ইউজেস',
+                'online': 'অনলাইন',
+                'network_diagram': 'নেটওয়ার্ক ডায়াগ্রাম',
+                'general_setting': 'জেনারেল সেটিং',
+                'website_setting': 'ওয়েবসাইট সেটিং',
+                'sms_setting': 'এসএমএস সেটিং',
+                'backup_restore': 'ব্যাকআপ অ্যান্ড রিস্টোর',
+                'vpn_server': 'ভিপিএন সার্ভার',
+                'vpn': 'ভিপিএন',
+                'vpn_port_forwarding': 'ভিপিএন পোর্ট ফরওয়ার্ডিং',
+                'account_support': 'অ্যাকাউন্ট অ্যান্ড সাপোর্ট',
+                'support_dashboard': 'ড্যাশবোর্ড',
+                'support_manage': 'ম্যানেজ',
+                'support': 'সাপোর্ট',
+                'support_tickets': 'সাপোর্ট টিকিটস',
+                'software_support_tickets': 'সফটওয়্যার সাপোর্ট টিকিটস',
+                'website_support_tickets': 'ওয়েবসাইট সাপোর্ট টিকিটস',
+                'expenses': 'এক্সপেন্সেস',
+                'add_expenses': 'অ্যাড এক্সপেন্সেস',
+                'all_expenses': 'অল এক্সপেন্সেস',
+                'expenses_report': 'এক্সপেন্সেস রিপোর্ট',
+                'human_resource': 'হিউম্যান রিসোর্স',
+                'department': 'ডিপার্টমেন্ট',
+                'all_employee': 'অল এমপ্লয়ি',
+                'added_employee': 'অ্যাডড এমপ্লয়ি',
+                'live_tracking': 'লাইভ ট্র্যাকিং',
+                'google_map': 'গুগল ম্যাপ',
+                'user_reseller': 'ইউজার অ্যান্ড রিসেলার',
+                'sub_staff': 'সাব-স্টাফ',
+                'welcome_msg': 'স্বাগতম, FAZ NETWORK অ্যাডমিন প্যানেল'
+            }
+        };
+
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('show');
         }
 
         function toggleSubmenu(button) {
             const submenu = button.nextElementSibling;
-            // Close other submenus for better UX (Optional)
             const allSubmenus = button.closest('.sidebar-menu').querySelectorAll('.submenu');
             allSubmenus.forEach(sm => {
                 if(sm !== submenu) sm.classList.remove('show');
@@ -354,6 +472,17 @@
             button.querySelector('.bi-chevron-down').classList.toggle('bi-chevron-up');
             submenu.classList.toggle('show');
         }
+
+        document.getElementById('langSelect').addEventListener('change', function() {
+            const lang = this.value;
+            const elements = document.querySelectorAll('[data-key]');
+            elements.forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (translations[lang] && translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+        });
     </script>
 </body>
 </html>
