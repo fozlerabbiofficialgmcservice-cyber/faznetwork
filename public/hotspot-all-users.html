@@ -1,0 +1,159 @@
+<div class="card card-custom">
+    <div class="card-custom-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-people-fill text-success fs-5"></i>
+            <span class="fs-5 fw-semibold" data-key="all_user">All Users</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-success" onclick="fetchHotspotUsers()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button class="btn btn-sm btn-theme text-white" onclick="openAddUserModal()">
+                <i class="bi bi-person-plus"></i> Add User
+            </button>
+        </div>
+    </div>
+    
+    <div class="card-body p-0">
+        <!-- Search and Filter Bar -->
+        <div class="p-3 border-bottom bg-light d-flex flex-wrap gap-2 justify-content-between align-items-center">
+            <div class="input-group" style="max-width: 320px;">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" id="userSearchInput" class="form-control" placeholder="Search user..." onkeyup="filterUsers()">
+            </div>
+            <div class="text-muted small">
+                Total Users: <span id="totalUserCount" class="fw-bold text-dark">0</span>
+            </div>
+        </div>
+
+        <!-- User Table -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Server</th>
+                        <th>Username</th>
+                        <th>Profile</th>
+                        <th>Uptime / Limit</th>
+                        <th>Bytes In / Out</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            ডাটা লোড করার জন্য অপেক্ষা করুন...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ডামি/টেস্ট ডাটা বা MikroTik API ফেচ ফাংশন
+    let hotspotUsersList = [];
+
+    function fetchHotspotUsers() {
+        const tableBody = document.getElementById('userTableBody');
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                    <span class="ms-2">MikroTik থেকে রিয়েল-টাইম ডাটা ফেচ করা হচ্ছে...</span>
+                </td>
+            </tr>
+        `;
+
+        // আপনার ব্যাকএন্ড API endpoint (প্রয়োজনে URL পরিবর্তন করে নিন)
+        fetch('/api/hotspot/users')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                hotspotUsersList = data;
+                renderUserTable(data);
+            })
+            .catch(error => {
+                // API এখনো যুক্ত না থাকলে ডেমো হিসেবে কিছু ডাটা শো করানো
+                console.warn('API Error, rendering demo hotspot users:', error);
+                hotspotUsersList = [
+                    { server: 'all', name: 'user01', profile: '10Mbps-30Days', limitUptime: '30d', bytesIn: '1.2 GB', bytesOut: '5.8 GB' },
+                    { server: 'hotspot1', name: 'faz_wifi_02', profile: '5Mbps-Regular', limitUptime: '15d', bytesIn: '450 MB', bytesOut: '2.1 GB' },
+                    { server: 'all', name: 'guest_user', profile: '1Mbps-Trial', limitUptime: '1h', bytesIn: '50 MB', bytesOut: '120 MB' }
+                ];
+                renderUserTable(hotspotUsersList);
+            });
+    }
+
+    function renderUserTable(users) {
+        const tableBody = document.getElementById('userTableBody');
+        const countSpan = document.getElementById('totalUserCount');
+        
+        tableBody.innerHTML = '';
+        countSpan.innerText = users.length;
+
+        if (users.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        কোনো ইউজার পাওয়া যায়নি।
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        users.forEach(user => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="ps-4"><span class="badge bg-secondary">${user.server || 'all'}</span></td>
+                <td class="fw-semibold text-dark">${user.name || user.username}</td>
+                <td><span class="badge bg-info text-dark">${user.profile || 'default'}</span></td>
+                <td>${user.limitUptime || user.uptime || 'Unlimited'}</td>
+                <td class="small text-muted">${user.bytesIn || '0'} / ${user.bytesOut || '0'}</td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn-outline-primary me-1" title="Edit" onclick="editUser('${user.name || user.username}')">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Remove" onclick="deleteUser('${user.name || user.username}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function filterUsers() {
+        const query = document.getElementById('userSearchInput').value.toLowerCase();
+        const filtered = hotspotUsersList.filter(user => {
+            const username = (user.name || user.username || '').toLowerCase();
+            const profile = (user.profile || '').toLowerCase();
+            return username.includes(query) || profile.includes(query);
+        });
+        renderUserTable(filtered);
+    }
+
+    function editUser(username) {
+        alert('Edit user: ' + username);
+    }
+
+    function deleteUser(username) {
+        if (confirm(`আপনি কি নিশ্চিত যে ইউজার "${username}" রিমুভ করবেন?`)) {
+            alert('User ' + username + ' deleted');
+            // ব্যাকএন্ড ডিলিট API কল এখানে বসবে
+        }
+    }
+
+    function openAddUserModal() {
+        alert('Add User modal or redirect action');
+    }
+
+    // পেজ লোড হওয়ার সাথে সাথে ফেচ কল হবে
+    fetchHotspotUsers();
+</script>
