@@ -57,18 +57,6 @@ const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT) || 1126;
 const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
 const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 
-const PRICE_PROFILE_MAP = {
-    '10': 'Profile-1Hour',
-    '15': 'Profile-12Hour',
-    '20': 'Profile-1Day',
-    '40': 'Profile-3Day',
-    '60': 'Profile-7Day',
-    '90': 'Profile-15Day',
-    '150': 'Profile-30Day',
-    '200': 'Profile-100GB',
-    '350': 'Profile-300GB'
-};
-
 const DB_FILE = path.join(__dirname, 'transactions.json');
 const CUSTOMERS_FILE = path.join(__dirname, 'customers.json');
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
@@ -95,7 +83,6 @@ function triggerPhoneSms(to, message) {
     const settings = loadJson(SETTINGS_FILE, { smsGatewayUrl: '' });
     const gatewayUrl = settings.smsGatewayUrl;
     if (!gatewayUrl) {
-        console.log('[SMS WARNING] Gateway URL not configured yet.');
         return Promise.resolve({ success: false, message: 'SMS Gateway URL not configured' });
     }
 
@@ -123,20 +110,17 @@ function triggerPhoneSms(to, message) {
                 let resData = '';
                 res.on('data', chunk => { resData += chunk; });
                 res.on('end', () => {
-                    console.log(`[SMS SENT VIA PHONE] To: ${to} | Response:`, resData);
                     resolve({ success: true, response: resData });
                 });
             });
 
             req.on('error', (err) => {
-                console.error('[SMS SEND ERROR]:', err.message);
                 resolve({ success: false, error: err.message });
             });
 
             req.write(postData);
             req.end();
         } catch (err) {
-            console.error('[SMS GATEWAY URL INVALID]:', err.message);
             resolve({ success: false, error: err.message });
         }
     });
@@ -155,6 +139,7 @@ function encodeWord(word) {
     return Buffer.concat([encodeLength(b.length), b]);
 }
 
+// মাইক্রোটিক কমান্ড চালানোর ফাংশন
 function executeSingleCommand(cmdWords) {
     return new Promise((resolve) => {
         const client = new net.Socket();
@@ -220,140 +205,271 @@ function executeSingleCommand(cmdWords) {
     });
 }
 
-async function ensureUser(username, comment = '') {
-    const cmd = [
-        '/user-manager/user/add',
-        `=name=${username}`,
-        `=password=${username}`,
-        `=group=Hotspot`
-    ];
-    if (comment) cmd.push(`=comment=${comment}`);
-    await executeSingleCommand(cmd);
-}
+// মাইক্রোটিক থেকে তথ্য পড়ার ফাংশন (বাক্য অনুযায়ী অবজেক্টে কনভার্ট)
+function queryMikrotikRecords(cmdWords) {
+    return new Promise((resolve) => {
+        const client = new net.Socket();
+        let buffer = Buffer.alloc(0);
+        let loggedIn = false;
+        let finished = false;
 
-async function attachProfile(username, profileName) {
-    const cmd = [
-        '/user-manager/user-profile/add',
-        `=user=${username}`,
-        `=profile=${profileName}`
-    ];
-    return await executeSingleCommand(cmd);
-}
+        const timer = setTimeout(() => {
+            if (!finished) {
+                finished = true;
+                client.destroy();
+                resolve([]);
+            }
+        }, 8000);
 
-async function updateUserComment(username, comment) {
-    const cmd = [
-        '/user-manager/user/set',
-        `=numbers=${username}`,
-        `=comment=${comment}`
-    ];
-    await executeSingleCommand(cmd);
+        client.connect(MIKROTIK_PORT, MIKROTIK_HOST, () => {
+            const loginReq = Buffer.concat([
+                encodeWord('/login'),
+                encodeWord(`=name=${MIKROTIK_USER}`),
+                encodeWord(`=password=${MIKROTIK_PASS}`),
+                Buffer.from([0x00])
+            ]);
+            client.write(loginReq);
+        });
+
+        client.on('data', (chunk) => {
+            buffer = Buffer.concat([buffer, chunk]);
+            const text = buffer.toString('utf-8');
+
+            if (!loggedIn && (text.includes('!done') || text.includes('!trap'))) {
+                loggedIn = true;
+                buffer = Buffer.alloc(0);
+                const payload = cmdWords.map(w => encodeWord(w));
+                payload.push(Buffer.from([0x00]));
+                client.write(Buffer.concat(payload));
+            } else if (loggedIn && text.includes('!done')) {
+                if (!finished) {
+                    finished = true;
+                    clearTimeout(timer);
+                    client.end();
+
+                    // !re রেসপন্স থেকে রেকর্ড এক্সট্র্যাক্ট করা
+                    const rawRecords = text.split('!re').slice(1);
+                    const records = [];
+
+                    for (const raw of rawRecords) {
+                        const item = {};
+                        const lines = raw.split(/\x00|\n|\r/);
+                        for (const line of lines) {
+                            if (line.startsWith('=')) {
+                                const eqIdx = line.indexOf('=', 1);
+                                if (eqIdx > 1) {
+                                    const key = line.substring(1, eqIdx);
+                                    const val = line.substring(eqIdx + 1);
+                                    item[key] = val;
+                                }
+                            }
+                        }
+                        if (Object.keys(item).length > 0) records.push(item);
+                    }
+                    resolve(records);
+                }
+            }
+        });
+
+        client.on('error', (err) => {
+            console.error('[ROUTER QUERY ERROR]:', err.message);
+            if (!finished) {
+                finished = true;
+                clearTimeout(timer);
+                client.destroy();
+                resolve([]);
+            }
+        });
+
+        client.on('close', () => {
+            if (!finished) {
+                finished = true;
+                clearTimeout(timer);
+                resolve([]);
+            }
+        });
+    });
 }
 
 // ======================== API ROUTES ========================
 
-// ১. SMS Webhook (বিকাশ ও নগদ ট্রানজেকশন রিসিভ)
-app.post('/forward', async (req, res) => {
+// ১. প্যাকেজ লিস্ট (MikroTik PPPoE Profiles)
+app.get('/api/packages', async (req, res) => {
     try {
-        let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
-        let sender = (req.query.sender || req.body.sender || req.body.from || '').trim().toLowerCase();
+        const profiles = await queryMikrotikRecords(['/ppp/profile/print']);
+        
+        // ডিফল্ট বা সিস্টেম প্রোফাইল ছাড়া প্যাকেজ তালিকা ফিল্টার
+        let packageNames = profiles
+            .map(p => p.name)
+            .filter(name => name && !['default', 'default-encryption'].includes(name.toLowerCase()));
 
-        if (typeof req.body === 'string') sms_body = req.body;
-
-        if (!sender) return res.status(400).json({ success: false, message: 'Sender missing.' });
-
-        const isBkash = sender.includes('bkash') || sender.includes('16247');
-        const isNagad = sender.includes('nagad') || sender.includes('16167');
-
-        if (!isBkash && !isNagad) {
-            return res.status(403).json({ success: false, message: 'Invalid payment sender.' });
+        if (packageNames.length === 0) {
+            packageNames = ['5Mbps', '10Mbps', '15Mbps', '20Mbps', '30Mbps'];
         }
 
-        const trxMatch = sms_body.match(/(?:TrxID|TxnID|TransID|TxId)\s*[:]?\s*([A-Za-z0-9]+)/i);
-        const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
-
-        const amountMatch = sms_body.match(/(?:Tk|Amount\s*[:]?\s*Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
-        const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
-
-        let detectedPhone = null;
-        const phoneMatch = sms_body.match(/(?:Sender|from|number|fee\s*tk\s*[0-9.]+\s*from)\s*[:]?\s*(?:\+?88)?(01[3-9][0-9]{8})/i);
-        if (phoneMatch && phoneMatch[1]) detectedPhone = phoneMatch[1].trim();
-
-        if (trxId && amount) {
-            const store = loadJson(DB_FILE, {});
-            store[trxId] = {
-                amount: amount,
-                phone: detectedPhone || '',
-                gateway: isNagad ? 'Nagad' : 'bKash',
-                used: false,
-                receivedAt: Date.now()
-            };
-            saveJson(DB_FILE, store);
-            return res.status(200).json({ success: true, trxId: trxId, amount: amount, user: detectedPhone });
-        }
-        return res.status(400).json({ success: false, message: 'TrxID or Amount not found.' });
-    } catch (err) {
-        return res.status(500).json({ success: false, error: err.message });
+        res.json({ success: true, packages: packageNames });
+    } catch (e) {
+        res.json({ success: true, packages: ['5Mbps', '10Mbps', '15Mbps', '20Mbps'] });
     }
 });
 
-// ২. হটস্পট ট্রানজেকশন ভেরিফিকেশন ও অটো লগইন
-app.post('/api/verify-trx', rateLimiter, async (req, res) => {
+// ২. সকল কাস্টমার তালিকা (MikroTik PPPoE Secrets + Local DB)
+app.get('/api/customers', async (req, res) => {
     try {
-        const { username, trxId } = req.body;
-        if (!username || !trxId) return res.status(400).json({ success: false, message: 'Information missing.' });
+        const pppSecrets = await queryMikrotikRecords(['/ppp/secret/print']);
+        const localCustomers = loadJson(CUSTOMERS_FILE, []);
 
-        const cleanTrx = trxId.trim().toUpperCase();
-        let cleanUser = username.trim().replace(/[^0-9]/g, '');
-        if (cleanUser.length >= 11) cleanUser = cleanUser.slice(-11);
-
-        const store = loadJson(DB_FILE, {});
-        const transaction = store[cleanTrx];
-
-        if (!transaction) return res.status(404).json({ success: false, message: 'Invalid or missing TrxID.' });
-        if (transaction.used) return res.status(400).json({ success: false, message: 'This TrxID has already been used.' });
-
-        const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
-        const commentText = `${transaction.gateway}: ${cleanTrx} | Tk: ${transaction.amount} | Date: ${new Date().toLocaleDateString('en-GB')}`;
-
-        await ensureUser(cleanUser, commentText);
-        await attachProfile(cleanUser, profile);
-        await updateUserComment(cleanUser, commentText);
-
-        transaction.used = true;
-        transaction.activatedUser = cleanUser;
-        transaction.usedAt = Date.now();
-        saveJson(DB_FILE, store);
-
-        // কাস্টমার ডেটাবেজে স্বয়ংক্রিয় সেভ
-        const customers = loadJson(CUSTOMERS_FILE, []);
-        const idx = customers.findIndex(c => c.username === cleanUser);
-        const custData = {
-            username: cleanUser,
-            name: cleanUser,
-            phone: cleanUser,
-            package: profile,
-            status: 'Active',
-            lastRecharge: new Date().toLocaleDateString('en-GB'),
-            balance: transaction.amount,
-            comment: commentText
-        };
-        if (idx !== -1) {
-            customers[idx] = Object.assign({}, customers[idx], custData);
-        } else {
-            customers.unshift(custData);
+        const customersMap = {};
+        for (const cust of localCustomers) {
+            customersMap[cust.username] = cust;
         }
+
+        const combined = pppSecrets.map(secret => {
+            const username = secret.name;
+            const extra = customersMap[username] || {};
+            const isDisabled = secret.disabled === 'true' || secret.disabled === 'yes';
+
+            // কমেন্ট থেকে এক্সপায়ারি বের করা (যদি থাকে)
+            let expiry = extra.expiryDate || '';
+            if (!expiry && secret.comment) {
+                const match = secret.comment.match(/Exp:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/i);
+                if (match) expiry = match[1];
+            }
+
+            return {
+                username: username,
+                name: extra.fullName || extra.name || username,
+                phone: extra.phoneNumber || extra.phone || '',
+                package: secret.profile || extra.package || 'Default',
+                service: secret.service || 'pppoe',
+                status: isDisabled ? 'Disabled' : 'Active',
+                expiryDate: expiry || extra.expiryDate || 'N/A',
+                address: extra.fullAddress || extra.address || '',
+                comment: secret.comment || ''
+            };
+        });
+
+        // যদি লোকাল ফাইলে এমন কোনো কাস্টমার থাকে যা রাউটারে নেই
+        for (const localCust of localCustomers) {
+            if (!combined.some(c => c.username === localCust.username)) {
+                combined.push(localCust);
+            }
+        }
+
+        res.json(combined);
+    } catch (err) {
+        console.error('Customer fetch error:', err);
+        const fallback = loadJson(CUSTOMERS_FILE, []);
+        res.json(fallback);
+    }
+});
+
+// ৩. নতুন PPPoE কাস্টমার যুক্ত / মেয়াদ সহ মাইক্রোটিকে কনফিগার করা
+app.post('/api/customers', async (req, res) => {
+    try {
+        const {
+            username,
+            password,
+            package: pkg,
+            fullName,
+            phoneNumber,
+            fullAddress,
+            nidPassport,
+            billingDuration,
+            customExpiryDate
+        } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ success: false, message: 'Username and Password are required.' });
+        }
+
+        // এক্সপায়ারি ডেট গণনা
+        let calculatedExpiry = '';
+        if (customExpiryDate) {
+            calculatedExpiry = customExpiryDate;
+        } else {
+            const now = new Date();
+            let monthsToAdd = 1;
+            if (billingDuration === '3_months') monthsToAdd = 3;
+            else if (billingDuration === '6_months') monthsToAdd = 6;
+            else if (billingDuration === '12_months') monthsToAdd = 12;
+
+            now.setMonth(now.getMonth() + monthsToAdd);
+            calculatedExpiry = now.toISOString().split('T')[0];
+        }
+
+        const commentText = `Exp: ${calculatedExpiry} | Phone: ${phoneNumber || 'N/A'} | Added: ${new Date().toISOString().split('T')[0]}`;
+
+        // MikroTik এ PPPoE Secret তৈরি / আপডেট
+        const cmd = [
+            '/ppp/secret/add',
+            `=name=${username.trim()}`,
+            `=password=${password.trim()}`,
+            `=service=pppoe`,
+            `=profile=${pkg || 'default'}`,
+            `=comment=${commentText}`
+        ];
+
+        let created = await executeSingleCommand(cmd);
+
+        // ইউজার আগে থেকেই থাকলে আপডেট করা হবে
+        if (!created) {
+            const updateCmd = [
+                '/ppp/secret/set',
+                `=numbers=${username.trim()}`,
+                `=password=${password.trim()}`,
+                `=profile=${pkg || 'default'}`,
+                `=comment=${commentText}`,
+                `=disabled=no`
+            ];
+            await executeSingleCommand(updateCmd);
+        }
+
+        // লোকাল ডেটাবেজে বিস্তারিত সেভ
+        const customers = loadJson(CUSTOMERS_FILE, []);
+        const idx = customers.findIndex(c => c.username === username.trim());
+        const customerRecord = {
+            username: username.trim(),
+            password: password.trim(),
+            name: fullName || username.trim(),
+            phone: phoneNumber || '',
+            package: pkg || 'default',
+            status: 'Active',
+            billingDuration: billingDuration || '1_month',
+            expiryDate: calculatedExpiry,
+            address: fullAddress || '',
+            nidPassport: nidPassport || '',
+            createdAt: new Date().toLocaleDateString('en-GB')
+        };
+
+        if (idx !== -1) {
+            customers[idx] = Object.assign({}, customers[idx], customerRecord);
+        } else {
+            customers.unshift(customerRecord);
+        }
+
         saveJson(CUSTOMERS_FILE, customers);
 
-        // গ্রাহককে স্বয়ংক্রিয় এসএমএস পাঠানো
-        triggerPhoneSms(cleanUser, `FAZ NETWORK: Package ${profile} activated successfully.`);
-
-        return res.status(200).json({ success: true, username: cleanUser, password: cleanUser, profile: profile });
+        res.json({
+            success: true,
+            message: 'PPPoE Customer created successfully in MikroTik.',
+            expiryDate: calculatedExpiry
+        });
     } catch (err) {
-        return res.status(500).json({ success: false, error: err.message });
+        console.error('Customer add error:', err);
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// ৩. সেটিংস: SMS Gateway Webhook সংরক্ষণ ও পড়া
+// ৪. নির্দিষ্ট কাস্টমারের তথ্য
+app.get('/api/customer/:username', (req, res) => {
+    const customers = loadJson(CUSTOMERS_FILE, []);
+    const customer = customers.find(c => c.username === req.params.username);
+    if (!customer) return res.status(404).json({ success: false, message: 'Customer not found.' });
+    res.json({ success: true, customer });
+});
+
+// ৫. সেটিংস API
 app.get('/api/settings', (req, res) => {
     const settings = loadJson(SETTINGS_FILE, { smsGatewayUrl: '' });
     res.json(settings);
@@ -362,64 +478,17 @@ app.get('/api/settings', (req, res) => {
 app.post('/api/settings', (req, res) => {
     const { smsGatewayUrl } = req.body;
     saveJson(SETTINGS_FILE, { smsGatewayUrl: (smsGatewayUrl || '').trim() });
-    res.json({ success: true, message: 'SMS Gateway URL saved.' });
+    res.json({ success: true, message: 'Settings saved successfully.' });
 });
 
-// ৪. কাস্টমার তালিকা API
-app.get('/api/customers', (req, res) => {
-    const customers = loadJson(CUSTOMERS_FILE, []);
-    res.json(customers);
-});
-
-// ৫. নির্দিষ্ট গ্রাহকের পূর্ণাঙ্গ তথ্য API
-app.get('/api/customer/:username', (req, res) => {
-    const customers = loadJson(CUSTOMERS_FILE, []);
-    const customer = customers.find(c => c.username === req.params.username);
-    if (!customer) return res.status(404).json({ success: false, message: 'Customer not found.' });
-    res.json({ success: true, customer: customer });
-});
-
-// ৬. ম্যানুয়ালি কাস্টমার যুক্ত / আপডেট
-app.post('/api/customers', (req, res) => {
-    const { username, name, phone, package: pkg, status, address } = req.body;
-    if (!username) return res.status(400).json({ success: false, message: 'Username is required.' });
-
-    const customers = loadJson(CUSTOMERS_FILE, []);
-    const idx = customers.findIndex(c => c.username === username);
-    const newCust = {
-        username: username,
-        name: name || username,
-        phone: phone || '',
-        package: pkg || 'Default',
-        status: status || 'Active',
-        address: address || '',
-        createdAt: new Date().toLocaleDateString('en-GB')
-    };
-
-    if (idx !== -1) {
-        customers[idx] = Object.assign({}, customers[idx], newCust);
-    } else {
-        customers.unshift(newCust);
-    }
-
-    saveJson(CUSTOMERS_FILE, customers);
-    res.json({ success: true, message: 'Customer saved successfully.' });
-});
-
-// ৭. প্যাকেজ লিস্ট পাওয়ার API
-app.get('/api/packages', (req, res) => {
-    const packages = Object.values(PRICE_PROFILE_MAP);
-    res.json({ success: true, packages: packages });
-});
-
-// ৮. ড্যাশবোর্ড থেকে SMS পাঠানো API
+// ৬. SMS API
 app.post('/api/send-sms', async (req, res) => {
     const { phone, message } = req.body;
     if (!phone || !message) return res.status(400).json({ success: false, message: 'Phone and message required.' });
 
     const result = await triggerPhoneSms(phone, message);
     if (result.success) {
-        res.json({ success: true, message: 'SMS request sent successfully.' });
+        res.json({ success: true, message: 'SMS sent successfully.' });
     } else {
         res.status(500).json({ success: false, message: 'Failed to send SMS.' });
     }
