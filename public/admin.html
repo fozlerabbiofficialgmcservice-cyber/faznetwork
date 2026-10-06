@@ -798,6 +798,32 @@
             e.preventDefault();
             alert('Customer form submitted successfully! (Backend integration pending)');
         });
+async function loadPackages() {
+    try {
+        const response = await fetch('/api/packages');
+        const data = await response.json();
+        const packageSelect = document.getElementById('packageSelect'); // আপনার ফর্মের প্যাকেজ সিলেক্ট আইডি
+        
+        if (packageSelect && data.success && data.packages) {
+            packageSelect.innerHTML = '<option value="" disabled selected>প্যাকেজ নির্বাচন করুন</option>';
+            data.packages.forEach(pkg => {
+                const opt = document.createElement('option');
+                opt.value = pkg;
+                opt.textContent = pkg;
+                packageSelect.appendChild(opt);
+            });
+        }
+    } catch (err) {
+        console.error('প্যাকেজ লোড করতে ত্রুটি:', err);
+    }
+}
+
+// পেজ লোড হলে স্বয়ংক্রিয়ভাবে প্যাকেজ লোড হবে
+window.addEventListener('DOMContentLoaded', loadPackages);
+
+
+
+        
     </script>
 </body>
 </html>
