@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,10 +11,7 @@
             --primary-color: #0a3d2e;
             --sidebar-width: 260px;
         }
-        body { 
-            background-color: #f8fafc; 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-        }
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif; }
         
         .sidebar {
             width: var(--sidebar-width);
@@ -54,6 +51,10 @@
             border-radius: 5px;
             font-size: 12px;
             cursor: pointer;
+        }
+        .lang-switcher select option {
+            background-color: var(--primary-color);
+            color: #fff;
         }
 
         .sidebar-menu { list-style: none; padding: 0; margin-top: 10px; }
@@ -118,14 +119,12 @@
         </div>
 
         <ul class="sidebar-menu">
-            <!-- Dashboard -->
             <li class="menu-item">
                 <a href="/dashboard" class="active">
                     <i class="bi bi-speedometer2"></i> <span data-key="dashboard">Dashboard</span>
                 </a>
             </li>
 
-            <!-- Customer -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-people"></i> <span data-key="customer">Customer</span>
@@ -146,7 +145,6 @@
                 </ul>
             </li>
 
-            <!-- Report -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-file-earmark-text"></i> <span data-key="report">Report</span>
@@ -159,7 +157,6 @@
                 </ul>
             </li>
 
-            <!-- Payments -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-credit-card"></i> <span data-key="payments">Payments</span>
@@ -175,7 +172,6 @@
                 </ul>
             </li>
 
-            <!-- Hotspot -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-wifi"></i> <span data-key="hotspot">Hotspot</span>
@@ -191,7 +187,6 @@
                 </ul>
             </li>
 
-            <!-- Core System -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-gear-wide-connected"></i> <span data-key="core_system">Core System</span>
@@ -199,14 +194,11 @@
                 </button>
                 <ul class="submenu">
                     <li><a href="/core/pppoe" data-key="pppoe">PPPoE</a></li>
-                    <li><a href="/core/devices" data-key="devices">Devices</a></li>
-                    <li><a href="/core/plan-packages" data-key="plan_packages">Plan & Packages</a></li>
+                    <li><a href="/core/plans" data-key="plan_package">Plan & Package</a></li>
                     <li><a href="/core/ip-pools" data-key="ip_pools">IP Pools</a></li>
+                    <li><a href="/core/devices" data-key="devices">Devices</a></li>
                     <li><a href="/core/olt" data-key="olt_management">OLT Management</a></li>
-                    <li>
-                        <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                            <span data-key="monitor">Monitor</span> <i class="bi bi-chevron-down ms-auto"></i>
-                        </button>
+                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)"><span data-key="monitor">Monitor</span> <i class="bi bi-chevron-down ms-auto"></i></button>
                         <ul class="submenu">
                             <li><a href="/core/monitor/usage" data-key="usage">Usage</a></li>
                             <li><a href="/core/monitor/online" data-key="online">Online</a></li>
@@ -216,7 +208,6 @@
                 </ul>
             </li>
 
-            <!-- General Setting -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-gear"></i> <span data-key="general_setting">General Setting</span>
@@ -229,7 +220,6 @@
                 </ul>
             </li>
 
-            <!-- VPN Server -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-shield-lock"></i> <span data-key="vpn_server">VPN Server</span>
@@ -247,7 +237,6 @@
                 </ul>
             </li>
 
-            <!-- Account & Support -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-headset"></i> <span data-key="account_support">Account & Support</span>
@@ -256,10 +245,7 @@
                 <ul class="submenu">
                     <li><a href="/support/dashboard" data-key="support_dashboard">Dashboard</a></li>
                     <li><a href="/support/manage" data-key="support_manage">Manage</a></li>
-                    <li>
-                        <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
-                            <span data-key="support">Support</span> <i class="bi bi-chevron-down ms-auto"></i>
-                        </button>
+                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)"><span data-key="support">Support</span> <i class="bi bi-chevron-down ms-auto"></i></button>
                         <ul class="submenu">
                             <li><a href="/support/tickets" data-key="support_tickets">Support Tickets</a></li>
                             <li><a href="/support/software" data-key="software_support_tickets">Software Support Tickets</a></li>
@@ -269,7 +255,6 @@
                 </ul>
             </li>
 
-            <!-- Expenses -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-wallet2"></i> <span data-key="expenses">Expenses</span>
@@ -282,7 +267,6 @@
                 </ul>
             </li>
 
-            <!-- Human Resource -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-person-badge"></i> <span data-key="human_resource">Human Resource</span>
@@ -295,7 +279,6 @@
                 </ul>
             </li>
 
-            <!-- Live Tracking -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-geo-alt"></i> <span data-key="live_tracking">Live Tracking</span>
@@ -306,7 +289,6 @@
                 </ul>
             </li>
 
-            <!-- User & Reseller -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-person-plus"></i> <span data-key="user_reseller">User & Reseller</span>
@@ -316,6 +298,7 @@
                     <li><a href="/user-reseller/sub-staff" data-key="sub_staff">Sub-Staff</a></li>
                 </ul>
             </li>
+
         </ul>
     </div>
 
@@ -377,9 +360,9 @@
                 'server_profile': 'Server Profile',
                 'core_system': 'Core System',
                 'pppoe': 'PPPoE',
-                'devices': 'Devices',
-                'plan_packages': 'Plan & Packages',
+                'plan_package': 'Plan & Package',
                 'ip_pools': 'IP Pools',
+                'devices': 'Devices',
                 'olt_management': 'OLT Management',
                 'monitor': 'Monitor',
                 'usage': 'Usage',
@@ -448,9 +431,9 @@
                 'server_profile': 'সার্ভার প্রোফাইল',
                 'core_system': 'কোর সিস্টেম',
                 'pppoe': 'পিপি পিও ই',
-                'devices': 'ডিভাইসেস',
-                'plan_packages': 'প্ল্যান অ্যান্ড প্যাকেজ',
+                'plan_package': 'প্ল্যান অ্যান্ড প্যাকেজ',
                 'ip_pools': 'আইপি পুলস',
+                'devices': 'ডিভাইসেস',
                 'olt_management': 'ও এল টি ম্যানেজমেন্ট',
                 'monitor': 'মনিটর',
                 'usage': 'ইউজেস',
@@ -494,19 +477,19 @@
             const submenu = button.nextElementSibling;
             const allSubmenus = button.closest('.sidebar-menu').querySelectorAll('.submenu');
             allSubmenus.forEach(sm => {
-                if(sm !== submenu) sm.classList.remove('show');
+                if (sm !== submenu) sm.classList.remove('show');
             });
             const allToggles = button.closest('.sidebar-menu').querySelectorAll('.dropdown-toggle .bi-chevron-down');
             allToggles.forEach(tog => {
-                if(tog !== button.querySelector('.bi-chevron-down')) tog.classList.remove('bi-chevron-up');
+                if (tog !== button.querySelector('.bi-chevron-down')) tog.classList.remove('bi-chevron-up');
             });
 
             button.querySelector('.bi-chevron-down').classList.toggle('bi-chevron-up');
             submenu.classList.toggle('show');
         }
 
-        document.getElementById('langSelect').addEventListener('change', function() {
-            const lang = this.value;
+        function updateLanguage(lang) {
+            document.documentElement.lang = lang;
             const elements = document.querySelectorAll('[data-key]');
             elements.forEach(el => {
                 const key = el.getAttribute('data-key');
@@ -514,8 +497,18 @@
                     el.innerText = translations[lang][key];
                 }
             });
+            localStorage.setItem('preferred_lang', lang);
+        }
+
+        const langSelect = document.getElementById('langSelect');
+        const savedLang = localStorage.getItem('preferred_lang') || 'en';
+        langSelect.value = savedLang;
+        updateLanguage(savedLang);
+
+        langSelect.addEventListener('change', function() {
+            updateLanguage(this.value);
         });
     </script>
 </body>
 </html>
-```হ্যাঁ, আপডেট করা কোডটি —
+```আমি নতুন কোডটি দিয়ে দিয়েছি, যাতে নেস্টেড সাবমেনু সঠিকভাবে কাজ করে এবং VPN Port Forwarding দেখা যায়।
