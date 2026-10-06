@@ -328,6 +328,52 @@
                     <li><a href="javascript:void(0)">Plan & Packages</a></li>
                 </ul>
             </li>
+            
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-broadcast"></i> Hotspot
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)">Users</a></li>
+                    <li><a href="javascript:void(0)">User Profiles</a></li>
+                    <li><a href="javascript:void(0)">Active</a></li>
+                    <li><a href="javascript:void(0)">Hosts</a></li>
+                    <li><a href="javascript:void(0)">IP Bindings</a></li>
+                    <li><a href="javascript:void(0)">Walled Garden</a></li>
+                </ul>
+            </li>
+
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-hdd-network"></i> IP
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)">Addresses</a></li>
+                    <li><a href="javascript:void(0)">DHCP Client</a></li>
+                    <li><a href="javascript:void(0)">DHCP Server</a></li>
+                    <li><a href="javascript:void(0)">Firewall</a></li>
+                </ul>
+            </li>
+
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-shield-lock"></i> System
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)">Users</a></li>
+                    <li><a href="javascript:void(0)">Password</a></li>
+                    <li><a href="javascript:void(0)">Backup</a></li>
+                </ul>
+            </li>
+
+            <li class="menu-item">
+                <a href="javascript:void(0)">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </li>
         </ul>
     </div>
 
@@ -509,6 +555,7 @@
                                 <select class="form-select" id="connectionType" required>
                                     <option value="pppoe" selected>PPPoE</option>
                                     <option value="static">Static IP</option>
+                                    <option value="hotspot">Hotspot</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -680,6 +727,7 @@
                                         <select class="form-select" id="editConnectionType" required>
                                             <option value="pppoe">PPPoE</option>
                                             <option value="static">Static IP</option>
+                                            <option value="hotspot">Hotspot</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
@@ -848,7 +896,7 @@
                         packagesData.forEach(pkg => {
                             const opt = document.createElement('option');
                             opt.value = pkg.name;
-                            opt.textContent = pkg.name; // Removed price from dropdown label as per preference
+                            opt.textContent = pkg.name; 
                             packageSelect.appendChild(opt);
                         });
                     }
@@ -902,7 +950,7 @@
                 if(offlineCounter) offlineCounter.textContent = 0;
 
                 renderCustomerRows(allCustomersData);
-                loadPackages(); // Pre-load Packages
+                loadPackages(); 
             } catch (err) {
                 if(tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">তথ্য লোড করতে ব্যর্থ হয়েছে।</td></tr>';
             }
@@ -920,7 +968,7 @@
             tbody.innerHTML = '';
             customers.forEach((user, index) => {
                 const rowNum = index + 1;
-                const custId = `FAZ-${(index + 1) * 2}`;
+                const custId = user.username; // Customer ID is the MikroTik Username as per preference
                 const pkgName = user.package || 'Default';
                 const statusBadge = user.status === 'Active' 
                     ? '<span class="badge bg-success-subtle text-success border">Active</span>'
@@ -967,7 +1015,7 @@
                     alert('এরর: ' + result.message);
                 }
             } catch(err) {
-                alert('কানেকশন সমস্যা: ' + err.message);
+                alert('کানেকশন সমস্যা: ' + err.message);
             }
         }
 
@@ -1021,7 +1069,7 @@
                     alert('এরর: ' + result.message);
                 }
             } catch(err) {
-                alert('কানেকশন সমস্যা: ' + err.message);
+                alert('کানেকশন সমস্যা: ' + err.message);
             }
         }
 
@@ -1087,7 +1135,7 @@
                 });
                 const result = await res.json();
                 if (result.success) {
-                    alert('কাস্টমার সফলভাবে যুক্ত হয়েছে!');
+                    alert('کাস্টমার সফলভাবে যুক্ত হয়েছে!');
                     document.getElementById('addCustomerForm').reset();
                     navigateTo('allCustomersView');
                 } else {
