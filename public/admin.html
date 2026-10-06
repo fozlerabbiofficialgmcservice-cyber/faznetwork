@@ -4,100 +4,539 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FAZ NETWORK - Admin Panel</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body { background-color: #060b13; color: #f1f5f9; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        .card { background-color: #0f172a; border: 1px solid #1e293b; border-radius: 10px; }
-        .table-dark { background-color: #0f172a; }
-        .table-dark th { background-color: #090e1a; color: #94a3b8; border-color: #1e293b; font-size: 13px; }
-        .table-dark td { border-color: #1e293b; font-size: 13px; }
-        .stat-card { padding: 14px; border-radius: 10px; }
-        .badge-active { background-color: #10b981; color: #fff; }
-        .badge-offline { background-color: #475569; color: #fff; }
-        .badge-expired { background-color: #f59e0b; color: #fff; }
-        .badge-suspended { background-color: #ef4444; color: #fff; }
-        .form-control, .form-select { background-color: #060b13; border-color: #1e293b; color: #fff; }
-        .form-control:focus, .form-select:focus { background-color: #060b13; border-color: #0ea5e9; color: #fff; box-shadow: none; }
-        .nav-pills .nav-link { color: #94a3b8; border-radius: 6px; padding: 6px 16px; font-weight: 500; }
-        .nav-pills .nav-link.active { background-color: #0284c7; color: #fff; }
-        .modal-content { background-color: #0f172a; border: 1px solid #1e293b; color: #fff; }
+        body {
+            background-color: #ffffff;
+            color: #1e293b;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar-custom {
+            background-color: #ffffff;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 12px 20px;
+        }
+        .stat-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .table-custom th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        .table-custom td {
+            vertical-align: middle;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .nav-tabs .nav-link {
+            color: #64748b;
+            font-weight: 600;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 10px 20px;
+        }
+        .nav-tabs .nav-link.active {
+            color: #0284c7;
+            border-bottom: 3px solid #0284c7;
+            background: transparent;
+        }
     </style>
 </head>
 <body>
 
-<div class="container-fluid py-3">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom border-secondary">
+    <!-- হেডার -->
+    <div class="navbar-custom d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold mb-0 text-white"><i class="bi bi-hdd-network-fill text-success me-2"></i>FAZ NETWORK</h4>
-            <small class="text-secondary">PPPoE & Hotspot ISP Management Panel</small>
+            <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-hdd-network text-success me-2"></i>FAZ NETWORK</h4>
+            <small class="text-muted">MikroTik Subscriber & Network Management</small>
         </div>
         <div class="d-flex gap-2">
-            <ul class="nav nav-pills me-3" id="mainPills">
-                <li class="nav-item">
-                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-customers" onclick="loadDashboard()">
-                        <i class="bi bi-people-fill me-1"></i> গ্রাহক তালিকা
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-pools" onclick="loadPools()">
-                        <i class="bi bi-diagram-3-fill me-1"></i> আইপি পুল (IP Pool)
-                    </button>
-                </li>
-            </ul>
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPoolModal">
-                <i class="bi bi-plus-circle me-1"></i> পুল যোগ
+            <button class="btn btn-outline-primary btn-sm" onclick="loadDashboard()">
+                <i class="bi bi-arrow-clockwise me-1"></i> রিফ্রেশ
+            </button>
+            <button class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addPoolModal">
+                <i class="bi bi-diagram-3 me-1"></i> নতুন আইপি পুল
             </button>
             <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
-                <i class="bi bi-person-plus-fill me-1"></i> কাস্টমার যোগ করুন
-            </button>
-            <button class="btn btn-outline-info btn-sm" onclick="loadDashboard()">
-                <i class="bi bi-arrow-clockwise"></i> রিফ্রেশ
+                <i class="bi bi-person-plus me-1"></i> কাস্টমার যোগ করুন
             </button>
         </div>
     </div>
 
-    <div class="tab-content">
-        <!-- Customers Tab -->
-        <div class="tab-pane fade show active" id="tab-customers">
-            <!-- Stats -->
-            <div class="row g-3 mb-3">
-                <div class="col-md-3 col-6">
-                    <div class="card stat-card border-success text-center">
-                        <small class="text-secondary d-block">অনলাইন ইউজার</small>
-                        <h3 class="fw-bold text-success mb-0" id="onlineUsers">0</h3>
+    <div class="container-fluid px-4">
+        
+        <!-- নেভিগেশন ট্যাব -->
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-customers" onclick="loadDashboard()">
+                    <i class="bi bi-people me-1"></i> গ্রাহক তালিকা (PPPoE)
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-pools" onclick="loadPools()">
+                    <i class="bi bi-diagram-3 me-1"></i> আইপি পুল (IP Pools)
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- কাস্টমার ট্যাব -->
+            <div class="tab-pane fade show active" id="tab-customers">
+                
+                <!-- স্ট্যাটাস কার্ড -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card border-start border-4 border-success">
+                            <span class="text-muted small d-block">অনলাইন গ্রাহক</span>
+                            <h3 class="fw-bold text-success mb-0" id="onlineUsers">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card border-start border-4 border-secondary">
+                            <span class="text-muted small d-block">অফলাইন</span>
+                            <h3 class="fw-bold text-secondary mb-0" id="offlineUsers">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card border-start border-4 border-primary">
+                            <span class="text-muted small d-block">মোট গ্রাহক</span>
+                            <h3 class="fw-bold text-primary mb-0" id="totalUsers">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card border-start border-4 border-danger">
+                            <span class="text-muted small d-block">মেয়াদ উত্তীর্ণ / বন্ধ</span>
+                            <h3 class="fw-bold text-danger mb-0" id="expiredUsers">0</h3>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-3 col-6">
-                    <div class="card stat-card border-secondary text-center">
-                        <small class="text-secondary d-block">অফলাইন</small>
-                        <h3 class="fw-bold text-secondary mb-0" id="offlineUsers">0</h3>
+
+                <!-- ফিল্টার ও সার্চ বার -->
+                <div class="card mb-3 border">
+                    <div class="card-body p-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                                    <input type="text" id="searchInput" class="form-control" placeholder="ইউজারনেম, মোবাইল, MAC বা আইপি খুঁজুন..." oninput="filterData()">
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <select id="statusFilter" class="form-select" onchange="filterData()">
+                                    <option value="all">সব স্ট্যাটাস</option>
+                                    <option value="active">অনলাইন (Active)</option>
+                                    <option value="offline">অফলাইন</option>
+                                    <option value="expired">মেয়াদ উত্তীর্ণ (Expired)</option>
+                                    <option value="suspended">সাসপেন্ডেড</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <select id="profileFilter" class="form-select" onchange="filterData()">
+                                    <option value="all">সব প্যাকেজ / প্রোফাইল</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <span class="badge bg-light text-dark border py-2 px-3 w-100" id="customerCountBadge">ইউজার: 0</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-3 col-6">
-                    <div class="card stat-card border-info text-center">
-                        <small class="text-secondary d-block">মোট সাবস্ক্রাইবার</small>
-                        <h3 class="fw-bold text-info mb-0" id="totalUsers">0</h3>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6">
-                    <div class="card stat-card border-danger text-center">
-                        <small class="text-secondary d-block">মেয়াদ উত্তীর্ণ / বন্ধ</small>
-                        <h3 class="fw-bold text-danger mb-0" id="expiredUsers">0</h3>
+
+                <!-- কাস্টমার টেবিল -->
+                <div class="card border">
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ইউজারনেম / নাম</th>
+                                    <th>মোবাইল</th>
+                                    <th>প্যাকেজ</th>
+                                    <th>MAC / কলার আইডি</th>
+                                    <th>আইপি অ্যাড্রেস</th>
+                                    <th>মেয়াদ (Expire)</th>
+                                    <th>বিল</th>
+                                    <th>স্ট্যাটাস</th>
+                                    <th class="text-center">অ্যাকশন</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customerTableBody">
+                                <tr>
+                                    <td colspan="9" class="text-center py-5 text-secondary">
+                                        <div class="spinner-border spinner-border-sm me-2 text-primary"></div> ডেটা লোড হচ্ছে...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Filters -->
-            <div class="card p-3 mb-3">
-                <div class="row g-2">
-                    <div class="col-md-4">
-                        <div class="input-group">
-                            <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-search"></i></span>
-                            <input type="text" id="searchInput" class="form-control" placeholder="ইউজারনেম, ফোন, MAC বা আইপি খুঁজুন..." oninput="filterData()">
-                        </div>
+            <!-- আইপি পুল ট্যাব -->
+            <div class="tab-pane fade" id="tab-pools">
+                <div class="card border">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-dark"><i class="bi bi-diagram-3-fill me-2 text-primary"></i>মাইক্রোটিক আইপি পুল তালিকা</span>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPoolModal">
+                            <i class="bi bi-plus-circle me-1"></i> নতুন পুল তৈরি
+                        </button>
                     </div>
-                    <div class="col-md-3 col-6">
-                        <select id="statusFilter" class="form-select" onchange="filterData()">
-                            <option value="
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>পুল নাম (Pool Name)</th>
+                                    <th>আইপি রেঞ্জ (IP Ranges)</th>
+                                    <th>পরবর্তী পুল (Next Pool)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="poolTableBody">
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-secondary">
+                                        <div class="spinner-border spinner-border-sm me-2 text-primary"></div> পুল লোড হচ্ছে...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: কাস্টমার যোগ -->
+    <div class="modal fade" id="addCustomerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">নতুন কাস্টমার যোগ করুন</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCustForm" onsubmit="handleAddCustomer(event)">
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">গ্রাহকের পুরো নাম</label>
+                            <input type="text" id="custName" class="form-control" required>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col">
+                                <label class="form-label small text-muted">ইউজারনেম</label>
+                                <input type="text" id="custUsername" class="form-control" required>
+                            </div>
+                            <div class="col">
+                                <label class="form-label small text-muted">পাসওয়ার্ড</label>
+                                <input type="text" id="custPassword" class="form-control" value="1234" required>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col">
+                                <label class="form-label small text-muted">মোবাইল নম্বর</label>
+                                <input type="text" id="custPhone" class="form-control" placeholder="017xxxxxxxx">
+                            </div>
+                            <div class="col">
+                                <label class="form-label small text-muted">প্যাকেজ প্রোফাইল</label>
+                                <input type="text" id="custProfile" class="form-control" placeholder="FZN 30 Mbps" required>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-4">
+                            <div class="col">
+                                <label class="form-label small text-muted">মাসিক বিল (টাকা)</label>
+                                <input type="number" id="custBill" class="form-control" value="500">
+                            </div>
+                            <div class="col">
+                                <label class="form-label small text-muted">মেয়াদ (ঐচ্ছিক)</label>
+                                <input type="date" id="custExpire" class="form-control">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">সেভ করুন</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: পুল যোগ -->
+    <div class="modal fade" id="addPoolModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">নতুন আইপি পুল তৈরি</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPoolForm" onsubmit="handleAddPool(event)">
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">পুল নাম</label>
+                            <input type="text" id="poolName" class="form-control" placeholder="pool-clients" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small text-muted">আইপি রেঞ্জ</label>
+                            <input type="text" id="poolRanges" class="form-control" placeholder="10.71.0.10-10.71.0.250" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">আইপি পুল যুক্ত করুন</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let rawCustomersList = [];
+
+        async function loadDashboard() {
+            const tableBody = document.getElementById('customerTableBody');
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center py-5 text-secondary">
+                        <div class="spinner-border spinner-border-sm me-2 text-primary"></div> ডেটা লোড হচ্ছে...
+                    </td>
+                </tr>
+            `;
+
+            try {
+                const res = await fetch('/api/admin/customers');
+                if (!res.ok) throw new Error('সার্ভার থেকে রেসপন্স আসেনি (Status: ' + res.status + ')');
+                const data = await res.json();
+                
+                rawCustomersList = Array.isArray(data.customers) ? data.customers : [];
+                populateProfiles(rawCustomersList);
+                filterData();
+            } catch (err) {
+                console.error('Fetch error:', err);
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i> ডেটা লোড করতে সমস্যা হয়েছে: ${err.message}
+                        </td>
+                    </tr>
+                `;
+                updateStats(0, 0, 0, 0);
+            }
+        }
+
+        async function loadPools() {
+            const tbody = document.getElementById('poolTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" class="text-center py-4 text-secondary">
+                        <div class="spinner-border spinner-border-sm me-2 text-primary"></div> আইপি পুল লোড হচ্ছে...
+                    </td>
+                </tr>
+            `;
+            try {
+                const res = await fetch('/api/admin/pools');
+                const data = await res.json();
+                const pools = Array.isArray(data.pools) ? data.pools : [];
+                
+                if (pools.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">কোনো আইপি পুল পাওয়া যায়নি।</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                pools.forEach(p => {
+                    html += `
+                        <tr>
+                            <td class="fw-bold text-primary">${p.name || p['=name'] || '-'}</td>
+                            <td><code>${p.ranges || p['=ranges'] || '-'}</code></td>
+                            <td><span class="badge bg-secondary">${p['next-pool'] || p['=next-pool'] || 'none'}</span></td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger">পুল লোড ব্যর্থ: ${e.message}</td></tr>`;
+            }
+        }
+
+        function populateProfiles(list) {
+            const select = document.getElementById('profileFilter');
+            const profiles = [...new Set(list.map(c => c.profile).filter(Boolean))];
+            select.innerHTML = '<option value="all">সব প্যাকেজ / প্রোফাইল</option>';
+            profiles.forEach(p => {
+                select.innerHTML += `<option value="${p}">${p}</option>`;
+            });
+        }
+
+        function filterData() {
+            const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+            const status = document.getElementById('statusFilter').value;
+            const profile = document.getElementById('profileFilter').value;
+
+            const filtered = rawCustomersList.filter(c => {
+                const matchQuery = 
+                    (c.username && c.username.toLowerCase().includes(query)) ||
+                    (c.name && c.name.toLowerCase().includes(query)) ||
+                    (c.phone && c.phone.includes(query)) ||
+                    (c.callerId && c.callerId.toLowerCase().includes(query)) ||
+                    (c.ipAddress && c.ipAddress.includes(query));
+
+                let matchStatus = true;
+                if (status !== 'all') {
+                    matchStatus = (c.liveStatus === status);
+                }
+
+                const matchProfile = (profile === 'all' || c.profile === profile);
+
+                return matchQuery && matchStatus && matchProfile;
+            });
+
+            renderTable(filtered);
+            updateCounters(rawCustomersList);
+        }
+
+        function renderTable(list) {
+            const tableBody = document.getElementById('customerTableBody');
+            document.getElementById('customerCountBadge').innerText = `ইউজার: ${list.length}`;
+
+            if (!list || list.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">কোনো গ্রাহকের তথ্য পাওয়া যায়নি।</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            list.forEach(c => {
+                let statusBadge = '';
+                if (c.liveStatus === 'active') statusBadge = '<span class="badge bg-success">অনলাইন</span>';
+                else if (c.liveStatus === 'suspended') statusBadge = '<span class="badge bg-danger">স্থগিত</span>';
+                else if (c.liveStatus === 'expired') statusBadge = '<span class="badge bg-warning text-dark">মেয়াদ শেষ</span>';
+                else statusBadge = '<span class="badge bg-secondary">অফলাইন</span>';
+
+                html += `
+                    <tr>
+                        <td>
+                            <strong class="text-dark">${c.username}</strong>
+                            <small class="d-block text-muted">${c.name || ''}</small>
+                        </td>
+                        <td>${c.phone || '-'}</td>
+                        <td><span class="badge bg-light text-dark border">${c.profile || '-'}</span></td>
+                        <td><code>${c.callerId || '-'}</code></td>
+                        <td><span class="badge bg-light text-primary border">${c.ipAddress || '-'}</span></td>
+                        <td>${c.expireDate || '-'}</td>
+                        <td>৳ ${c.bill || 0}</td>
+                        <td>${statusBadge}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-success" title="৩০ দিন রিনিউ" onclick="triggerAction('${c.username}', 'renew', { days: 30 })">
+                                    <i class="bi bi-cash"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" title="এসএমএস নোটিশ" onclick="triggerAction('${c.username}', 'send-notice')">
+                                    <i class="bi bi-chat-dots"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" title="সাসপেন্ড / চালু" onclick="toggleStatus('${c.username}', '${c.status}')">
+                                    <i class="bi bi-power"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            tableBody.innerHTML = html;
+        }
+
+        function updateCounters(list) {
+            let online = 0, offline = 0, expired = 0;
+            list.forEach(c => {
+                if (c.liveStatus === 'active') online++;
+                else if (c.liveStatus === 'offline') offline++;
+                if (c.liveStatus === 'expired' || c.liveStatus === 'suspended') expired++;
+            });
+            updateStats(online, offline, list.length, expired);
+        }
+
+        function updateStats(online, offline, total, expired) {
+            document.getElementById('onlineUsers').innerText = online;
+            document.getElementById('offlineUsers').innerText = offline;
+            document.getElementById('totalUsers').innerText = total;
+            document.getElementById('expiredUsers').innerText = expired;
+        }
+
+        async function triggerAction(username, action, extra = {}) {
+            if (!confirm(`ইউজার (${username}) এর জন্য এই কাজটি করতে চান?`)) return;
+            try {
+                const res = await fetch('/api/admin/customers/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, action, ...extra })
+                });
+                const data = await res.json();
+                alert(data.message || (data.success ? 'সফল হয়েছে' : 'ব্যর্থ হয়েছে'));
+                loadDashboard();
+            } catch (e) {
+                alert('ত্রুটি: ' + e.message);
+            }
+        }
+
+        function toggleStatus(username, currentStatus) {
+            const nextStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
+            triggerAction(username, 'status', { status: nextStatus });
+        }
+
+        async function handleAddCustomer(e) {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('custName').value,
+                username: document.getElementById('custUsername').value,
+                password: document.getElementById('custPassword').value,
+                phone: document.getElementById('custPhone').value,
+                profile: document.getElementById('custProfile').value,
+                bill: document.getElementById('custBill').value,
+                expireDate: document.getElementById('custExpire').value
+            };
+
+            try {
+                const res = await fetch('/api/admin/customers/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('কাস্টমার সফলভাবে তৈরি হয়েছে!');
+                    bootstrap.Modal.getInstance(document.getElementById('addCustomerModal')).hide();
+                    document.getElementById('addCustForm').reset();
+                    loadDashboard();
+                } else {
+                    alert(data.message || 'ব্যর্থ হয়েছে');
+                }
+            } catch (e) {
+                alert('ত্রুটি: ' + e.message);
+            }
+        }
+
+        async function handleAddPool(e) {
+            e.preventDefault();
+            const name = document.getElementById('poolName').value.trim();
+            const ranges = document.getElementById('poolRanges').value.trim();
+
+            try {
+                const res = await fetch('/api/admin/pools/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, ranges })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('আইপি পুল সফলভাবে তৈরি হয়েছে!');
+                    bootstrap.Modal.getInstance(document.getElementById('addPoolModal')).hide();
+                    document.getElementById('addPoolForm').reset();
+                    loadPools();
+                } else {
+                    alert(data.message || 'ব্যর্থ হয়েছে');
+                }
+            } catch (e) {
+                alert('ত্রুটি: ' + e.message);
+            }
+        }
+
+        // পেজ লোড হওয়ার সাথে সাথে ডেটা ফেচ
+        window.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>
