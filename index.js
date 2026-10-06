@@ -4,18 +4,18 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', function (err) {
     console.error('[UNCAUGHT EXCEPTION SAFEGUARD]:', err.message);
 });
 
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', function (reason) {
     console.error('[UNHANDLED REJECTION SAFEGUARD]:', reason);
 });
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-app.use((req, res, next) => {
+app.use(function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -91,7 +91,7 @@ function saveJSON(filePath, data) {
     try {
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
     } catch (e) {
-        console.error(`Error saving ${filePath}:`, e.message);
+        console.error('Error saving ' + filePath + ':', e.message);
     }
 }
 
@@ -128,8 +128,8 @@ function executeSingleCommand(cmdWords) {
         client.connect(MIKROTIK_PORT, MIKROTIK_HOST, () => {
             const loginReq = Buffer.concat([
                 encodeWord('/login'),
-                encodeWord(`=name=${MIKROTIK_USER}`),
-                encodeWord(`=password=${MIKROTIK_PASS}`),
+                encodeWord('=name=' + MIKROTIK_USER),
+                encodeWord('=password=' + MIKROTIK_PASS),
                 Buffer.from([0x00])
             ]);
             client.write(loginReq);
@@ -194,16 +194,16 @@ function executeSingleCommand(cmdWords) {
 async function sendGatewaySMS(toPhone, message) {
     if (!toPhone || toPhone.length < 11) return;
     try {
-        await axios.post(SMS_GATEWAY_URL, `to=${encodeURIComponent(toPhone)}&message=${encodeURIComponent(message)}`, {
+        await axios.post(SMS_GATEWAY_URL, 'to=' + encodeURIComponent(toPhone) + '&message=' + encodeURIComponent(message), {
             headers: {
                 'Authorization': SMS_GATEWAY_TOKEN,
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             timeout: 5000
         });
-        console.log(`[SMS SENT] To: ${toPhone}`);
+        console.log('[SMS SENT] To: ' + toPhone);
     } catch (err) {
-        console.error(`[SMS GATEWAY ERROR]:`, err.message);
+        console.error('[SMS GATEWAY ERROR]:', err.message);
     }
 }
 
@@ -220,18 +220,18 @@ function addDaysToDate(baseDateStr, daysToAdd) {
 
 // হটস্পট ফাংশনসমূহ
 async function ensureUser(username, comment = '') {
-    const cmd = ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=group=Hotspot`];
-    if (comment) cmd.push(`=comment=${comment}`);
+    const cmd = ['/user-manager/user/add', '=name=' + username, '=password=' + username, '=group=Hotspot'];
+    if (comment) cmd.push('=comment=' + comment);
     await executeSingleCommand(cmd);
 }
 
 async function attachProfile(username, profileName) {
-    const cmd = ['/user-manager/user-profile/add', `=user=${username}`, `=profile=${profileName}`];
+    const cmd = ['/user-manager/user-profile/add', '=user=' + username, '=profile=' + profileName];
     return await executeSingleCommand(cmd);
 }
 
 async function updateUserComment(username, comment) {
-    const cmd = ['/user-manager/user/set', `=numbers=${username}`, `=comment=${comment}`];
+    const cmd = ['/user-manager/user/set', '=numbers=' + username, '=comment=' + comment];
     await executeSingleCommand(cmd);
 }
 
@@ -254,52 +254,5 @@ app.post('/api/verify-trx', rateLimiter, async (req, res) => {
         const store = loadJSON(DB_FILE);
         const transaction = store[cleanTrx];
 
-        if (!transaction) return res.status(404).json({ success: false, message: `ট্রানজেকশন আইডি (${cleanTrx}) পাওয়া যায়নি!` });
-        if (transaction.used) return res.status(400).json({ success: false, message: 'এই আইডি দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।' });
-
-        const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
-        const senderInfo = transaction.phone ? ` | Payer: ${transaction.phone}` : '';
-        const method = transaction.gateway || 'Pay';
-        const commentText = `${method}: ${cleanTrx} | Tk: ${transaction.amount}${senderInfo} | Date: ${new Date().toLocaleDateString('en-GB')}`;
-
-        await ensureUser(cleanUser, commentText);
-        await attachProfile(cleanUser, profile);
-        await updateUserComment(cleanUser, commentText);
-
-        transaction.used = true;
-        transaction.activatedUser = cleanUser;
-        transaction.usedAt = Date.now();
-        saveJSON(DB_FILE, store);
-
-        return res.status(200).json({
-            success: true,
-            message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
-            username: cleanUser,
-            password: cleanUser,
-            profile: profile
-        });
-    } catch (err) {
-        return res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// MacroDroid SMS Forward Webhook
-app.post('/forward', async (req, res) => {
-    try {
-        let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
-        let sender = (req.query.sender || req.body.sender || req.body.from || '').trim().toLowerCase();
-
-        if (typeof req.body === 'string') sms_body = req.body;
-        console.log(`[INCOMING SMS RAW] Sender: "${sender}" | Body: "${sms_body}"`);
-
-        const isBkashSender = sender.includes('bkash') || sender.includes('16247');
-        const isNagadSender = sender.includes('nagad') || sender.includes('16167');
-
-        const trxMatch = sms_body.match(/(?:TrxID|TxnID|TransID|TxId)\s*[:]?\s*([A-Za-z0-9]+)/i);
-        const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
-
-        const amountMatch = sms_body.match(/(?:Tk|Amount\s*[:]?\s*Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
-        const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
-
-        const refMatch = sms_body.match(/(?:Ref|Reference)\s*[:]?\s*([A-Za-z0-9_-]+)/i);
-        const
+        if (!transaction) return res.status(404).json({ success: false, message: 'ট্রানজেকশন আইডি (' + cleanTrx + ') পাওয়া যায়নি!' });
+        if (transaction.used) return res.status(
