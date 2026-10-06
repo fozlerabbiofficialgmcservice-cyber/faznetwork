@@ -9,9 +9,9 @@
     <style>
         :root {
             --primary-color: #0a3d2e;
-            --sidebar-width: 250px;
+            --sidebar-width: 260px;
         }
-        body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif; }
         
         /* Sidebar Styles */
         .sidebar {
@@ -27,7 +27,7 @@
             overflow-y: auto;
         }
         .sidebar-header {
-            padding: 15px 20px;
+            padding: 20px;
             font-size: 20px;
             font-weight: bold;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -35,7 +35,27 @@
             justify-content: space-between;
             align-items: center;
         }
-        .sidebar-menu { list-style: none; padding: 0; margin-top: 20px; }
+        
+        /* Language Switcher */
+        .lang-switcher {
+            padding: 10px 20px;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .lang-switcher select {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .sidebar-menu { list-style: none; padding: 0; margin-top: 10px; }
         .menu-item a, .menu-item .dropdown-toggle {
             color: #a7f3d0;
             padding: 12px 20px;
@@ -90,6 +110,15 @@
             </button>
         </div>
 
+        <!-- Language Switcher -->
+        <div class="lang-switcher">
+            <i class="bi bi-translate"></i>
+            <select id="langSelect" class="form-select-sm">
+                <option value="en" selected>English (USA)</option>
+                <option value="bn">বাংলা</option>
+            </select>
+        </div>
+
         <ul class="sidebar-menu">
             <!-- Dashboard -->
             <li class="menu-item">
@@ -98,26 +127,188 @@
                 </a>
             </li>
 
-            <!-- Customer Management Dropdown -->
+            <!-- Customer Management -->
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
                     <i class="bi bi-people"></i> কাস্টমার
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/customers/all"><i class="bi bi-list"></i> অল কাস্টমার</a></li>
-                    <li><a href="/customers/add"><i class="bi bi-person-plus"></i> অ্যাড কাস্টমার</a></li>
-                    <li><a href="/customers/online"><i class="bi bi-circle-fill text-success fs-6 me-2"></i> অনলাইন কাস্টমার</a></li>
-                    <li><a href="/customers/offline"><i class="bi bi-circle-fill text-secondary fs-6 me-2"></i> অফলাইন কাস্টমার</a></li>
-                    <li><a href="/customers/active"><i class="bi bi-check-circle"></i> অ্যাক্টিভ কাস্টমার</a></li>
-                    <li><a href="/customers/left"><i class="bi bi-person-dash"></i> লেফট কাস্টমার</a></li>
-                    <li><a href="/customers/expire"><i class="bi bi-x-circle"></i> এক্সপায়ার কাস্টমার</a></li>
-                    <li><a href="/customers/expire-today-yesterday"><i class="bi bi-calendar-event"></i> এক্সপায়ার ইন টুডে অ্যান্ড ইয়েস্টারডে</a></li>
-                    <li><a href="/customers/expire-7-days"><i class="bi bi-calendar-week"></i> এক্সপায়ার ইন সেভেন ডেস</a></li>
-                    <li><a href="/customers/new"><i class="bi bi-star"></i> নিউ কাস্টমার</a></li>
-                    <li><a href="/customers/due-collection"><i class="bi bi-cash-stack"></i> ডিউ কালেকশন</a></li>
+                    <li><a href="/customers/all">অল কাস্টমার</a></li>
+                    <li><a href="/customers/add">অ্যাড কাস্টমার</a></li>
+                    <li><a href="/customers/online">অনলাইন কাস্টমার</a></li>
+                    <li><a href="/customers/offline">অফলাইন কাস্টমার</a></li>
+                    <li><a href="/customers/active">অ্যাক্টিভ কাস্টমার</a></li>
+                    <li><a href="/customers/left">লেফট কাস্টমার</a></li>
+                    <li><a href="/customers/expire">এক্সপায়ার কাস্টমার</a></li>
+                    <li><a href="/customers/expire-today-yesterday">এক্সপায়ার ইন টুডে অ্যান্ড ইয়েস্টারডে</a></li>
+                    <li><a href="/customers/expire-7-days">এক্সপায়ার ইন সেভেন ডেস</a></li>
+                    <li><a href="/customers/new">নিউ কাস্টমার</a></li>
+                    <li><a href="/customers/due-collection">ডিউ কালেকশন</a></li>
                 </ul>
             </li>
+
+            <!-- Report -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-file-earmark-text"></i> রিপোর্ট
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/report/collection-due">মান্থলি কালেকশন অ্যান্ড ডিউ</a></li>
+                    <li><a href="/report/sales">মান্থলি সেল</a></li>
+                    <li><a href="/report/invoice">ইনভয়েস রিপোর্ট</a></li>
+                </ul>
+            </li>
+
+            <!-- Payments -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-credit-card"></i> পেমেন্টস
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/payments/pending-invoice">পেন্ডিং ইনভয়েস</a></li>
+                    <li><a href="/payments/all">অল পেমেন্টস</a></li>
+                    <li><a href="/payments/request">পেমেন্ট রিকোয়েস্ট</a></li>
+                    <li><a href="/payments/bkash">বিকাশ পেমেন্টস</a></li>
+                    <li><a href="/payments/nagad">নগদ পেমেন্টস</a></li>
+                    <li><a href="/payments/rocket">রকেট পেমেন্টস</a></li>
+                </ul>
+            </li>
+
+            <!-- Hotspot -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-wifi"></i> হটস্পট
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/hotspot/dashboard">ড্যাশবোর্ড</a></li>
+                    <li><a href="/hotspot/all-user">অল ইউজার</a></li>
+                    <li><a href="/hotspot/active-user">অ্যাক্টিভ ইউজার</a></li>
+                    <li><a href="/hotspot/online-user">অনলাইন ইউজার</a></li>
+                    <li><a href="/hotspot/profile">প্রোফাইল</a></li>
+                    <li><a href="/hotspot/server-profile">সার্ভার প্রোফাইল</a></li>
+                </ul>
+            </li>
+
+            <!-- Core System -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-gear-wide-connected"></i> কোর সিস্টেম
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/core/pppoe">পিপি পিও ই</a></li>
+                    <li><a href="/core/devices">ডিভাইসেস</a></li>
+                    <li><a href="/core/olt">ও এল টি ম্যানেজমেন্ট</a></li>
+                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)">মনিটর <i class="bi bi-chevron-down ms-auto"></i></button>
+                        <ul class="submenu">
+                            <li><a href="/core/monitor/usage">ইউজেস</a></li>
+                            <li><a href="/core/monitor/online">অনলাইন</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="/core/diagram">নেটওয়ার্ক ডায়াগ্রাম</a></li>
+                </ul>
+            </li>
+
+            <!-- General Setting -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-gear"></i> জেনারেল সেটিং
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/settings/website">ওয়েবসাইট সেটিং</a></li>
+                    <li><a href="/settings/sms">এসএমএস সেটিং</a></li>
+                    <li><a href="/settings/backup">ব্যাকআপ অ্যান্ড রিস্টোর</a></li>
+                </ul>
+            </li>
+
+            <!-- VPN Server -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-shield-lock"></i> ভিপিএন সার্ভার
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)">ভিপিএন <i class="bi bi-chevron-down ms-auto"></i></button>
+                        <ul class="submenu">
+                            <li><a href="/vpn/forwarding">ভিপিএন পোর্ট ফরওয়ার্ডিং</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Account & Support -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-headset"></i> অ্যাকাউন্ট অ্যান্ড সাপোর্ট
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/support/dashboard">ড্যাশবোর্ড</a></li>
+                    <li><a href="/support/manage">ম্যানেজ</a></li>
+                    <li><a href="/support/tickets">সাপোর্ট টিকিটস</a></li>
+                    <li><button class="dropdown-toggle" onclick="toggleSubmenu(this)">সাপোর্ট <i class="bi bi-chevron-down ms-auto"></i></button>
+                        <ul class="submenu">
+                            <li><a href="/support/tickets">সাপোর্ট টিকিটস</a></li>
+                            <li><a href="/support/software">সফটওয়্যার সাপোর্ট টিকিটস</a></li>
+                            <li><a href="/support/website">ওয়েবসাইট সাপোর্ট টিকিটস</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Expenses -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-wallet2"></i> এক্সপেন্সেস
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/expenses/add">অ্যাড এক্সপেন্সেস</a></li>
+                    <li><a href="/expenses/all">অল এক্সপেন্সেস</a></li>
+                    <li><a href="/expenses/report">এক্সপেন্সেস রিপোর্ট</a></li>
+                </ul>
+            </li>
+
+            <!-- Human Resource -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-person-badge"></i> হিউম্যান রিসোর্স
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/hr/department">ডিপার্টমেন্ট</a></li>
+                    <li><a href="/hr/employees">অল এমপ্লয়ি</a></li>
+                    <li><a href="/hr/add-employee">অ্যাডড এমপ্লয়ি</a></li>
+                </ul>
+            </li>
+
+            <!-- Live Tracking -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-geo-alt"></i> লাইভ ট্র্যাকিং
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/tracking/google-map">গুগল ম্যাপ</a></li>
+                </ul>
+            </li>
+
+            <!-- User & Reseller -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-person-plus"></i> ইউজার অ্যান্ড রিসেলার
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/user-reseller/sub-staff">সাব-স্টাফ</a></li>
+                </ul>
+            </li>
+
         </ul>
     </div>
 
@@ -128,7 +319,7 @@
                 <button class="btn btn-outline-success d-md-none" onclick="toggleSidebar()">
                     <i class="bi bi-list"></i>
                 </button>
-                <div class="ms-auto">
+                <div class="ms-auto d-flex gap-2">
                     <button class="btn btn-outline-dark" id="mikrotikToggle">
                         <i class="bi bi-router"></i> MikroTik
                     </button>
@@ -150,6 +341,16 @@
 
         function toggleSubmenu(button) {
             const submenu = button.nextElementSibling;
+            // Close other submenus for better UX (Optional)
+            const allSubmenus = button.closest('.sidebar-menu').querySelectorAll('.submenu');
+            allSubmenus.forEach(sm => {
+                if(sm !== submenu) sm.classList.remove('show');
+            });
+            const allToggles = button.closest('.sidebar-menu').querySelectorAll('.dropdown-toggle .bi-chevron-down');
+            allToggles.forEach(tog => {
+                if(tog !== button.querySelector('.bi-chevron-down')) tog.classList.remove('bi-chevron-up');
+            });
+
             button.querySelector('.bi-chevron-down').classList.toggle('bi-chevron-up');
             submenu.classList.toggle('show');
         }
