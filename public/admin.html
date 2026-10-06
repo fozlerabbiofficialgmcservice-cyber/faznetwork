@@ -90,7 +90,6 @@
         }
         .menu-item i { margin-right: 12px; font-size: 17px; }
         
-        /* Dropdown toggles reset */
         .dropdown-toggle::after {
             display: none;
         }
@@ -106,7 +105,6 @@
             padding-left: 48px; 
             font-size: 13.5px; 
         }
-        /* Nested Submenu styling */
         .submenu .submenu a { 
             padding-left: 65px; 
             font-size: 13px; 
@@ -264,14 +262,8 @@
                     <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
-                    <li>
-                        <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
-                            <span data-key="vpn">VPN</span> <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
-                        </button>
-                        <ul class="submenu">
-                            <li><a href="/vpn/port-forwarding" data-key="vpn_port_forwarding">VPN Port Forwarding</a></li>
-                        </ul>
-                    </li>
+                    <li><a href="/vpn/list" data-key="vpn">VPN</a></li>
+                    <li><a href="/vpn/port-forwarding" data-key="vpn_port_forwarding">VPN Port Forwarding</a></li>
                 </ul>
             </li>
 
@@ -405,9 +397,9 @@
                 'server_profile': 'Server Profile',
                 'core_system': 'Core System',
                 'pppoe': 'PPPoE',
-                'devices': 'Devices',
-                'plan_packages': 'Plan & Packages',
+                'plan_package': 'Plan & Package',
                 'ip_pools': 'IP Pools',
+                'devices': 'Devices',
                 'olt_management': 'OLT Management',
                 'monitor': 'Monitor',
                 'usage': 'Usage',
@@ -477,7 +469,7 @@
                 'core_system': 'কোর সিস্টেম',
                 'pppoe': 'পিপি পিও ই',
                 'devices': 'ডিভাইসেস',
-                'plan_packages': 'প্ল্যান অ্যান্ড প্যাকেজ',
+                'plan_package': 'প্ল্যান অ্যান্ড প্যাকেজ',
                 'ip_pools': 'আইপি পুলস',
                 'olt_management': 'ও এল টি ম্যানেজমেন্ট',
                 'monitor': 'মনিটর',
@@ -489,7 +481,6 @@
                 'sms_setting': 'এসএমএস সেটিং',
                 'backup_restore': 'ব্যাকআপ অ্যান্ড রিস্টোর',
                 'vpn_server': 'ভিপিএন সার্ভার',
-                'vpn': 'ভিপিএন',
                 'vpn_port_forwarding': 'ভিপিএন পোর্ট ফরওয়ার্ডিং',
                 'account_support': 'অ্যাকাউন্ট অ্যান্ড সাপোর্ট',
                 'support_dashboard': 'ড্যাশবোর্ড',
@@ -518,13 +509,11 @@
             document.getElementById('sidebar').classList.toggle('show');
         }
 
-        // Improved nested submenu handler
         function toggleSubmenu(event, button) {
             event.stopPropagation();
             const submenu = button.nextElementSibling;
             const parentList = button.closest('ul');
             
-            // Close other sibling submenus at the same level
             parentList.querySelectorAll(':scope > li > .submenu').forEach(sm => {
                 if (sm !== submenu) {
                     sm.classList.remove('show');
@@ -533,7 +522,6 @@
                 }
             });
 
-            // Toggle current submenu
             submenu.classList.toggle('show');
             const arrow = button.querySelector('.arrow-icon');
             if (arrow) {
@@ -554,7 +542,6 @@
         }
 
         const langSelect = document.getElementById('langSelect');
-        // Default to English (USA)
         const savedLang = localStorage.getItem('faz_preferred_lang') || 'en';
         langSelect.value = savedLang;
         updateLanguage(savedLang);
