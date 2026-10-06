@@ -9,6 +9,8 @@
     <style>
         :root {
             --primary-color: #0a3d2e;
+            --primary-hover: #0d4d3a;
+            --accent-color: #10b981;
             --sidebar-width: 260px;
         }
         body { 
@@ -18,6 +20,7 @@
             padding: 0;
         }
         
+        /* Sidebar Styling */
         .sidebar {
             width: var(--sidebar-width);
             background-color: var(--primary-color);
@@ -111,10 +114,56 @@
             background-color: rgba(0, 0, 0, 0.15);
         }
         
+        /* Main Content Layout */
         .main-content {
             margin-left: var(--sidebar-width);
             transition: all 0.3s ease;
-            padding: 20px;
+            padding: 24px;
+        }
+
+        /* Form Card Custom Styling */
+        .card-custom {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            background: #ffffff;
+        }
+        .card-custom-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #edf2f7;
+            padding: 16px 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-theme {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            padding: 9px 22px;
+            font-weight: 500;
+        }
+        .btn-theme:hover {
+            background-color: var(--primary-hover);
+            color: #ffffff;
+        }
+        .form-label {
+            font-weight: 500;
+            font-size: 13.5px;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+        .form-control, .form-select {
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            padding: 9px 13px;
+            font-size: 14px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.15);
         }
         
         @media (max-width: 768px) {
@@ -126,6 +175,7 @@
 </head>
 <body>
 
+    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <span data-key="brand">FAZ NETWORK</span>
@@ -146,7 +196,7 @@
         <ul class="sidebar-menu">
             <!-- Dashboard -->
             <li class="menu-item">
-                <a href="/dashboard" class="active">
+                <a href="/dashboard">
                     <i class="bi bi-speedometer2"></i> <span data-key="dashboard">Dashboard</span>
                 </a>
             </li>
@@ -155,11 +205,11 @@
             <li class="menu-item">
                 <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
                     <i class="bi bi-people"></i> <span data-key="customer">Customer</span>
-                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon bi-chevron-up"></i>
                 </button>
-                <ul class="submenu">
+                <ul class="submenu show">
                     <li><a href="/customers/all" data-key="all_customer">All Customer</a></li>
-                    <li><a href="/customers/add" data-key="add_customer">Add Customer</a></li>
+                    <li><a href="/customers/add" class="active text-white" data-key="add_customer">Add Customer</a></li>
                     <li><a href="/customers/online" data-key="online_customer">Online Customer</a></li>
                     <li><a href="/customers/offline" data-key="offline_customer">Offline Customer</a></li>
                     <li><a href="/customers/active" data-key="active_customer">Active Customer</a></li>
@@ -226,7 +276,7 @@
                 <ul class="submenu">
                     <li><a href="/core/pppoe" data-key="pppoe">PPPoE</a></li>
                     <li><a href="/core/devices" data-key="devices">Devices</a></li>
-                    <li><a href="/core/plan-packages" data-key="plan_packages">Plan & Packages</a></li>
+                    <li><a href="/core/plan-packages" data-key="plan_package">Plan & Packages</a></li>
                     <li><a href="/core/ip-pools" data-key="ip_pools">IP Pools</a></li>
                     <li><a href="/core/olt" data-key="olt_management">OLT Management</a></li>
                     <li>
@@ -341,11 +391,13 @@
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
+        <!-- Top Navbar -->
         <nav class="navbar navbar-expand-lg navbar-light bg-white rounded shadow-sm mb-4 p-2">
             <div class="container-fluid">
                 <button class="btn btn-outline-success d-md-none" onclick="toggleSidebar()">
                     <i class="bi bi-list"></i>
                 </button>
+                <span class="fs-5 fw-semibold text-secondary d-none d-md-block" data-key="customer_management">Customer Management</span>
                 <div class="ms-auto d-flex gap-2">
                     <button class="btn btn-outline-dark" id="mikrotikToggle">
                         <i class="bi bi-router"></i> MikroTik
@@ -354,8 +406,134 @@
             </div>
         </nav>
         
-        <div class="container-fluid">
-            <h3 data-key="welcome_msg">Welcome to FAZ NETWORK Admin Panel</h3>
+        <!-- Add Customer Form Section -->
+        <div class="container-fluid p-0">
+            <div class="card card-custom">
+                <div class="card-custom-header">
+                    <i class="bi bi-person-plus-fill text-success fs-5"></i>
+                    <span class="fs-5" data-key="add_new_customer">Add New Customer</span>
+                </div>
+                <div class="card-body p-4">
+                    <form id="addCustomerForm">
+                        <div class="row g-3">
+                            <!-- Full Name -->
+                            <div class="col-md-6">
+                                <label for="fullName" class="form-label" data-key="label_fullname">Full Name *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                    <input type="text" class="form-control" id="fullName" placeholder="e.g. John Doe" data-placeholder-key="ph_fullname" required>
+                                </div>
+                            </div>
+
+                            <!-- Phone Number -->
+                            <div class="col-md-6">
+                                <label for="phoneNumber" class="form-label" data-key="label_phone">Phone Number *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-telephone"></i></span>
+                                    <input type="tel" class="form-control" id="phoneNumber" placeholder="e.g. 01700000000" data-placeholder-key="ph_phone" required>
+                                </div>
+                            </div>
+
+                            <!-- Device Selection -->
+                            <div class="col-md-6">
+                                <label for="device" class="form-label" data-key="label_device">Device (Router / NAS) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-hdd-network"></i></span>
+                                    <select class="form-select" id="device" required>
+                                        <option value="" disabled selected data-key="opt_select_device">Select MikroTik / Router</option>
+                                        <option value="main-router">Core Router (RB4011)</option>
+                                        <option value="station-router">POP-1 Router</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Connection Type -->
+                            <div class="col-md-6">
+                                <label for="connectionType" class="form-label" data-key="label_conn_type">Connection Type *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-diagram-3"></i></span>
+                                    <select class="form-select" id="connectionType" required>
+                                        <option value="pppoe" selected>PPPoE</option>
+                                        <option value="static">Static IP</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Username -->
+                            <div class="col-md-6">
+                                <label for="username" class="form-label" data-key="label_username">Username *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-at"></i></span>
+                                    <input type="text" class="form-control" id="username" placeholder="pppoe_user" data-placeholder-key="ph_username" required>
+                                </div>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="col-md-6">
+                                <label for="password" class="form-label" data-key="label_password">Password *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                                    <input type="password" class="form-control" id="password" placeholder="••••••••" data-placeholder-key="ph_password" required>
+                                </div>
+                            </div>
+
+                            <!-- Package Selection -->
+                            <div class="col-md-6">
+                                <label for="packageSelect" class="form-label" data-key="label_package">Package Selection *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-speedometer"></i></span>
+                                    <select class="form-select" id="packageSelect" required>
+                                        <option value="" disabled selected data-key="opt_select_package">Select Internet Plan</option>
+                                        <option value="pkg_10mbps">Standard - 10 Mbps</option>
+                                        <option value="pkg_20mbps">Premium - 20 Mbps</option>
+                                        <option value="pkg_30mbps">Ultra - 30 Mbps</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Billing Duration -->
+                            <div class="col-md-6">
+                                <label for="billingDuration" class="form-label" data-key="label_billing_duration">Billing Duration *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-calendar-event"></i></span>
+                                    <select class="form-select" id="billingDuration" required>
+                                        <option value="1_month" selected data-key="opt_1_month">1 Month (30 Days)</option>
+                                        <option value="3_months" data-key="opt_3_months">3 Months</option>
+                                        <option value="6_months" data-key="opt_6_months">6 Months</option>
+                                        <option value="1_year" data-key="opt_1_year">1 Year</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- NID / Passport Info -->
+                            <div class="col-md-6">
+                                <label for="nidPassport" class="form-label" data-key="label_nid_passport">NID / Passport Information</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-card-heading"></i></span>
+                                    <input type="text" class="form-control" id="nidPassport" placeholder="e.g. NID or Passport Number" data-placeholder-key="ph_nid_passport">
+                                </div>
+                            </div>
+
+                            <!-- Full Address -->
+                            <div class="col-md-6">
+                                <label for="fullAddress" class="form-label" data-key="label_address">Full Address *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-geo-alt"></i></span>
+                                    <textarea class="form-control" id="fullAddress" rows="1" placeholder="House, Road, Area, District" data-placeholder-key="ph_address" required></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="col-12 mt-4 pt-2 border-top d-flex justify-content-end gap-2">
+                                <button type="reset" class="btn btn-light border px-4" data-key="btn_reset">Reset</button>
+                                <button type="submit" class="btn btn-theme px-4" data-key="btn_save_customer">
+                                    <i class="bi bi-check2-circle me-1"></i> Save Customer
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -397,7 +575,7 @@
                 'server_profile': 'Server Profile',
                 'core_system': 'Core System',
                 'pppoe': 'PPPoE',
-                'plan_package': 'Plan & Package',
+                'plan_package': 'Plan & Packages',
                 'ip_pools': 'IP Pools',
                 'devices': 'Devices',
                 'olt_management': 'OLT Management',
@@ -431,7 +609,34 @@
                 'google_map': 'Google Map',
                 'user_reseller': 'User & Reseller',
                 'sub_staff': 'Sub-Staff',
-                'welcome_msg': 'Welcome to FAZ NETWORK Admin Panel'
+                
+                // Add Customer Form
+                'customer_management': 'Customer Management',
+                'add_new_customer': 'Add New Customer',
+                'label_fullname': 'Full Name *',
+                'label_phone': 'Phone Number *',
+                'label_device': 'Device (Router / NAS) *',
+                'label_conn_type': 'Connection Type *',
+                'label_username': 'Username *',
+                'label_password': 'Password *',
+                'label_package': 'Package Selection *',
+                'label_billing_duration': 'Billing Duration *',
+                'label_nid_passport': 'NID / Passport Information',
+                'label_address': 'Full Address *',
+                'opt_select_device': 'Select MikroTik / Router',
+                'opt_select_package': 'Select Internet Plan',
+                'opt_1_month': '1 Month (30 Days)',
+                'opt_3_months': '3 Months',
+                'opt_6_months': '6 Months',
+                'opt_1_year': '1 Year',
+                'btn_reset': 'Reset',
+                'btn_save_customer': 'Save Customer',
+                'ph_fullname': 'e.g. John Doe',
+                'ph_phone': 'e.g. 01700000000',
+                'ph_username': 'pppoe_user',
+                'ph_password': '••••••••',
+                'ph_nid_passport': 'e.g. NID or Passport Number',
+                'ph_address': 'House, Road, Area, District'
             },
             'bn': {
                 'brand': 'FAZ NETWORK',
@@ -481,6 +686,7 @@
                 'sms_setting': 'এসএমএস সেটিং',
                 'backup_restore': 'ব্যাকআপ অ্যান্ড রিস্টোর',
                 'vpn_server': 'ভিপিএন সার্ভার',
+                'vpn': 'ভিপিএন',
                 'vpn_port_forwarding': 'ভিপিএন পোর্ট ফরওয়ার্ডিং',
                 'account_support': 'অ্যাকাউন্ট অ্যান্ড সাপোর্ট',
                 'support_dashboard': 'ড্যাশবোর্ড',
@@ -501,7 +707,34 @@
                 'google_map': 'গুগল ম্যাপ',
                 'user_reseller': 'ইউজার অ্যান্ড রিসেলার',
                 'sub_staff': 'সাব-স্টাফ',
-                'welcome_msg': 'স্বাগতম, FAZ NETWORK অ্যাডমিন প্যানেল'
+                
+                // Add Customer Form
+                'customer_management': 'কাস্টমার ম্যানেজমেন্ট',
+                'add_new_customer': 'নতুন কাস্টমার যুক্ত করুন',
+                'label_fullname': 'পূর্ণ নাম *',
+                'label_phone': 'ফোন নম্বর *',
+                'label_device': 'ডিভাইস (রাউটার / ন্যাস) *',
+                'label_conn_type': 'কানেকশন টাইপ *',
+                'label_username': 'ইউজারনেম *',
+                'label_password': 'পাসওয়ার্ড *',
+                'label_package': 'প্যাকেজ নির্বাচন *',
+                'label_billing_duration': 'বিলিং মেয়াদ *',
+                'label_nid_passport': 'এনআইডি / পাসপোর্ট তথ্য',
+                'label_address': 'সম্পূর্ণ ঠিকানা *',
+                'opt_select_device': 'মাইক্রোটিক / রাউটার বেছে নিন',
+                'opt_select_package': 'ইন্টারনেট প্ল্যান নির্বাচন করুন',
+                'opt_1_month': '১ মাস (৩০ দিন)',
+                'opt_3_months': '৩ মাস',
+                'opt_6_months': '৬ মাস',
+                'opt_1_year': '১ বছর',
+                'btn_reset': 'রিসেট',
+                'btn_save_customer': 'সংরক্ষণ করুন',
+                'ph_fullname': 'যেমন: মোঃ ফজল রাব্বি',
+                'ph_phone': 'যেমন: ০১৭১২-৩৪৫৬৭৮',
+                'ph_username': 'pppoe_user',
+                'ph_password': '••••••••',
+                'ph_nid_passport': 'এনআইডি বা পাসপোর্ট নম্বর লিখুন',
+                'ph_address': 'বাড়ি, রোড, এলাকা, জেলা'
             }
         };
 
@@ -531,13 +764,23 @@
 
         function updateLanguage(lang) {
             document.documentElement.lang = lang;
-            const elements = document.querySelectorAll('[data-key]');
-            elements.forEach(el => {
+            
+            // Translate text content
+            document.querySelectorAll('[data-key]').forEach(el => {
                 const key = el.getAttribute('data-key');
                 if (translations[lang] && translations[lang][key]) {
                     el.innerText = translations[lang][key];
                 }
             });
+
+            // Translate placeholders
+            document.querySelectorAll('[data-placeholder-key]').forEach(el => {
+                const key = el.getAttribute('data-placeholder-key');
+                if (translations[lang] && translations[lang][key]) {
+                    el.setAttribute('placeholder', translations[lang][key]);
+                }
+            });
+
             localStorage.setItem('faz_preferred_lang', lang);
         }
 
@@ -548,6 +791,12 @@
 
         langSelect.addEventListener('change', function() {
             updateLanguage(this.value);
+        });
+
+        // Form submission handler
+        document.getElementById('addCustomerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Customer form submitted successfully! (Backend integration pending)');
         });
     </script>
 </body>
