@@ -179,4 +179,656 @@
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <span data-key="brand">FAZ NETWORK</span>
-            <button
+            <button class="btn btn-link text-white d-md-none" onclick="toggleSidebar()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <!-- Language Switcher -->
+        <div class="lang-switcher">
+            <i class="bi bi-translate"></i>
+            <select id="langSelect">
+                <option value="en" selected>English (USA)</option>
+                <option value="bn">বাংলা</option>
+            </select>
+        </div>
+
+        <ul class="sidebar-menu">
+            <!-- Dashboard -->
+            <li class="menu-item">
+                <a href="javascript:void(0)" onclick="loadContentPage('dashboard.html', 'Dashboard')">
+                    <i class="bi bi-speedometer2"></i> <span data-key="dashboard">Dashboard</span>
+                </a>
+            </li>
+
+            <!-- Customer -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-people"></i> <span data-key="customer">Customer</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon bi-chevron-up"></i>
+                </button>
+                <ul class="submenu show">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('customers-all.html', 'All Customer')"><span data-key="all_customer">All Customer</span></a></li>
+                    <li><a href="javascript:void(0)" class="active text-white" onclick="loadContentPage('customers-add.html', 'Add Customer')"><span data-key="add_customer">Add Customer</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('customers-online.html', 'Online Customer')"><span data-key="online_customer">Online Customer</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('customers-offline.html', 'Offline Customer')"><span data-key="offline_customer">Offline Customer</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('customers-active.html', 'Active Customer')"><span data-key="active_customer">Active Customer</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('customers-left.html', 'Left Customer')"><span data-key="left_customer">Left Customer</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('customers-expire.html', 'Expire Customer')"><span data-key="expire_customer">Expire Customer</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('customers-expire-today-yesterday.html', 'Expire Today & Yesterday')"><span data-key="expire_today_yesterday">Expire Today & Yesterday</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('customers-expire-7-days.html', 'Expire in 7 Days')"><span data-key="expire_7_days">Expire in 7 Days</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('customers-new.html', 'New Customer')"><span data-key="new_customer">New Customer</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('customers-due-collection.html', 'Due Collection')"><span data-key="due_collection">Due Collection</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Report -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-file-earmark-text"></i> <span data-key="report">Report</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('report-collection-due.html', 'Monthly Collection & Due')"><span data-key="monthly_collection_due">Monthly Collection & Due</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('report-sales.html', 'Monthly Sales')"><span data-key="monthly_sales">Monthly Sales</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('report-invoice.html', 'Invoice Report')"><span data-key="invoice_report">Invoice Report</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Payments -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-credit-card"></i> <span data-key="payments">Payments</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('payments-pending.html', 'Pending Invoice')"><span data-key="pending_invoice">Pending Invoice</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('payments-all.html', 'All Payments')"><span data-key="all_payments">All Payments</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('payments-request.html', 'Payment Request')"><span data-key="payment_request">Payment Request</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('payments-bkash.html', 'bKash Payments')"><span data-key="bkash_payments">bKash Payments</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('payments-nagad.html', 'Nagad Payments')"><span data-key="nagad_payments">Nagad Payments</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('payments-rocket.html', 'Rocket Payments')"><span data-key="rocket_payments">Rocket Payments</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Hotspot -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-wifi"></i> <span data-key="hotspot">Hotspot</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('hotspot-dashboard.html', 'Hotspot Dashboard')"><span data-key="hotspot_dashboard">Dashboard</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('hotspot-all-users.html', 'All Users')"><span data-key="all_user">All Users</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('hotspot-active-users.html', 'Active Users')"><span data-key="active_user">Active Users</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('hotspot-online-users.html', 'Online Users')"><span data-key="online_user">Online Users</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('hotspot-profile.html', 'Profile')"><span data-key="hotspot_profile">Profile</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('hotspot-server-profile.html', 'Server Profile')"><span data-key="server_profile">Server Profile</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Core System -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-gear-wide-connected"></i> <span data-key="core_system">Core System</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('core-pppoe.html', 'PPPoE')"><span data-key="pppoe">PPPoE</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('core-devices.html', 'Devices')"><span data-key="devices">Devices</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('core-plan-packages.html', 'Plan & Packages')"><span data-key="plan_package">Plan & Packages</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('core-ip-pools.html', 'IP Pools')"><span data-key="ip_pools">IP Pools</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('core-olt.html', 'OLT Management')"><span data-key="olt_management">OLT Management</span></a></li>
+                    <li>
+                        <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                            <span data-key="monitor">Monitor</span> <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                        </button>
+                        <ul class="submenu">
+                            <li><a href="javascript:void(0)" onclick="loadContentPage('core-monitor-usage.html', 'Usage')"><span data-key="usage">Usage</span></a></li>
+                            <li><a href="javascript:void(0)" onclick="loadContentPage('core-monitor-online.html', 'Online')"><span data-key="online">Online</span></a></li>
+                        </ul>
+                    </li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('core-diagram.html', 'Network Diagram')"><span data-key="network_diagram">Network Diagram</span></a></li>
+                </ul>
+            </li>
+
+            <!-- General Setting -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-gear"></i> <span data-key="general_setting">General Setting</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('settings-website.html', 'Website Setting')"><span data-key="website_setting">Website Setting</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('settings-sms.html', 'SMS Setting')"><span data-key="sms_setting">SMS Setting</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('settings-backup.html', 'Backup & Restore')"><span data-key="backup_restore">Backup & Restore</span></a></li>
+                </ul>
+            </li>
+
+            <!-- VPN Server -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-shield-lock"></i> <span data-key="vpn_server">VPN Server</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('vpn-list.html', 'VPN')"><span data-key="vpn">VPN</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('vpn-port-forwarding.html', 'VPN Port Forwarding')"><span data-key="vpn_port_forwarding">VPN Port Forwarding</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Account & Support -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-headset"></i> <span data-key="account_support">Account & Support</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('support-dashboard.html', 'Dashboard')"><span data-key="support_dashboard">Dashboard</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('support-manage.html', 'Manage')"><span data-key="support_manage">Manage</span></a></li>
+                    <li>
+                        <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                            <span data-key="support">Support</span> <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                        </button>
+                        <ul class="submenu">
+                            <li><a href="javascript:void(0)" onclick="loadContentPage('support-tickets.html', 'Support Tickets')"><span data-key="support_tickets">Support Tickets</span></a></li>
+                            <li><a href="javascript:void(0)" onclick="loadContentPage('support-software-tickets.html', 'Software Support Tickets')"><span data-key="software_support_tickets">Software Support Tickets</span></a></li>
+                            <li><a href="javascript:void(0)" onclick="loadContentPage('support-website-tickets.html', 'Website Support Tickets')"><span data-key="website_support_tickets">Website Support Tickets</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Expenses -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-wallet2"></i> <span data-key="expenses">Expenses</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('expenses-add.html', 'Add Expenses')"><span data-key="add_expenses">Add Expenses</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('expenses-all.html', 'All Expenses')"><span data-key="all_expenses">All Expenses</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('expenses-report.html', 'Expenses Report')"><span data-key="expenses_report">Expenses Report</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Human Resource -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-person-badge"></i> <span data-key="human_resource">Human Resource</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('hr-department.html', 'Department')"><span data-key="department">Department</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('hr-employees.html', 'All Employees')"><span data-key="all_employee">All Employees</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('hr-add-employee.html', 'Added Employees')"><span data-key="added_employee">Added Employees</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Live Tracking -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-geo-alt"></i> <span data-key="live_tracking">Live Tracking</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('tracking-google-map.html', 'Google Map')"><span data-key="google_map">Google Map</span></a></li>
+                </ul>
+            </li>
+
+            <!-- User & Reseller -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
+                    <i class="bi bi-person-plus"></i> <span data-key="user_reseller">User & Reseller</span>
+                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="loadContentPage('user-sub-staff.html', 'Sub-Staff')"><span data-key="sub_staff">Sub-Staff</span></a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white rounded shadow-sm mb-4 p-2">
+            <div class="container-fluid">
+                <button class="btn btn-outline-success d-md-none" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <span class="fs-5 fw-semibold text-secondary d-none d-md-block" id="pageTitle" data-key="customer_management">Customer Management</span>
+                <div class="ms-auto d-flex gap-2">
+                    <button class="btn btn-outline-dark" id="mikrotikToggle">
+                        <i class="bi bi-router"></i> MikroTik
+                    </button>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Dynamic Content Mount Area -->
+        <div id="dynamicPageContent">
+            <!-- ডিফল্ট হিসেবে Add Customer ফর্মটি শুরুতেই থাকবে -->
+            <div class="card card-custom">
+                <div class="card-custom-header">
+                    <i class="bi bi-person-plus-fill text-success fs-5"></i>
+                    <span class="fs-5" data-key="add_new_customer">Add New Customer</span>
+                </div>
+                <div class="card-body p-4">
+                    <form id="addCustomerForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="fullName" class="form-label" data-key="label_fullname">Full Name *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                    <input type="text" class="form-control" id="fullName" placeholder="e.g. John Doe" data-placeholder-key="ph_fullname" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phoneNumber" class="form-label" data-key="label_phone">Phone Number *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-telephone"></i></span>
+                                    <input type="tel" class="form-control" id="phoneNumber" placeholder="e.g. 01700000000" data-placeholder-key="ph_phone" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="device" class="form-label" data-key="label_device">Device (Router / NAS) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-hdd-network"></i></span>
+                                    <select class="form-select" id="device" required>
+                                        <option value="" disabled selected data-key="opt_select_device">Select MikroTik / Router</option>
+                                        <option value="main-router">Core Router (RB4011)</option>
+                                        <option value="station-router">POP-1 Router</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="connectionType" class="form-label" data-key="label_conn_type">Connection Type *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-diagram-3"></i></span>
+                                    <select class="form-select" id="connectionType" required>
+                                        <option value="pppoe" selected>PPPoE</option>
+                                        <option value="static">Static IP</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="username" class="form-label" data-key="label_username">Username *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-at"></i></span>
+                                    <input type="text" class="form-control" id="username" placeholder="pppoe_user" data-placeholder-key="ph_username" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="password" class="form-label" data-key="label_password">Password *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                                    <input type="password" class="form-control" id="password" placeholder="••••••••" data-placeholder-key="ph_password" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="packageSelect" class="form-label" data-key="label_package">Package Selection *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-speedometer"></i></span>
+                                    <select class="form-select" id="packageSelect" required>
+                                        <option value="" disabled selected data-key="opt_select_package">Select Internet Plan</option>
+                                        <option value="pkg_10mbps">Standard - 10 Mbps</option>
+                                        <option value="pkg_20mbps">Premium - 20 Mbps</option>
+                                        <option value="pkg_30mbps">Ultra - 30 Mbps</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="billingDuration" class="form-label" data-key="label_billing_duration">Billing Duration *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-calendar-event"></i></span>
+                                    <select class="form-select" id="billingDuration" required>
+                                        <option value="1_month" selected data-key="opt_1_month">1 Month (30 Days)</option>
+                                        <option value="3_months" data-key="opt_3_months">3 Months</option>
+                                        <option value="6_months" data-key="opt_6_months">6 Months</option>
+                                        <option value="1_year" data-key="opt_1_year">1 Year</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="nidPassport" class="form-label" data-key="label_nid_passport">NID / Passport Information</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-card-heading"></i></span>
+                                    <input type="text" class="form-control" id="nidPassport" placeholder="e.g. NID or Passport Number" data-placeholder-key="ph_nid_passport">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="fullAddress" class="form-label" data-key="label_address">Full Address *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-geo-alt"></i></span>
+                                    <textarea class="form-control" id="fullAddress" rows="1" placeholder="House, Road, Area, District" data-placeholder-key="ph_address" required></textarea>
+                                </div>
+                            </div>
+                            <div class="col-12 mt-4 pt-2 border-top d-flex justify-content-end gap-2">
+                                <button type="reset" class="btn btn-light border px-4" data-key="btn_reset">Reset</button>
+                                <button type="submit" class="btn btn-theme px-4" data-key="btn_save_customer">
+                                    <i class="bi bi-check2-circle me-1"></i> Save Customer
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const translations = {
+            'en': {
+                'brand': 'FAZ NETWORK',
+                'dashboard': 'Dashboard',
+                'customer': 'Customer',
+                'all_customer': 'All Customer',
+                'add_customer': 'Add Customer',
+                'online_customer': 'Online Customer',
+                'offline_customer': 'Offline Customer',
+                'active_customer': 'Active Customer',
+                'left_customer': 'Left Customer',
+                'expire_customer': 'Expire Customer',
+                'expire_today_yesterday': 'Expire Today & Yesterday',
+                'expire_7_days': 'Expire in 7 Days',
+                'new_customer': 'New Customer',
+                'due_collection': 'Due Collection',
+                'report': 'Report',
+                'monthly_collection_due': 'Monthly Collection & Due',
+                'monthly_sales': 'Monthly Sales',
+                'invoice_report': 'Invoice Report',
+                'payments': 'Payments',
+                'pending_invoice': 'Pending Invoice',
+                'all_payments': 'All Payments',
+                'payment_request': 'Payment Request',
+                'bkash_payments': 'bKash Payments',
+                'nagad_payments': 'Nagad Payments',
+                'rocket_payments': 'Rocket Payments',
+                'hotspot': 'Hotspot',
+                'hotspot_dashboard': 'Dashboard',
+                'all_user': 'All Users',
+                'active_user': 'Active Users',
+                'online_user': 'Online Users',
+                'hotspot_profile': 'Profile',
+                'server_profile': 'Server Profile',
+                'core_system': 'Core System',
+                'pppoe': 'PPPoE',
+                'plan_package': 'Plan & Packages',
+                'ip_pools': 'IP Pools',
+                'devices': 'Devices',
+                'olt_management': 'OLT Management',
+                'monitor': 'Monitor',
+                'usage': 'Usage',
+                'online': 'Online',
+                'network_diagram': 'Network Diagram',
+                'general_setting': 'General Setting',
+                'website_setting': 'Website Setting',
+                'sms_setting': 'SMS Setting',
+                'backup_restore': 'Backup & Restore',
+                'vpn_server': 'VPN Server',
+                'vpn': 'VPN',
+                'vpn_port_forwarding': 'VPN Port Forwarding',
+                'account_support': 'Account & Support',
+                'support_dashboard': 'Dashboard',
+                'support_manage': 'Manage',
+                'support': 'Support',
+                'support_tickets': 'Support Tickets',
+                'software_support_tickets': 'Software Support Tickets',
+                'website_support_tickets': 'Website Support Tickets',
+                'expenses': 'Expenses',
+                'add_expenses': 'Add Expenses',
+                'all_expenses': 'All Expenses',
+                'expenses_report': 'Expenses Report',
+                'human_resource': 'Human Resource',
+                'department': 'Department',
+                'all_employee': 'All Employees',
+                'added_employee': 'Added Employees',
+                'live_tracking': 'Live Tracking',
+                'google_map': 'Google Map',
+                'user_reseller': 'User & Reseller',
+                'sub_staff': 'Sub-Staff',
+                'customer_management': 'Customer Management',
+                'add_new_customer': 'Add New Customer',
+                'label_fullname': 'Full Name *',
+                'label_phone': 'Phone Number *',
+                'label_device': 'Device (Router / NAS) *',
+                'label_conn_type': 'Connection Type *',
+                'label_username': 'Username *',
+                'label_password': 'Password *',
+                'label_package': 'Package Selection *',
+                'label_billing_duration': 'Billing Duration *',
+                'label_nid_passport': 'NID / Passport Information',
+                'label_address': 'Full Address *',
+                'opt_select_device': 'Select MikroTik / Router',
+                'opt_select_package': 'Select Internet Plan',
+                'opt_1_month': '1 Month (30 Days)',
+                'opt_3_months': '3 Months',
+                'opt_6_months': '6 Months',
+                'opt_1_year': '1 Year',
+                'btn_reset': 'Reset',
+                'btn_save_customer': 'Save Customer',
+                'ph_fullname': 'e.g. John Doe',
+                'ph_phone': 'e.g. 01700000000',
+                'ph_username': 'pppoe_user',
+                'ph_password': '••••••••',
+                'ph_nid_passport': 'e.g. NID or Passport Number',
+                'ph_address': 'House, Road, Area, District'
+            },
+            'bn': {
+                'brand': 'FAZ NETWORK',
+                'dashboard': 'ড্যাশবোর্ড',
+                'customer': 'কাস্টমার',
+                'all_customer': 'অল কাস্টমার',
+                'add_customer': 'অ্যাড কাস্টমার',
+                'online_customer': 'অনলাইন কাস্টমার',
+                'offline_customer': 'অফলাইন কাস্টমার',
+                'active_customer': 'অ্যাক্টিভ কাস্টমার',
+                'left_customer': 'লেফট কাস্টমার',
+                'expire_customer': 'এক্সপায়ার কাস্টমার',
+                'expire_today_yesterday': 'এক্সপায়ার ইন টুডে অ্যান্ড ইয়েস্টারডে',
+                'expire_7_days': 'এক্সপায়ার ইন সেভেন ডেস',
+                'new_customer': 'নিউ কাস্টমার',
+                'due_collection': 'ডিউ কালেকশন',
+                'report': 'রিপোর্ট',
+                'monthly_collection_due': 'মান্থলি কালেকশন অ্যান্ড ডিউ',
+                'monthly_sales': 'মান্থলি সেল',
+                'invoice_report': 'ইনভয়েস রিপোর্ট',
+                'payments': 'পেমেন্টস',
+                'pending_invoice': 'পেন্ডিং ইনভয়েস',
+                'all_payments': 'অল পেমেন্টস',
+                'payment_request': 'পেমেন্ট রিকোয়েস্ট',
+                'bkash_payments': 'বিকাশ পেমেন্টস',
+                'nagad_payments': 'নগদ পেমেন্টস',
+                'rocket_payments': 'রকেট পেমেন্টস',
+                'hotspot': 'হটস্পট',
+                'hotspot_dashboard': 'ড্যাশবোর্ড',
+                'all_user': 'অল ইউজার',
+                'active_user': 'অ্যাক্টিভ ইউজার',
+                'online_user': 'অনলাইন ইউজার',
+                'hotspot_profile': 'প্রোফাইল',
+                'server_profile': 'সার্ভার প্রোফাইল',
+                'core_system': 'কোর সিস্টেম',
+                'pppoe': 'পিপি পিও ই',
+                'devices': 'ডিভাইসেস',
+                'plan_package': 'প্ল্যান অ্যান্ড প্যাকেজ',
+                'ip_pools': 'আইপি পুলস',
+                'olt_management': 'ও এল টি ম্যানেজমেন্ট',
+                'monitor': 'মনিটর',
+                'usage': 'ইউজেস',
+                'online': 'অনলাইন',
+                'network_diagram': 'নেটওয়ার্ক ডায়াগ্রাম',
+                'general_setting': 'জেনারেল সেটিং',
+                'website_setting': 'ওয়েবসাইট সেটিং',
+                'sms_setting': 'এসএমএস সেটিং',
+                'backup_restore': 'ব্যাকআপ অ্যান্ড রিস্টোর',
+                'vpn_server': 'ভিপিএন সার্ভার',
+                'vpn': 'ভিপিএন',
+                'vpn_port_forwarding': 'ভিপিএন পোর্ট ফরওয়ার্ডিং',
+                'account_support': 'অ্যাকাউন্ট অ্যান্ড সাপোর্ট',
+                'support_dashboard': 'ড্যাশবোর্ড',
+                'support_manage': 'ম্যানেজ',
+                'support': 'সাপোর্ট',
+                'support_tickets': 'সাপোর্ট টিকিটস',
+                'software_support_tickets': 'সফটওয়্যার সাপোর্ট টিকিটস',
+                'website_support_tickets': 'ওয়েবসাইট সাপোর্ট টিকিটস',
+                'expenses': 'এক্সপেন্সেস',
+                'add_expenses': 'অ্যাড এক্সপেন্সেস',
+                'all_expenses': 'অল এক্সপেন্সেস',
+                'expenses_report': 'এক্সপেন্সেস রিপোর্ট',
+                'human_resource': 'হিউম্যান রিসোর্স',
+                'department': 'ডিপার্টমেন্ট',
+                'all_employee': 'অল এমপ্লয়ি',
+                'added_employee': 'অ্যাডড এমপ্লয়ি',
+                'live_tracking': 'লাইভ ট্র্যাকিং',
+                'google_map': 'গুগল ম্যাপ',
+                'user_reseller': 'ইউজার অ্যান্ড রিসেলার',
+                'sub_staff': 'সাব-স্টাফ',
+                'customer_management': 'কাস্টমার ম্যানেজমেন্ট',
+                'add_new_customer': 'নতুন কাস্টমার যুক্ত করুন',
+                'label_fullname': 'পূর্ণ নাম *',
+                'label_phone': 'ফোন নম্বর *',
+                'label_device': 'ডিভাইস (রাউটার / ন্যাস) *',
+                'label_conn_type': 'কানেকশন টাইপ *',
+                'label_username': 'ইউজারনেম *',
+                'label_password': 'পাসওয়ার্ড *',
+                'label_package': 'প্যাকেজ নির্বাচন *',
+                'label_billing_duration': 'বিলিং মেয়াদ *',
+                'label_nid_passport': 'এনআইডি / পাসপোর্ট তথ্য',
+                'label_address': 'সম্পূর্ণ ঠিকানা *',
+                'opt_select_device': 'মাইক্রোটিক / রাউটার বেছে নিন',
+                'opt_select_package': 'ইন্টারনেট প্ল্যান নির্বাচন করুন',
+                'opt_1_month': '১ মাস (৩০ দিন)',
+                'opt_3_months': '৩ মাস',
+                'opt_6_months': '৬ মাস',
+                'opt_1_year': '১ বছর',
+                'btn_reset': 'রিসেট',
+                'btn_save_customer': 'সংরক্ষণ করুন',
+                'ph_fullname': 'যেমন: মোঃ ফজল রাব্বি',
+                'ph_phone': 'যেমন: ০১৭১২-৩৪৫৬৭৮',
+                'ph_username': 'pppoe_user',
+                'ph_password': '••••••••',
+                'ph_nid_passport': 'এনআইডি বা পাসপোর্ট নম্বর লিখুন',
+                'ph_address': 'বাড়ি, রোড, এলাকা, জেলা'
+            }
+        };
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+
+        // Submenu Toggle Handler
+        function toggleSubmenu(event, button) {
+            event.stopPropagation();
+            const submenu = button.nextElementSibling;
+            const parentList = button.closest('ul');
+            
+            parentList.querySelectorAll(':scope > li > .submenu').forEach(sm => {
+                if (sm !== submenu) {
+                    sm.classList.remove('show');
+                    const icon = sm.previousElementSibling.querySelector('.arrow-icon');
+                    if (icon) icon.classList.remove('bi-chevron-up');
+                }
+            });
+
+            submenu.classList.toggle('show');
+            const arrow = button.querySelector('.arrow-icon');
+            if (arrow) {
+                arrow.classList.toggle('bi-chevron-up');
+            }
+        }
+
+        // Dynamic Page Loader Handler
+        function loadContentPage(fileName, titleText) {
+            const contentArea = document.getElementById('dynamicPageContent');
+            const pageTitle = document.getElementById('pageTitle');
+            
+            if (titleText && pageTitle) {
+                pageTitle.innerText = titleText;
+            }
+
+            // সক্রিয় ক্লাস সেট করা
+            document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active', 'text-white'));
+            if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.classList.add('active', 'text-white');
+            }
+
+            contentArea.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p class="mt-2 text-muted">লোড হচ্ছে...</p>
+                </div>
+            `;
+
+            // ফাইলে রিকোয়েস্ট পাঠানো
+            fetch(fileName)
+                .then(response => {
+                    if (!response.ok) throw new Error('File not found');
+                    return response.text();
+                })
+                .then(html => {
+                    contentArea.innerHTML = html;
+
+                    // স্ক্রিপ্ট এক্সিকিউট করা
+                    const scripts = contentArea.querySelectorAll("script");
+                    scripts.forEach(oldScript => {
+                        const newScript = document.createElement("script");
+                        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                    });
+
+                    // ভাষা প্রয়োগ
+                    const currentLang = localStorage.getItem('faz_preferred_lang') || 'en';
+                    updateLanguage(currentLang);
+                })
+                .catch(err => {
+                    contentArea.innerHTML = `
+                        <div class="alert alert-warning m-3" role="alert">
+                            <i class="bi bi-info-circle me-2"></i> <strong>${fileName}</strong> ফাইলটি এখনও তৈরি করা হয়নি বা পাওয়া যায়নি।
+                        </div>
+                    `;
+                });
+        }
+
+        function updateLanguage(lang) {
+            document.documentElement.lang = lang;
+            
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (translations[lang] && translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+
+            document.querySelectorAll('[data-placeholder-key]').forEach(el => {
+                const key = el.getAttribute('data-placeholder-key');
+                if (translations[lang] && translations[lang][key]) {
+                    el.setAttribute('placeholder', translations[lang][key]);
+                }
+            });
+
+            localStorage.setItem('faz_preferred_lang', lang);
+        }
+
+        const langSelect = document.getElementById('langSelect');
+        const savedLang = localStorage.getItem('faz_preferred_lang') || 'en';
+        langSelect.value = savedLang;
+        updateLanguage(savedLang);
+
+        langSelect.addEventListener('change', function() {
+            updateLanguage(this.value);
+        });
+
+        // Add Customer Form Submit Handler
+        const addCustomerForm = document.getElementById('addCustomerForm');
+        if (addCustomerForm) {
+            addCustomerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Customer form submitted successfully! (Backend integration pending)');
+            });
+        }
+    </script>
+</body>
+</html>
