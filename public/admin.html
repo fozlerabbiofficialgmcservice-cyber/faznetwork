@@ -3,194 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAZ NETWORK - ISP Core ERP Dashboard</title>
+    <title>FAZ NETWORK - Admin Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        :root {
-            --bg-dark: #07151e;
-            --card-bg: #0d2230;
-            --border-color: #1a384e;
-            --accent-green: #10b981;
-            --accent-blue: #0284c7;
+        body {
+            background-color: #121927;
+            color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        body { background-color: var(--bg-dark); color: #f1f5f9; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; }
-        .badge-active { background: #10b981; color: #fff; }
-        .badge-offline { background: #64748b; color: #fff; }
-        .badge-expired { background: #f59e0b; color: #000; font-weight: bold; }
-        .badge-suspended { background: #ef4444; color: #fff; }
-        .badge-terminated { background: #475569; color: #fff; }
-        .table { color: #f1f5f9; vertical-align: middle; }
-        .table-dark { background-color: var(--card-bg); }
-        .mac-text { font-family: monospace; color: #38bdf8; font-size: 13px; }
-        .search-box { background: #071924; border: 1px solid var(--border-color); color: #fff; }
-        .search-box:focus { background: #071924; color: #fff; border-color: var(--accent-green); box-shadow: none; }
+        .card {
+            background-color: #1a233a;
+            border: 1px solid #2d3748;
+            border-radius: 10px;
+        }
+        .table-dark {
+            background-color: #1a233a;
+        }
+        .table-dark th {
+            background-color: #242f49;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .stat-card {
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .badge-active {
+            background-color: #10b981;
+            color: #fff;
+        }
+        .badge-inactive {
+            background-color: #ef4444;
+            color: #fff;
+        }
+        .loader-spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            vertical-align: text-bottom;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
+        }
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
-<body class="p-3 p-md-4">
+<body>
 
-<div class="container-fluid">
-    <!-- হেডার -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary gap-2">
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom border-secondary">
         <div>
-            <h2 class="fw-bold mb-0 text-success"><i class="fa-solid fa-bolt"></i> FAZ NETWORK</h2>
-            <small class="text-secondary">সম্পূর্ণ স্বয়ংক্রিয় PPPoE & ISP বিলিং কোর ড্যাশবোর্ড</small>
+            <h3 class="fw-bold mb-0 text-white"><i class="bi bi-hdd-network text-success me-2"></i>FAZ NETWORK</h3>
+            <small class="text-secondary">ISP Subscriber Management Dashboard</small>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-light" onclick="loadDashboard()"><i class="fa-solid fa-arrows-rotate"></i> রিফ্রেশ</button>
-            <button class="btn btn-info fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#poolModal"><i class="fa-solid fa-network-wired"></i> IP Pools</button>
-            <button class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addCustomerModal"><i class="fa-solid fa-user-plus"></i> নতুন কাস্টমার</button>
+        <button class="btn btn-primary" onclick="loadDashboard()">
+            <i class="bi bi-arrow-clockwise me-1"></i> রিফ্রেশ
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="card stat-card border-success">
+                <small class="text-secondary d-block">অনলাইন ইউজার</small>
+                <h3 class="fw-bold text-success mb-0" id="onlineUsers">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card stat-card border-warning">
+                <small class="text-secondary d-block">অফলাইন</small>
+                <h3 class="fw-bold text-warning mb-0" id="offlineUsers">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card stat-card border-info">
+                <small class="text-secondary d-block">মোট ইউজার</small>
+                <h3 class="fw-bold text-info mb-0" id="totalUsers">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card stat-card border-danger">
+                <small class="text-secondary d-block">মেয়াদ উত্তীর্ণ / বাকি</small>
+                <h3 class="fw-bold text-danger mb-0" id="expiredUsers">0</h3>
+            </div>
         </div>
     </div>
 
-    <!-- মোট পরিসংখ্যান ও মাসিক আয় কার্ড -->
-    <div class="row g-3 mb-4 text-center">
-        <div class="col-6 col-md-2">
-            <div class="card p-3 shadow-sm"><small class="text-secondary">মোট গ্রাহক</small><h3 id="total-cust" class="fw-bold mb-0">0</h3></div>
-        </div>
-        <div class="col-6 col-md-2">
-            <div class="card p-3 shadow-sm"><small class="text-success">অনলাইন (সচল)</small><h3 id="active-cust" class="text-success fw-bold mb-0">0</h3></div>
-        </div>
-        <div class="col-6 col-md-2">
-            <div class="card p-3 shadow-sm"><small class="text-secondary">অফলাইন</small><h3 id="offline-cust" class="text-secondary fw-bold mb-0">0</h3></div>
-        </div>
-        <div class="col-6 col-md-2">
-            <div class="card p-3 shadow-sm"><small class="text-warning">মেয়াদ উত্তীর্ণ</small><h3 id="exp-cust" class="text-warning fw-bold mb-0">0</h3></div>
-        </div>
-        <div class="col-6 col-md-2">
-            <div class="card p-3 shadow-sm"><small class="text-danger">ব্লকড / স্থগিত</small><h3 id="susp-cust" class="text-danger fw-bold mb-0">0</h3></div>
-        </div>
-        <div class="col-6 col-md-2">
-            <div class="card p-3 shadow-sm border-success"><small class="text-info">চলতি মাসে আয়</small><h3 id="total-income" class="text-info fw-bold mb-0">৳ 0</h3></div>
-        </div>
-    </div>
-
-    <!-- কাস্টমার টেবিল এবং ফিল্টারিং -->
-    <div class="card p-3 shadow-lg">
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-            <h5 class="fw-bold mb-0"><i class="fa-solid fa-users"></i> গ্রাহক তালিকা ও লাইভ ম্যানেজমেন্ট</h5>
-            <div class="d-flex gap-2 w-100 w-md-auto" style="max-width: 400px;">
-                <input type="text" id="searchInput" onkeyup="filterCustomers()" class="form-control search-box" placeholder="🔍 আইডি, নাম বা মোবাইল দিয়ে খুঁজুন...">
-                <select id="statusFilter" onchange="filterCustomers()" class="form-select search-box" style="width: 140px;">
-                    <option value="all">সব স্ট্যাটাস</option>
-                    <option value="active">Active</option>
-                    <option value="offline">Offline</option>
-                    <option value="expired">Expired</option>
-                    <option value="suspended">Suspended</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-dark table-hover">
-                <thead>
-                    <tr class="text-secondary">
-                        <th>কাস্টমার আইডি ও নাম</th>
-                        <th>টাইপ</th>
-                        <th>মোবাইল নম্বর</th>
-                        <th>প্যাকেজ</th>
-                        <th>লকড MAC</th>
-                        <th>আইপি / আপটাইম</th>
-                        <th>মেয়াদ (Expire Date)</th>
-                        <th>মাসিক বিল</th>
-                        <th>স্ট্যাটাস</th>
-                        <th>অ্যাকশন</th>
-                    </tr>
-                </thead>
-                <tbody id="customer-rows">
-                    <tr><td colspan="10" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> ডাটা লোড হচ্ছে...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: কাস্টমার ডিটেইলস ও পেমেন্ট হিস্টোরি -->
-<div class="modal fade" id="historyModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark text-white border-secondary">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="historyModalTitle">কাস্টমার প্রোফাইল ও স্টেটমেন্ট</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="customer-summary-box" class="p-3 mb-3 rounded" style="background: #071924; border: 1px solid #1a384e;"></div>
-                <h6 class="fw-bold mb-2">রিচার্জ ও ট্রানজেকশন হিস্টোরি:</h6>
-                <div class="table-responsive">
-                    <table class="table table-dark table-bordered">
-                        <thead>
-                            <tr class="text-secondary">
-                                <th>তারিখ ও সময়</th>
-                                <th>টাকা</th>
-                                <th>পদ্ধতি</th>
-                                <th>TrxID / রেফারেন্স</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-rows"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: নতুন কাস্টমার যোগ -->
-<div class="modal fade" id="addCustomerModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-white border-secondary">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title">+ নতুন কাস্টমার যোগ করুন</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="add-cust-form">
-                    <div class="mb-2"><label class="form-label">গ্রাহকের নাম</label><input type="text" id="cust-name" class="form-control bg-secondary text-white" required></div>
-                    <div class="mb-2"><label class="form-label">User ID (ইউজারনেম)</label><input type="text" id="cust-user" class="form-control bg-secondary text-white" required></div>
-                    <div class="mb-2"><label class="form-label">পাসওয়ার্ড</label><input type="text" id="cust-pass" value="1234" class="form-control bg-secondary text-white" required></div>
-                    <div class="mb-2">
-                        <label class="form-label">কানেকশন টাইপ</label>
-                        <select id="cust-type" class="form-select bg-secondary text-white">
-                            <option value="PPPoE">PPPoE</option>
-                            <option value="Static IP">Static IP</option>
-                        </select>
-                    </div>
-                    <div class="mb-2"><label class="form-label">মোবাইল নম্বর</label><input type="text" id="cust-phone" class="form-control bg-secondary text-white" placeholder="017xxxxxxxx" required></div>
-                    <div class="mb-2">
-                        <label class="form-label">প্যাকেজ প্রোফাইল</label>
-                        <select id="cust-profile" class="form-select bg-secondary text-white">
-                            <option value="FZN 30 Mbps">FZN 30 Mbps</option>
-                            <option value="FZN 50 Mbps">FZN 50 Mbps</option>
-                        </select>
-                    </div>
-                    <div class="mb-2"><label class="form-label">মাসিক বিল (টাকা)</label><input type="number" id="cust-bill" value="500" class="form-control bg-secondary text-white" required></div>
-                    <div class="mb-2"><label class="form-label">মেয়াদ শুরুর তারিখ (ঐচ্ছিক)</label><input type="date" id="cust-exp" class="form-control bg-secondary text-white"></div>
-                    <button type="submit" class="btn btn-success w-100 mt-3 fw-bold">কাস্টমার সংরক্ষণ করুন</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: IP Pool ম্যানেজমেন্ট -->
-<div class="modal fade" id="poolModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark text-white border-secondary">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title">MikroTik IP Pool তালিকা</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <table class="table table-dark table-bordered mb-4">
-                    <thead><tr><th>Pool Name</th><th>IP Ranges</th></tr></thead>
-                    <tbody id="pool-rows"></tbody>
+    <!-- Customer Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>ইউজারনেম</th>
+                            <th>মোবাইল নম্বর</th>
+                            <th>প্যাকেজ</th>
+                            <th>কানেকশন MAC</th>
+                            <th>আইপি / সাবনেট</th>
+                            <th>মেয়াদ (Expire Date)</th>
+                            <th>মাসিক বিল</th>
+                            <th>স্ট্যাটাস</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerTableBody">
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-warning" id="tableLoadingMsg">
+                                <span class="loader-spinner me-2"></span> ডাটা লোড হচ্ছে...
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
-                <h6 class="fw-bold">নতুন IP Pool যোগ করুন (১ সেকেন্ডে সিঙ্ক):</h6>
-                <div class="row g-2">
-                    <div class="col-5"><input type="text" id="new-pool-name" placeholder="Pool Name" class="form-control bg-secondary text-white"></div>
-                    <div class="col-5"><input type="text" id="new-pool-range" placeholder="Ranges (ex: 10.85.0.2-10.85.0.254)" class="form-control bg-secondary text-white"></div>
-                    <div class="col-2"><button class="btn btn-info w-100 fw-bold" onclick="addNewPool()">যোগ করুন</button></div>
-                </div>
             </div>
         </div>
     </div>
@@ -198,91 +126,100 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // Global variable define kora holo jate error na ashe
     let rawCustomersList = [];
 
     async function loadDashboard() {
+        const tableBody = document.getElementById('customerTableBody');
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-5 text-warning">
+                    <span class="loader-spinner me-2"></span> ডাটা লোড হচ্ছে...
+                </td>
+            </tr>
+        `;
+
         try {
-            const res = await fetch('/api/admin/customers');
-            const data = await res.json();
-            if (!data.success) return;
+            // Backend API theke data fetch kora
+            const response = await fetch('/api/customers');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-            rawCustomersList = data.customers || [];
-            let active = 0, offline = 0, exp = 0, susp = 0, monthlyTotal = 0;
+            const data = await response.json();
+            rawCustomersList = Array.isArray(data) ? data : (data.customers || []);
 
-            const currentMonthPrefix = new Date().toISOString().slice(0, 7);
-
-            rawCustomersList.forEach(c => {
-                if (c.liveStatus === 'active') active++;
-                else if (c.liveStatus === 'offline') offline++;
-                else if (c.liveStatus === 'expired') exp++;
-                else if (c.liveStatus === 'suspended' || c.liveStatus === 'terminated') susp++;
-
-                if (c.history && Array.isArray(c.history)) {
-                    c.history.forEach(h => {
-                        if (h.date && h.date.startsWith(currentMonthPrefix)) {
-                            monthlyTotal += Number(h.amount || 0);
-                        }
-                    });
-                }
-            });
-
-            document.getElementById('total-cust').innerText = rawCustomersList.length;
-            document.getElementById('active-cust').innerText = active;
-            document.getElementById('offline-cust').innerText = offline;
-            document.getElementById('exp-cust').innerText = exp;
-            document.getElementById('susp-cust').innerText = susp;
-            document.getElementById('total-income').innerText = '৳ ' + monthlyTotal.toLocaleString();
-
-            renderCustomerTable(rawCustomersList);
-        } catch (err) {
-            console.error(err);
+            renderDashboard(rawCustomersList);
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i> ডাটা লোড করতে সমস্যা হয়েছে: ${error.message}
+                    </td>
+                </tr>
+            `;
         }
     }
 
-    function renderCustomerTable(list) {
-        const tbody = document.getElementById('customer-rows');
-        tbody.innerHTML = '';
+    function renderDashboard(customers) {
+        const tableBody = document.getElementById('customerTableBody');
+        
+        let onlineCount = 0;
+        let offlineCount = 0;
+        let expiredCount = 0;
 
-        if (list.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">কোনো কাস্টমার পাওয়া যায়নি।</td></tr>';
+        if (!customers || customers.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-secondary">
+                        কোনো কাস্টমার ডাটা পাওয়া যায়নি।
+                    </td>
+                </tr>
+            `;
+            updateStats(0, 0, 0, 0);
             return;
         }
 
-        list.forEach(c => {
-            tbody.innerHTML += `
+        let rowsHtml = '';
+        customers.forEach(customer => {
+            const isOnline = customer.status === 'online' || customer.online === true;
+            if (isOnline) onlineCount++; else offlineCount++;
+            if (customer.expired) expiredCount++;
+
+            rowsHtml += `
                 <tr>
+                    <td class="fw-bold">${customer.username || '-'}</td>
+                    <td>${customer.phone || '-'}</td>
+                    <td><span class="badge bg-secondary">${customer.package || '-'}</span></td>
+                    <td><code>${customer.mac || '-'}</code></td>
+                    <td>${customer.ip || '-'}</td>
+                    <td>${customer.expireDate || '-'}</td>
+                    <td>৳ ${customer.bill || 0}</td>
                     <td>
-                        <a href="javascript:showHistory('${c.username}')" class="text-info fw-bold text-decoration-none">
-                            <i class="fa-regular fa-user"></i> ${c.name}
-                        </a>
-                        <br><small class="text-secondary">${c.username}</small>
-                    </td>
-                    <td><span class="badge bg-secondary">${c.connectionType}</span></td>
-                    <td>${c.phone || '<span class="text-muted">N/A</span>'}</td>
-                    <td>${c.profile}</td>
-                    <td><span class="mac-text">${c.callerId || '<span class="text-secondary">লক হয়নি</span>'}</span></td>
-                    <td><small>${c.ipAddress}</small><br><small class="text-secondary">${c.uptime}</small></td>
-                    <td><b class="${c.liveStatus === 'expired' ? 'text-warning' : ''}">${c.expireDate || 'N/A'}</b></td>
-                    <td>৳ ${c.bill}</td>
-                    <td>
-                        <select class="form-select form-select-sm bg-dark text-white border-secondary" style="width: 120px;" onchange="changeCustomerStatus('${c.username}', this.value)">
-                            <option value="active" ${c.liveStatus === 'active' ? 'selected' : ''}>Active</option>
-                            <option value="offline" ${c.liveStatus === 'offline' ? 'selected' : ''}>Offline</option>
-                            <option value="expired" ${c.liveStatus === 'expired' ? 'selected' : ''}>Expired</option>
-                            <option value="suspended" ${c.liveStatus === 'suspended' ? 'selected' : ''}>Suspended</option>
-                            <option value="terminated" ${c.liveStatus === 'terminated' ? 'selected' : ''}>Terminated</option>
-                        </select>
-                    </td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-success" title="ম্যানুয়াল রিনিউ (+৩০ দিন)" onclick="renewUser('${c.username}')"><i class="fa-solid fa-rotate-right"></i> রিনিউ</button>
-                            <button class="btn btn-warning" title="মেয়াদ শেষ এসএমএস পাঠান" onclick="sendExpireNotice('${c.username}')"><i class="fa-solid fa-paper-plane"></i> নোটিশ</button>
-                        </div>
+                        <span class="badge ${isOnline ? 'badge-active' : 'badge-inactive'}">
+                            ${isOnline ? 'অনলাইন' : 'অফলাইন'}
+                        </span>
                     </td>
                 </tr>
             `;
         });
+
+        tableBody.innerHTML = rowsHtml;
+        updateStats(onlineCount, offlineCount, customers.length, expiredCount);
     }
 
-    function filterCustomers() {
-        const query = document.getElementById('searchInput
+    function updateStats(online, offline, total, expired) {
+        document.getElementById('onlineUsers').innerText = online;
+        document.getElementById('offlineUsers').innerText = offline;
+        document.getElementById('totalUsers').innerText = total;
+        document.getElementById('expiredUsers').innerText = expired;
+    }
+
+    // Page load hole shathe shathe call hobe
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDashboard();
+    });
+</script>
+</body>
+</html>
