@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ইউজার ম্যানেজমেন্ট - FAZ NETWORK</title>
+    <title>ইউজার ম্যানেজার ও হটস্পট - FAZ NETWORK</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -35,115 +35,4 @@
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dark); }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: left; font-size: 14px; }
-        th { background: #f1f5f9; color: var(--text-muted); font-weight: 600; }
-        tr:hover { background: #f8fafc; }
-
-        .badge { padding: 4px 8px; border-radius: 9999px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
-        .badge-online { background: #dcfce7; color: #15803d; }
-        .badge-offline { background: #f1f5f9; color: #64748b; }
-        .badge-disabled { background: #fee2e2; color: #b91c1c; }
-
-        .spinner { text-align: center; padding: 40px; font-size: 18px; color: var(--secondary); }
-        .hidden { display: none !important; }
-
-        /* Modal Styles */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: var(--card); width: 100%; max-width: 850px; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; display: flex; flex-direction: column; }
-        .modal-header { padding: 16px 24px; background: #f8fafc; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 24px; overflow-y: auto; }
-        .modal-close { font-size: 24px; color: var(--text-muted); cursor: pointer; border: none; background: none; }
-
-        .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px; }
-        .info-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
-        .info-card h4 { font-size: 13px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px dashed var(--border); padding-bottom: 6px; }
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
-        .info-row span:first-child { color: var(--text-muted); }
-        .info-row span:last-child { font-weight: 500; }
-
-        .actions-panel { border-top: 1px solid var(--border); padding-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="header">
-        <h1><i class="fa-solid fa-users-gear"></i> ইউজার ম্যানেজার ও হটস্পট</h1>
-        <div style="display:flex; gap:10px;">
-            <button class="btn" onclick="fetchUsers()"><i class="fa fa-rotate"></i> রিফ্রেশ</button>
-        </div>
-    </div>
-
-    <div id="loader" class="spinner">
-        <i class="fa-solid fa-circle-notch fa-spin"></i> মাইক্রোটিক থেকে তথ্য নেওয়া হচ্ছে...
-    </div>
-
-    <div id="tableWrapper" class="hidden">
-        <table>
-            <thead>
-                <tr>
-                    <th>ইউজারনেম</th>
-                    <th>নাম</th>
-                    <th>প্যাকেজ</th>
-                    <th>স্ট্যাটাস</th>
-                    <th>আপটাইম</th>
-                    <th>আইপি অ্যাড্রেস</th>
-                    <th>অ্যাকশন</th>
-                </tr>
-            </thead>
-            <tbody id="userRows"></tbody>
-        </table>
-    </div>
-</div>
-
-<!-- USER DETAILS MODAL -->
-<div id="detailsModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modalTitle"><i class="fa-solid fa-id-card"></i> ইউজার বিস্তারিত</h3>
-            <button class="modal-close" onclick="closeModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="grid-layout">
-                <!-- Basic Information -->
-                <div class="info-card">
-                    <h4><i class="fa-solid fa-user"></i> বেসিক তথ্য</h4>
-                    <div class="info-row"><span>ইউজারনেম:</span> <span id="mUsername">-</span></div>
-                    <div class="info-row"><span>নাম:</span> <span id="mName">-</span></div>
-                    <div class="info-row"><span>মোবাইল:</span> <span id="mMobile">-</span></div>
-                    <div class="info-row"><span>ঠিকানা:</span> <span id="mAddress">-</span></div>
-                </div>
-
-                <!-- Connection -->
-                <div class="info-card">
-                    <h4><i class="fa-solid fa-network-wired"></i> কানেকশন</h4>
-                    <div class="info-row"><span>স্ট্যাটাস:</span> <span id="mConnStatus">-</span></div>
-                    <div class="info-row"><span>আইপি অ্যাড্রেস:</span> <span id="mIp">-</span></div>
-                    <div class="info-row"><span>ম্যাক অ্যাড্রেস:</span> <span id="mMac">-</span></div>
-                    <div class="info-row"><span>আপটাইম:</span> <span id="mUptime">-</span></div>
-                    <div class="info-row"><span>সংযুক্ত শুরু:</span> <span id="mConnectedSince">-</span></div>
-                </div>
-
-                <!-- Package -->
-                <div class="info-card">
-                    <h4><i class="fa-solid fa-box-open"></i> প্যাকেজ</h4>
-                    <div class="info-row"><span>প্যাকেজ নাম:</span> <span id="mPkgName">-</span></div>
-                    <div class="info-row"><span>গতি (Speed):</span> <span id="mSpeed">-</span></div>
-                    <div class="info-row"><span>মাসিক মূল্য:</span> <span id="mPrice">-</span></div>
-                    <div class="info-row"><span>শুরুর তারিখ:</span> <span id="mStartDate">-</span></div>
-                    <div class="info-row"><span>মেয়াদ শেষ:</span> <span id="mExpiryDate">-</span></div>
-                </div>
-
-                <!-- Usage -->
-                <div class="info-card">
-                    <h4><i class="fa-solid fa-chart-pie"></i> ডেটা ব্যবহার</h4>
-                    <div class="info-row"><span>ডাউনলোড:</span> <span id="mDownload">-</span></div>
-                    <div class="info-row"><span>আপলোড:</span> <span id="mUpload">-</span></div>
-                    <div class="info-row"><span>মোট ডেটা:</span> <span id="mTotalData">-</span></div>
-                </div>
-
-                <!-- Payment -->
-                <div class="info-card">
-                    <h4><i class="fa-solid fa-receipt"></i> পেমেন্ট</h4>
-                    <div class="info-row"><span>শেষ পেমেন্ট:</span> <span id="mLastPay">-</span></div>
-                    <div class="info-row"><span>পেমেন্টের তারিখ:</span> <span id
+        th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: left
