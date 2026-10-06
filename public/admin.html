@@ -220,6 +220,50 @@
             font-size: 11.5px;
             color: #64748b;
         }
+
+        /* Profile Page Styling */
+        .profile-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .profile-header {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .profile-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: #e0f2fe;
+            color: var(--accent-blue);
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .info-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .info-value-highlight {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
         
         .content-panel { display: none; }
         .content-panel.active { display: block; }
@@ -522,6 +566,167 @@
             </div>
         </div>
 
+        <!-- VIEW 3: Customer Profile & Edit Panel -->
+        <div class="content-panel" id="customerProfileView">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h4 class="fw-bold mb-0 text-dark">Customer Profile</h4>
+                <button class="btn btn-sm btn-outline-secondary" onclick="navigateTo('allCustomersView')"><i class="bi bi-arrow-left me-1"></i>Back to List</button>
+            </div>
+
+            <div class="row g-4">
+                <!-- Profile Information Card -->
+                <div class="col-lg-4">
+                    <div class="profile-card h-100">
+                        <div class="profile-header">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="profile-avatar"><i class="bi bi-person-fill"></i></div>
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-0" id="profileName">-</h5>
+                                    <span class="text-muted small" id="profileUsername">-</span>
+                                </div>
+                            </div>
+                            <span id="profileStatusBadge"></span>
+                        </div>
+                        <div class="p-4 d-flex flex-column gap-3">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="info-label">Customer ID</div>
+                                    <div class="info-value" id="profileCustomerID">-</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-label">Connection Status</div>
+                                    <div class="info-value" id="profileConnectionStatus">-</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="info-label">Phone Number</div>
+                                    <div class="info-value" id="profilePhone">-</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-label">Connected Time / Date</div>
+                                    <div class="info-value" id="profileConnectionTime">-</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="info-label">Package</div>
+                                    <div class="info-value" id="profilePackage">-</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-label">Price of Package</div>
+                                    <div class="info-value" id="profilePackagePrice">-</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="info-label">Expiry Date</div>
+                                    <div class="info-value" id="profileExpiryDate">-</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-label">Billing Cycle</div>
+                                    <div class="info-value" id="profileBillingCycle">-</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="info-label">Total Due</div>
+                                    <div class="info-value-highlight" id="profileTotalDue">-</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-label">Balance</div>
+                                    <div class="info-value" id="profileBalance">-</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="info-label">IP Address</div>
+                                    <div class="info-value" id="profileIPAddress">-</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-label">MAC Address</div>
+                                    <div class="info-value" id="profileMACAddress">-</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="info-label">Full Address</div>
+                                <div class="info-value" id="profileAddress">-</div>
+                            </div>
+                            <div>
+                                <div class="info-label">Device (Router / NAS)</div>
+                                <div class="info-value" id="profileDevice">-</div>
+                            </div>
+                            <div>
+                                <div class="info-label">NID / Passport Info</div>
+                                <div class="info-value" id="profileNIDPassport">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Customer Form Card -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-3 h-100">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Customer Info</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <form id="editCustomerForm">
+                                <div class="row g-3">
+                                    <input type="hidden" id="editUsername">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Full Name *</label>
+                                        <input type="text" class="form-control" id="editFullName" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Phone Number *</label>
+                                        <input type="tel" class="form-control" id="editPhoneNumber" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Connection Type *</label>
+                                        <select class="form-select" id="editConnectionType" required>
+                                            <option value="pppoe">PPPoE</option>
+                                            <option value="static">Static IP</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Package Selection *</label>
+                                        <select class="form-select" id="editPackageSelect" required>
+                                            <option value="" disabled selected>Loading Packages...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Billing Duration *</label>
+                                        <select class="form-select" id="editBillingDuration" onchange="handleDurationChange(this.value, 'edit')">
+                                            <option value="1_month">1 Month (Monthly)</option>
+                                            <option value="3_months">3 Months</option>
+                                            <option value="custom">Custom Expiry Date</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6" id="editCustomDateContainer" style="display: none;">
+                                        <label class="form-label small fw-semibold text-danger">Select Custom Date *</label>
+                                        <input type="date" class="form-control" id="editCustomExpiryDate">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">NID / Passport Information</label>
+                                        <input type="text" class="form-control" id="editNIDPassport">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Full Address *</label>
+                                        <textarea class="form-control" id="editFullAddress" rows="1" required></textarea>
+                                    </div>
+                                    <div class="col-12 mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-light border px-4" onclick="navigateTo('allCustomersView')">Cancel</button>
+                                        <button type="submit" class="btn btn-primary px-4" id="editSubmitBtn">Update Information</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -563,9 +768,12 @@
             }
         }
 
-        function handleDurationChange(val) {
-            const container = document.getElementById('customDateContainer');
-            const dateInput = document.getElementById('customExpiryDate');
+        function handleDurationChange(val, context = '') {
+            const containerId = context === 'edit' ? 'editCustomDateContainer' : 'customDateContainer';
+            const dateInputId = context === 'edit' ? 'editCustomExpiryDate' : 'customExpiryDate';
+            const container = document.getElementById(containerId);
+            const dateInput = document.getElementById(dateInputId);
+
             if (val === 'custom') {
                 if(container) container.style.display = 'block';
                 if(dateInput) dateInput.setAttribute('required', 'required');
@@ -585,7 +793,9 @@
 
         async function loadPackages() {
             const packageSelect = document.getElementById('packageSelect');
+            const editPackageSelect = document.getElementById('editPackageSelect');
             const filterPackageSelect = document.getElementById('filterPackageSelect');
+
             try {
                 const response = await fetch('/api/packages');
                 const data = await response.json();
@@ -597,15 +807,23 @@
                         packageSelect.innerHTML = '<option value="" disabled selected>Select Internet Plan</option>';
                         packagesData.forEach(pkg => {
                             const opt = document.createElement('option');
-                            const name = pkg.name;
-                            const price = pkg.price ? ` - ৳${pkg.price}` : '';
-                            opt.value = name;
-                            opt.textContent = `${name}${price}`;
+                            opt.value = pkg.name;
+                            opt.textContent = `${pkg.name} ${pkg.price ? '- ৳' + pkg.price : ''}`;
                             packageSelect.appendChild(opt);
                         });
                         packageSelect.onchange = function() {
                             updatePackagePrice(this.value);
                         };
+                    }
+
+                    if (editPackageSelect) {
+                        editPackageSelect.innerHTML = '<option value="" disabled selected>Select Internet Plan</option>';
+                        packagesData.forEach(pkg => {
+                            const opt = document.createElement('option');
+                            opt.value = pkg.name;
+                            opt.textContent = pkg.name;
+                            editPackageSelect.appendChild(opt);
+                        });
                     }
 
                     if (filterPackageSelect) {
@@ -644,9 +862,10 @@
                 if(softwareCounter) softwareCounter.textContent = active;
                 if(mikrotikCounter) mikrotikCounter.textContent = total;
                 if(suspendCounter) suspendCounter.textContent = disabled;
-                if(offlineCounter) offlineCounter.textContent = 0; // Backend implementation pending for specific offline
+                if(offlineCounter) offlineCounter.textContent = 0;
 
                 renderCustomerRows(allCustomersData);
+                loadPackages(); // Pre-load Packages
             } catch (err) {
                 if(tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">তথ্য লোড করতে ব্যর্থ হয়েছে।</td></tr>';
             }
@@ -675,7 +894,7 @@
                 tr.innerHTML = `
                     <td><input type="checkbox"></td>
                     <td class="text-muted">${rowNum}</td>
-                    <td><a href="javascript:void(0)" class="cust-id-link"><span class="text-success me-1">●</span>${custId}</a></td>
+                    <td><a href="javascript:void(0)" class="cust-id-link" onclick="viewCustomerProfile(${index})"><span class="text-success me-1">●</span>${custId}</a></td>
                     <td>
                         <div class="cust-info-title">${user.username}</div>
                         <div class="cust-info-sub">(${user.name || 'User'})</div>
@@ -692,7 +911,7 @@
                         <div class="d-flex gap-1">
                             <button class="btn btn-sm btn-success px-2 py-1" style="font-size:11px;">Paid</button>
                             <button class="btn btn-sm btn-primary px-2 py-1" style="font-size:11px;">Renew</button>
-                            <button class="btn btn-sm btn-info text-white px-2 py-1" style="font-size:11px;"><i class="bi bi-eye"></i></button>
+                            <button class="btn btn-sm btn-info text-white px-2 py-1" style="font-size:11px;" onclick="viewCustomerProfile(${index})"><i class="bi bi-eye"></i></button>
                             <button class="btn btn-sm btn-primary px-2 py-1" style="font-size:11px;"><i class="bi bi-pencil-square"></i></button>
                             <button class="btn btn-sm btn-danger px-2 py-1" style="font-size:11px;"><i class="bi bi-trash"></i></button>
                         </div>
@@ -700,6 +919,52 @@
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        function viewCustomerProfile(index) {
+            const user = allCustomersData[index];
+            if (!user) return;
+
+            // Populate View Profile Panel
+            document.getElementById('profileName').textContent = user.name || 'N/A';
+            document.getElementById('profileUsername').textContent = user.username;
+            document.getElementById('profileCustomerID').textContent = `FAZ-${(index + 1) * 2}`;
+            document.getElementById('profilePhone').textContent = user.phone || 'N/A';
+            document.getElementById('profilePackage').textContent = user.package || 'Default';
+            document.getElementById('profileExpiryDate').textContent = user.expiryDate || 'N/A';
+            document.getElementById('profileAddress').textContent = user.address || 'N/A';
+            document.getElementById('profileDevice').textContent = user.device || 'Core Router (RB4011)';
+            document.getElementById('profileNIDPassport').textContent = user.nidPassport || 'N/A';
+            
+            // Highlighted Fields (Backend specific simulation)
+            document.getElementById('profileConnectionStatus').innerHTML = user.status === 'Active' 
+                ? '<span class="text-success fw-bold"><i class="bi bi-circle-fill me-1"></i>Online</span>' 
+                : '<span class="text-danger fw-bold"><i class="bi bi-circle-fill me-1"></i>Offline</span>';
+            document.getElementById('profileConnectionTime').textContent = user.status === 'Active' ? '24h 15m' : 'Disconnected';
+            document.getElementById('profilePackagePrice').textContent = user.price ? `৳${user.price}` : '৳0';
+            document.getElementById('profileTotalDue').textContent = user.due ? `৳${user.due}` : '৳0';
+            document.getElementById('profileBalance').textContent = user.balance ? `৳${user.balance}` : '৳0';
+            document.getElementById('profileIPAddress').textContent = user.ip || '192.168.88.2';
+            document.getElementById('profileMACAddress').textContent = user.mac || 'AA:BB:CC:DD:EE:FF';
+            document.getElementById('profileBillingCycle').textContent = user.billingCycle || 'Prepaid';
+
+            document.getElementById('profileStatusBadge').innerHTML = user.status === 'Active' 
+                ? '<span class="badge bg-success-subtle text-success border px-3 py-2">Active</span>'
+                : '<span class="badge bg-danger-subtle text-danger border px-3 py-2">Disabled</span>';
+
+            // Populate Edit Form
+            document.getElementById('editUsername').value = user.username;
+            document.getElementById('editFullName').value = user.name || '';
+            document.getElementById('editPhoneNumber').value = user.phone || '';
+            document.getElementById('editConnectionType').value = user.service || 'pppoe';
+            document.getElementById('editPackageSelect').value = user.package || '';
+            document.getElementById('editBillingDuration').value = user.billingDuration || '1_month';
+            document.getElementById('editFullAddress').value = user.address || '';
+            document.getElementById('editNIDPassport').value = user.nidPassport || '';
+
+            handleDurationChange(user.billingDuration || '1_month', 'edit');
+
+            navigateTo('customerProfileView');
         }
 
         function filterCustomerTable(textVal) {
