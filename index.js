@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-// ফ্রড ও ব্রুট-ফোর্স রোধে মেমোরি রেট লিমিটার
+// রেট লিমিটার
 const requestTracker = {};
 function rateLimiter(req, res, next) {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -51,21 +51,20 @@ function rateLimiter(req, res, next) {
     next();
 }
 
-// মাইক্রোটিক সংযোগ সেটিংস
+// মাইক্রোটিক কনফিগ
 const MIKROTIK_HOST = process.env.MIKROTIK_HOST || '103.54.37.182';
 const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT) || 1126;
 const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
 const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 
-// FAZ SMS Gateway কনফিগারেশন
+// FAZ SMS Gateway
 const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'http://10.71.0.7:8080/send-sms';
 const SMS_GATEWAY_TOKEN = process.env.SMS_GATEWAY_TOKEN || 'Bearer faz_secure_token_2026';
 
-// ফাইল ভিত্তিক ডাটা স্টোরেজ
+// ফাইল স্টোরেজ
 const DB_FILE = path.join(__dirname, 'transactions.json');
 const CUSTOMERS_FILE = path.join(__dirname, 'customers.json');
 
-// হটস্পটের পূর্বের প্রাইস প্রোফাইল ম্যাপিং
 const PRICE_PROFILE_MAP = {
     '10': 'Profile-1Hour',
     '15': 'Profile-12Hour',
@@ -95,7 +94,7 @@ function saveJSON(filePath, data) {
     }
 }
 
-// =================== MikroTik Binary API Encoder & Socket ===================
+// =================== MikroTik Binary Socket API ===================
 function encodeLength(len) {
     if (len < 0x80) return Buffer.from([len]);
     if (len < 0x4000) return Buffer.from([(len >> 8) | 0x80, len & 0xFF]);
@@ -190,7 +189,7 @@ function executeSingleCommand(cmdWords) {
     });
 }
 
-// FAZ SMS Gateway দিয়ে মেসেজ পাঠানোর ফাংশন
+// SMS Gateway Helper
 async function sendGatewaySMS(toPhone, message) {
     if (!toPhone || toPhone.length < 11) return;
     try {
@@ -207,18 +206,18 @@ async function sendGatewaySMS(toPhone, message) {
     }
 }
 
-// তারিখের সাথে দিন যোগ করার মেকানিজম (Carry Forward লজিক)
+// Carry forward date
 function addDaysToDate(baseDateStr, daysToAdd) {
     let base = new Date();
     if (baseDateStr) {
         const parsed = new Date(baseDateStr);
-        if (parsed > base) base = parsed; // আগের মেয়াদ বাকি থাকলে সেখান থেকে বাড়বে
+        if (parsed > base) base = parsed;
     }
     base.setDate(base.getDate() + parseInt(daysToAdd));
     return base.toISOString().split('T')[0];
 }
 
-// =================== পূর্বের হটস্পট ফাংশনসমূহ (অপরিবর্তিত) ===================
+// হটস্পট ফাংশনসমূহ (অপরিবর্তিত)
 async function ensureUser(username, comment = '') {
     const cmd = ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=group=Hotspot`];
     if (comment) cmd.push(`=comment=${comment}`);
@@ -241,7 +240,7 @@ app.get('/', (req, res) => {
     return res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// ১. হটস্পটের ট্রানজেকশন ভেরিফিকেশন API
+// হটস্পট ভেরিফিকেশন API
 app.post('/api/verify-trx', rateLimiter, async (req, res) => {
     try {
         const { username, trxId } = req.body;
@@ -254,12 +253,8 @@ app.post('/api/verify-trx', rateLimiter, async (req, res) => {
         const store = loadJSON(DB_FILE);
         const transaction = store[cleanTrx];
 
-        if (!transaction) {
-            return res.status(404).json({ success: false, message: `ট্রানজেকশন আইডি (${cleanTrx}) পাওয়া যায়নি!` });
-        }
-        if (transaction.used) {
-            return res.status(400).json({ success: false, message: 'এই আইডি দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।' });
-        }
+        if (!transaction) return res.status(404).json({ success: false, message: `ট্রানজেকশন আইডি (${cleanTrx}) পাওয়া যায়নি!` });
+        if (transaction.used) return res.status(400).json({ success: false, message: 'এই আইডি দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।' });
 
         const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
         const senderInfo = transaction.phone ? ` | Payer: ${transaction.phone}` : '';
@@ -287,7 +282,7 @@ app.post('/api/verify-trx', rateLimiter, async (req, res) => {
     }
 });
 
-// ২. MacroDroid SMS Forward Webhook (হটস্পট এবং PPPoE অটোমেশন)
+// MacroDroid SMS Forward Webhook (PPPoE + Hotspot অটোমেশন)
 app.post('/forward', async (req, res) => {
     try {
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
@@ -305,14 +300,13 @@ app.post('/forward', async (req, res) => {
         const amountMatch = sms_body.match(/(?:Tk|Amount\s*[:]?\s*Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
         const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
 
-        // এসএমএস থেকে রেফারেন্স চেক (গ্রাহকের ইউজারনেম)
         const refMatch = sms_body.match(/(?:Ref|Reference)\s*[:]?\s*([A-Za-z0-9_-]+)/i);
         const referenceUser = refMatch ? refMatch[1].trim() : null;
 
         if (trxId && amount) {
             const customers = loadJSON(CUSTOMERS_FILE);
 
-            // ক. যদি রেফারেন্সে PPPoE ইউজার আইডি মেলে ➔ অটো রিনিউ
+            // PPPoE কাস্টমার পাওয়া গেলে
             if (referenceUser && (customers[referenceUser] || referenceUser === '100001')) {
                 let cust = customers[referenceUser] || {
                     name: referenceUser,
@@ -331,7 +325,6 @@ app.post('/forward', async (req, res) => {
 
                 const commentText = `Exp: ${newExp}`;
 
-                // রাউটারে লাইন ও কমেন্ট আপডেট
                 await executeSingleCommand([
                     '/ppp/secret/set',
                     `=numbers=${referenceUser}`,
@@ -341,7 +334,6 @@ app.post('/forward', async (req, res) => {
                 ]);
                 await executeSingleCommand(['/ppp/active/remove', `?name=${referenceUser}`]);
 
-                // পেমেন্ট হিস্টোরি সংরক্ষণ
                 if (!cust.history) cust.history = [];
                 cust.history.unshift({
                     date: new Date().toISOString(),
@@ -353,7 +345,6 @@ app.post('/forward', async (req, res) => {
                 customers[referenceUser] = cust;
                 saveJSON(CUSTOMERS_FILE, customers);
 
-                // গ্রাহককে কনফার্মেশন SMS পাঠানো
                 if (cust.phone) {
                     await sendGatewaySMS(cust.phone, `Prio Grahok (User: ${referenceUser}), apnar ${amount} tk bill grohon kora hoyeche. Notun meyad: ${newExp} porjonto. Dhonnobad!`);
                 }
@@ -362,7 +353,7 @@ app.post('/forward', async (req, res) => {
                 return res.status(200).json({ success: true, type: 'PPPoE', user: referenceUser, expireDate: newExp });
             }
 
-            // খ. অন্যথায় এটি হটস্পটের জন্য transactions.json-এ সংরক্ষিত হবে
+            // অন্যথায় হটস্পট ট্রানজেকশনে জমা হবে
             const store = loadJSON(DB_FILE);
             store[trxId] = {
                 amount: amount,
@@ -382,7 +373,7 @@ app.post('/forward', async (req, res) => {
 
 // ========================= অ্যাডমিন ড্যাশবোর্ড API =========================
 
-// কাস্টমার তালিকা ও লাইভ তথ্য
+// কাস্টমার তালিকা
 app.get('/api/admin/customers', async (req, res) => {
     try {
         const customers = loadJSON(CUSTOMERS_FILE);
@@ -396,7 +387,6 @@ app.get('/api/admin/customers', async (req, res) => {
             activeMap[u.name] = { uptime: u.uptime, address: u.address, callerId: u['caller-id'] };
         });
 
-        // রাউটারের সিক্রেট লিস্ট মার্জ করা
         secrets.forEach(sec => {
             if (!customers[sec.name]) {
                 let exp = null;
@@ -429,6 +419,8 @@ app.get('/api/admin/customers', async (req, res) => {
             let liveStatus = 'offline';
             if (c.status === 'suspended' || c.profile === 'Expired_Profile') {
                 liveStatus = 'suspended';
+            } else if (c.status === 'terminated') {
+                liveStatus = 'terminated';
             } else if (c.expireDate && c.expireDate < today) {
                 liveStatus = 'expired';
             } else if (activeMap[c.username]) {
@@ -448,7 +440,7 @@ app.get('/api/admin/customers', async (req, res) => {
     }
 });
 
-// নতুন কাস্টমার তৈরি
+// কাস্টমার তৈরি
 app.post('/api/admin/customers/add', async (req, res) => {
     try {
         const { name, username, password, connectionType, phone, profile, bill, expireDate } = req.body;
@@ -495,10 +487,10 @@ app.post('/api/admin/customers/add', async (req, res) => {
     }
 });
 
-// কাস্টমার রিনিউ ও সাসপেন্ড অ্যাকশন
+// অ্যাকশন: রিনিউ, স্ট্যাটাস পরিবর্তন এবং নোটিশ এসএমএস
 app.post('/api/admin/customers/action', async (req, res) => {
     try {
-        const { username, action, days, amount } = req.body;
+        const { username, action, days, amount, status } = req.body;
         const customers = loadJSON(CUSTOMERS_FILE);
         const cust = customers[username];
 
@@ -533,24 +525,31 @@ app.post('/api/admin/customers/action', async (req, res) => {
                 await sendGatewaySMS(cust.phone, `Prio Grahok (User: ${username}), apnar internet line renew kora hoyeche. Notun meyad: ${newExp} porjonto.`);
             }
 
-        } else if (action === 'suspend') {
-            cust.status = 'suspended';
-            await executeSingleCommand([
-                '/ppp/secret/set',
-                `=numbers=${username}`,
-                `=profile=Expired_Profile`
-            ]);
-            await executeSingleCommand(['/ppp/active/remove', `?name=${username}`]);
+        } else if (action === 'status') {
+            cust.status = status;
+            if (status === 'suspended' || status === 'expired') {
+                await executeSingleCommand(['/ppp/secret/set', `=numbers=${username}`, `=profile=Expired_Profile`]);
+                await executeSingleCommand(['/ppp/active/remove', `?name=${username}`]);
+            } else if (status === 'active') {
+                await executeSingleCommand(['/ppp/secret/set', `=numbers=${username}`, `=profile=${cust.profile === 'Expired_Profile' ? 'FZN 30 Mbps' : cust.profile}`, `=disabled=no`]);
+            } else if (status === 'terminated') {
+                await executeSingleCommand(['/ppp/secret/set', `=numbers=${username}`, `=disabled=yes`]);
+                await executeSingleCommand(['/ppp/active/remove', `?name=${username}`]);
+            }
+        } else if (action === 'send-notice') {
+            if (!cust.phone) return res.status(400).json({ success: false, message: 'কাস্টমারের ফোন নম্বর নেই।' });
+            await sendGatewaySMS(cust.phone, `Prio Grahok (User: ${username}), apnar internet package-er meyad shesh hoyeche. Shongjog shochol rakhte bKash/Nagad Send Money-te Reference-e "${username}" likhe bill porishodh korun.`);
+            return res.json({ success: true, message: 'নোটিশ এসএমএস পাঠানো হয়েছে!' });
         }
 
         saveJSON(CUSTOMERS_FILE, customers);
-        res.json({ success: true, message: 'সফলভাবে সম্পন্ন হয়েছে!' });
+        res.json({ success: true, message: 'অ্যাকশন সফল হয়েছে!' });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
 });
 
-// IP Pool তালিকা ও নতুন পুল তৈরি
+// আইপি পুল হ্যান্ডলার
 app.get('/api/admin/pools', async (req, res) => {
     try {
         const pools = await executeSingleCommand(['/ip/pool/print']);
@@ -565,11 +564,7 @@ app.post('/api/admin/pools/add', async (req, res) => {
         const { name, ranges } = req.body;
         if (!name || !ranges) return res.status(400).json({ success: false, message: 'নাম ও রেঞ্জ দিন।' });
 
-        await executeSingleCommand([
-            '/ip/pool/add',
-            `=name=${name}`,
-            `=ranges=${ranges}`
-        ]);
+        await executeSingleCommand(['/ip/pool/add', `=name=${name}`, `=ranges=${ranges}`]);
         res.json({ success: true, message: 'IP Pool ১ সেকেন্ডে যুক্ত হয়েছে!' });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
