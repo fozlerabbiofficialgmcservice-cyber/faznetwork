@@ -7,51 +7,22 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body {
-            background-color: #ffffff;
-            color: #1e293b;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .navbar-custom {
-            background-color: #ffffff;
-            border-bottom: 2px solid #e2e8f0;
-            padding: 12px 20px;
-        }
-        .stat-card {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .table-custom th {
-            background-color: #f1f5f9;
-            color: #475569;
-            font-weight: 600;
-            border-bottom: 2px solid #cbd5e1;
-        }
-        .table-custom td {
-            vertical-align: middle;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .nav-tabs .nav-link {
-            color: #64748b;
-            font-weight: 600;
-            border: none;
-            border-bottom: 3px solid transparent;
-            padding: 10px 20px;
-        }
-        .nav-tabs .nav-link.active {
-            color: #0284c7;
-            border-bottom: 3px solid #0284c7;
-            background: transparent;
-        }
+        body { background-color: #ffffff; color: #1e293b; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .navbar-custom { background-color: #ffffff; border-bottom: 2px solid #e2e8f0; padding: 12px 20px; }
+        .stat-card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .table-custom th { background-color: #f1f5f9; color: #475569; font-weight: 600; font-size: 14px; border-bottom: 2px solid #cbd5e1; }
+        .table-custom td { vertical-align: middle; border-bottom: 1px solid #e2e8f0; font-size: 14px; cursor: pointer; }
+        .nav-tabs .nav-link { color: #64748b; font-weight: 600; border: none; border-bottom: 3px solid transparent; padding: 10px 20px; }
+        .nav-tabs .nav-link.active { color: #0284c7; border-bottom: 3px solid #0284c7; background: transparent; }
+        .modal-content { background-color: #ffffff; border: 1px solid #e2e8f0; }
+        .clickable-row:hover { background-color: #f8fafc; }
+        .profile-badge { border-radius: 4px; padding: 4px 8px; font-size: 12px; font-weight: 600; }
     </style>
 </head>
 <body>
 
     <!-- হেডার -->
-    <div class="navbar-custom d-flex justify-content-between align-items-center mb-4">
+    <div class="navbar-custom d-flex justify-content-between align-items-center mb-4 sticky-top bg-white">
         <div>
             <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-hdd-network text-success me-2"></i>FAZ NETWORK</h4>
             <small class="text-muted">MikroTik Subscriber & Network Management</small>
@@ -70,7 +41,6 @@
     </div>
 
     <div class="container-fluid px-4">
-        
         <!-- নেভিগেশন ট্যাব -->
         <ul class="nav nav-tabs mb-4">
             <li class="nav-item">
@@ -88,7 +58,6 @@
         <div class="tab-content">
             <!-- কাস্টমার ট্যাব -->
             <div class="tab-pane fade show active" id="tab-customers">
-                
                 <!-- স্ট্যাটাস কার্ড -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-3 col-6">
@@ -123,22 +92,22 @@
                         <div class="row g-2 align-items-center">
                             <div class="col-md-4">
                                 <div class="input-group">
-                                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                                    <input type="text" id="searchInput" class="form-control" placeholder="ইউজারনেম, মোবাইল, MAC বা আইপি খুঁজুন..." oninput="filterData()">
+                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                    <input type="text" id="searchInput" class="form-control border-start-0" placeholder="ইউজারনেম, মোবাইল, MAC বা আইপি খুঁজুন..." oninput="filterData()">
                                 </div>
                             </div>
                             <div class="col-md-3 col-6">
                                 <select id="statusFilter" class="form-select" onchange="filterData()">
                                     <option value="all">সব স্ট্যাটাস</option>
-                                    <option value="active">অনলাইন (Active)</option>
+                                    <option value="active">অনলাইন (Live)</option>
                                     <option value="offline">অফলাইন</option>
-                                    <option value="expired">মেয়াদ উত্তীর্ণ (Expired)</option>
+                                    <option value="expired">মেয়াদ শেষ (Expired)</option>
                                     <option value="suspended">সাসপেন্ডেড</option>
                                 </select>
                             </div>
                             <div class="col-md-3 col-6">
                                 <select id="profileFilter" class="form-select" onchange="filterData()">
-                                    <option value="all">সব প্যাকেজ / প্রোফাইল</option>
+                                    <option value="all">সব প্যাকেজ প্রোফাইল</option>
                                 </select>
                             </div>
                             <div class="col-md-2 text-end">
@@ -151,9 +120,10 @@
                 <!-- কাস্টমার টেবিল -->
                 <div class="card border">
                     <div class="table-responsive">
-                        <table class="table table-custom table-hover mb-0">
+                        <table class="table table-custom table-hover mb-0 align-middle">
                             <thead>
                                 <tr>
+                                    <th class="text-center" style="width: 50px;">#</th>
                                     <th>ইউজারনেম / নাম</th>
                                     <th>মোবাইল</th>
                                     <th>প্যাকেজ</th>
@@ -167,7 +137,7 @@
                             </thead>
                             <tbody id="customerTableBody">
                                 <tr>
-                                    <td colspan="9" class="text-center py-5 text-secondary">
+                                    <td colspan="10" class="text-center py-5 text-secondary">
                                         <div class="spinner-border spinner-border-sm me-2 text-primary"></div> ডেটা লোড হচ্ছে...
                                     </td>
                                 </tr>
@@ -187,7 +157,7 @@
                         </button>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-custom table-hover mb-0">
+                        <table class="table table-custom table-hover mb-0 align-middle">
                             <thead>
                                 <tr>
                                     <th>পুল নাম (Pool Name)</th>
@@ -240,7 +210,15 @@
                             </div>
                             <div class="col">
                                 <label class="form-label small text-muted">প্যাকেজ প্রোফাইল</label>
-                                <input type="text" id="custProfile" class="form-control" placeholder="FZN 30 Mbps" required>
+                                <select id="custProfile" class="form-select" required>
+                                    <option value="" disabled selected>প্রোফাইল সিলেক্ট করুন</option>
+                                    <option value="Profile-1Hour">Profile-1Hour</option>
+                                    <option value="Profile-12Hour">Profile-12Hour</option>
+                                    <option value="Profile-1Day">Profile-1Day</option>
+                                    <option value="Profile-3Day">Profile-3Day</option>
+                                    <option value="FZN 30 Mbps">FZN 30 Mbps</option>
+                                    <option value="FZN 50 Mbps">FZN 50 Mbps</option>
+                                </select>
                             </div>
                         </div>
                         <div class="row g-2 mb-4">
@@ -285,6 +263,21 @@
         </div>
     </div>
 
+    <!-- Modal: কাস্টমার ডিটেইলস -->
+    <div class="modal fade" id="customerDetailModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="detailModalTitle">কাস্টমার ডিটেইলস</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="customerDetailBody"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let rawCustomersList = [];
@@ -293,7 +286,7 @@
             const tableBody = document.getElementById('customerTableBody');
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="9" class="text-center py-5 text-secondary">
+                    <td colspan="10" class="text-center py-5 text-secondary">
                         <div class="spinner-border spinner-border-sm me-2 text-primary"></div> ডেটা লোড হচ্ছে...
                     </td>
                 </tr>
@@ -301,7 +294,7 @@
 
             try {
                 const res = await fetch('/api/admin/customers');
-                if (!res.ok) throw new Error('সার্ভার থেকে রেসপন্স আসেনি (Status: ' + res.status + ')');
+                if (!res.ok) throw new Error('সার্ভার থেকে রেসপন্স আসেনি');
                 const data = await res.json();
                 
                 rawCustomersList = Array.isArray(data.customers) ? data.customers : [];
@@ -311,7 +304,7 @@
                 console.error('Fetch error:', err);
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="9" class="text-center py-4 text-danger">
+                        <td colspan="10" class="text-center py-4 text-danger">
                             <i class="bi bi-exclamation-triangle me-2"></i> ডেটা লোড করতে সমস্যা হয়েছে: ${err.message}
                         </td>
                     </tr>
@@ -358,7 +351,7 @@
         function populateProfiles(list) {
             const select = document.getElementById('profileFilter');
             const profiles = [...new Set(list.map(c => c.profile).filter(Boolean))];
-            select.innerHTML = '<option value="all">সব প্যাকেজ / প্রোফাইল</option>';
+            select.innerHTML = '<option value="all">সব প্যাকেজ প্রোফাইল</option>';
             profiles.forEach(p => {
                 select.innerHTML += `<option value="${p}">${p}</option>`;
             });
@@ -396,12 +389,12 @@
             document.getElementById('customerCountBadge').innerText = `ইউজার: ${list.length}`;
 
             if (!list || list.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">কোনো গ্রাহকের তথ্য পাওয়া যায়নি।</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-muted">কোনো গ্রাহকের তথ্য পাওয়া যায়নি।</td></tr>`;
                 return;
             }
 
             let html = '';
-            list.forEach(c => {
+            list.forEach((c, index) => {
                 let statusBadge = '';
                 if (c.liveStatus === 'active') statusBadge = '<span class="badge bg-success">অনলাইন</span>';
                 else if (c.liveStatus === 'suspended') statusBadge = '<span class="badge bg-danger">স্থগিত</span>';
@@ -409,13 +402,14 @@
                 else statusBadge = '<span class="badge bg-secondary">অফলাইন</span>';
 
                 html += `
-                    <tr>
-                        <td>
-                            <strong class="text-dark">${c.username}</strong>
-                            <small class="d-block text-muted">${c.name || ''}</small>
+                    <tr class="clickable-row">
+                        <td class="text-center fw-bold text-muted">${index + 1}</td>
+                        <td onclick="showDetails('${c.username}')">
+                            <strong class="text-dark d-block">${c.username}</strong>
+                            <small class="text-muted">${c.name || ''}</small>
                         </td>
                         <td>${c.phone || '-'}</td>
-                        <td><span class="badge bg-light text-dark border">${c.profile || '-'}</span></td>
+                        <td><span class="badge bg-light text-dark border profile-badge">${c.profile || '-'}</span></td>
                         <td><code>${c.callerId || '-'}</code></td>
                         <td><span class="badge bg-light text-primary border">${c.ipAddress || '-'}</span></td>
                         <td>${c.expireDate || '-'}</td>
@@ -438,6 +432,40 @@
                 `;
             });
             tableBody.innerHTML = html;
+        }
+
+        function showDetails(username) {
+            const c = rawCustomersList.find(cus => cus.username === username);
+            if (!c) return;
+
+            const modalTitle = document.getElementById('detailModalTitle');
+            const modalBody = document.getElementById('customerDetailBody');
+
+            modalTitle.innerText = `প্রোফাইল: ${c.username}`;
+            
+            let statusBadge = '';
+            if (c.liveStatus === 'active') statusBadge = '<span class="badge bg-success">অনলাইন</span>';
+            else if (c.liveStatus === 'suspended') statusBadge = '<span class="badge bg-danger">স্থগিত</span>';
+            else if (c.liveStatus === 'expired') statusBadge = '<span class="badge bg-warning text-dark">মেয়াদ শেষ</span>';
+            else statusBadge = '<span class="badge bg-secondary">অফলাইন</span>';
+
+            modalBody.innerHTML = `
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between"><span>নাম:</span> <strong class="text-dark">${c.name || '-'}</strong></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>ইউজারনেম:</span> <span class="text-secondary">${c.username}</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>মোবাইল:</span> <strong class="text-dark">${c.phone || '-'}</strong></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>প্যাকেজ:</span> <span class="badge bg-light text-dark border profile-badge">${c.profile || '-'}</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>আইপি অ্যাড্রেস:</span> <code>${c.ipAddress || '-'}</code></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>ম্যাক / কলার আইডি:</span> <code>${c.callerId || '-'}</code></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>মেয়াদ (Expire):</span> <strong class="text-dark">${c.expireDate || '-'}</strong></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>মাসিক বিল:</span> <strong class="text-dark">৳ ${c.bill || 0}</strong></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>স্ট্যাটাস:</span> <span>${statusBadge}</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><span>কানেকশন টাইপ:</span> <span>${c.connectionType || '-'}</span></li>
+                </ul>
+            `;
+
+            const detailModal = new bootstrap.Modal(document.getElementById('customerDetailModal'));
+            detailModal.show();
         }
 
         function updateCounters(list) {
@@ -535,7 +563,6 @@
             }
         }
 
-        // পেজ লোড হওয়ার সাথে সাথে ডেটা ফেচ
         window.addEventListener('DOMContentLoaded', loadDashboard);
     </script>
 </body>
