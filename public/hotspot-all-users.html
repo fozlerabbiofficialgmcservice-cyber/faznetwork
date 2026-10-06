@@ -1,267 +1,3006 @@
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-    .fzn-card { background: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 20px; margin-top: 15px; font-family: 'Segoe UI', Tahoma, sans-serif; }
-    .fzn-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px; }
-    .fzn-header h2 { font-size: 1.25rem; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 8px; }
-    .fzn-btn { background: #0ea5e9; color: #fff; border: none; padding: 8px 14px; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
-    .fzn-btn:hover { opacity: 0.9; }
-    .fzn-btn-danger { background: #ef4444; }
-    .fzn-btn-warning { background: #f59e0b; color: #fff; }
-    .fzn-btn-success { background: #10b981; }
-    .fzn-btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #334155; }
-    .fzn-btn-sm { padding: 5px 8px; font-size: 12px; }
+/* =========================================================
+   FAZ NETWORK - HOTSPOT ALL USERS
+   Professional ISP Admin UI
+   ========================================================= */
 
-    .fzn-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .fzn-table th, .fzn-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 13px; color: #334155; }
-    .fzn-table th { background: #f8fafc; font-weight: 600; color: #475569; }
-    .fzn-table tr:hover { background: #f1f5f9; }
+.fzn-users,
+.fzn-users * {
+    box-sizing: border-box;
+}
 
-    .fzn-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
-    .fzn-badge-online { background: #dcfce7; color: #166534; }
-    .fzn-badge-offline { background: #f1f5f9; color: #64748b; }
-    .fzn-badge-disabled { background: #fee2e2; color: #991b1b; }
+.fzn-users {
+    --primary: #0f766e;
+    --primary-dark: #064e3b;
+    --primary-light: #ecfdf5;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --green: #059669;
+    --red: #dc2626;
+    --orange: #d97706;
+    --blue: #2563eb;
 
-    /* Modal Layout */
-    .fzn-modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 99999; align-items: center; justify-content: center; }
-    .fzn-modal-content { background: #fff; width: 90%; max-width: 800px; border-radius: 8px; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
-    .fzn-modal-header { padding: 15px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-    .fzn-modal-body { padding: 20px; overflow-y: auto; }
-    .fzn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
-    .fzn-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; }
-    .fzn-box h4 { font-size: 12px; text-transform: uppercase; color: #64748b; margin: 0 0 10px 0; border-bottom: 1px dashed #cbd5e1; padding-bottom: 5px; }
-    .fzn-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
-    .fzn-row span:first-child { color: #64748b; }
-    .fzn-row span:last-child { font-weight: 600; color: #0f172a; }
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    color: var(--text);
+    width: 100%;
+    padding: 18px;
+}
+
+.fzn-users .container {
+    max-width: 1600px;
+    margin: auto;
+}
+
+/* ================= HEADER ================= */
+
+.fzn-users .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 18px;
+}
+
+.fzn-users .title-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.fzn-users .title-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.fzn-users h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 750;
+}
+
+.fzn-users .subtitle {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.fzn-users .header-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ================= BUTTONS ================= */
+
+.fzn-users button {
+    font-family: inherit;
+}
+
+.fzn-users .btn {
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: #334155;
+    min-height: 38px;
+    padding: 0 13px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 650;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: .18s;
+}
+
+.fzn-users .btn:hover {
+    background: #f1f5f9;
+}
+
+.fzn-users .btn-primary {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.fzn-users .btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.fzn-users .btn-danger {
+    color: var(--red);
+    border-color: #fecaca;
+}
+
+.fzn-users .btn-success {
+    color: var(--green);
+    border-color: #a7f3d0;
+}
+
+.fzn-users .btn-warning {
+    color: var(--orange);
+    border-color: #fde68a;
+}
+
+.fzn-users .btn-sm {
+    min-height: 31px;
+    padding: 0 9px;
+    font-size: 11px;
+}
+
+/* ================= STAT CARDS ================= */
+
+.fzn-users .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.fzn-users .stat {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 3px 15px rgba(15,23,42,.04);
+}
+
+.fzn-users .stat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fzn-users .stat-label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.fzn-users .stat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.fzn-users .stat-number {
+    margin-top: 12px;
+    font-size: 25px;
+    font-weight: 800;
+}
+
+.fzn-users .stat-note {
+    margin-top: 6px;
+    font-size: 10px;
+    color: var(--muted);
+}
+
+/* ================= MAIN CARD ================= */
+
+.fzn-users .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 3px 15px rgba(15,23,42,.04);
+}
+
+.fzn-users .card-header {
+    padding: 15px 17px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.fzn-users .card-title {
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.fzn-users .card-subtitle {
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 10px;
+}
+
+/* ================= FILTER BAR ================= */
+
+.fzn-users .filters {
+    padding: 13px 17px;
+    background: #fbfdff;
+    border-bottom: 1px solid var(--border);
+}
+
+.fzn-users .filter-grid {
+    display: grid;
+    grid-template-columns:
+        minmax(220px, 1.6fr)
+        repeat(3, minmax(130px, .7fr))
+        auto auto;
+    gap: 8px;
+}
+
+.fzn-users .field {
+    position: relative;
+}
+
+.fzn-users .search-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.fzn-users input,
+.fzn-users select {
+    width: 100%;
+    height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text);
+    padding: 0 11px;
+    font-size: 12px;
+    outline: none;
+}
+
+.fzn-users .search {
+    padding-left: 31px;
+}
+
+.fzn-users input:focus,
+.fzn-users select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(15,118,110,.08);
+}
+
+.fzn-users .filter-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.fzn-users .live {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fzn-users .live input {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--primary);
+}
+
+/* ================= TABLE ================= */
+
+.fzn-users .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.fzn-users table {
+    width: 100%;
+    min-width: 1150px;
+    border-collapse: collapse;
+}
+
+.fzn-users th {
+    background: #f8fafc;
+    color: #64748b;
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-size: 10px;
+    font-weight: 750;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.fzn-users td {
+    padding: 11px 12px;
+    border-bottom: 1px solid #edf2f7;
+    font-size: 12px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.fzn-users tbody tr:hover {
+    background: #f8fafc;
+}
+
+.fzn-users .check {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--primary);
+}
+
+/* ================= USER ================= */
+
+.fzn-users .user-cell {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.fzn-users .avatar {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: var(--primary-light);
+    color: #047857;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.fzn-users .username {
+    font-weight: 750;
+    color: var(--text);
+}
+
+.fzn-users .user-meta {
+    margin-top: 2px;
+    color: #94a3b8;
+    font-size: 10px;
+}
+
+.fzn-users .package-name {
+    font-weight: 700;
+}
+
+.fzn-users .package-price {
+    color: #94a3b8;
+    font-size: 10px;
+    margin-top: 2px;
+}
+
+/* ================= STATUS ================= */
+
+.fzn-users .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 750;
+}
+
+.fzn-users .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.fzn-users .online {
+    color: #047857;
+    background: #ecfdf5;
+}
+
+.fzn-users .offline {
+    color: #64748b;
+    background: #f1f5f9;
+}
+
+.fzn-users .disabled {
+    color: #b91c1c;
+    background: #fef2f2;
+}
+
+.fzn-users .expired {
+    color: #c2410c;
+    background: #fff7ed;
+}
+
+.fzn-users .expiry-warning {
+    color: #d97706;
+    font-weight: 750;
+}
+
+/* ================= ACTIONS ================= */
+
+.fzn-users .actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.fzn-users .action-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: #475569;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.fzn-users .action-btn:hover {
+    background: #f1f5f9;
+}
+
+.fzn-users .action-view:hover {
+    color: var(--primary);
+}
+
+/* ================= EMPTY / LOADING ================= */
+
+.fzn-users .state {
+    text-align: center;
+    padding: 45px 20px;
+    color: var(--muted);
+}
+
+.fzn-users .state i {
+    font-size: 25px;
+    margin-bottom: 10px;
+    color: #94a3b8;
+}
+
+.fzn-users .state strong {
+    display: block;
+    color: #334155;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.fzn-users .state span {
+    font-size: 11px;
+}
+
+/* ================= FOOTER ================= */
+
+.fzn-users .table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 17px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.fzn-users .page-info {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.fzn-users .pagination {
+    display: flex;
+    gap: 4px;
+}
+
+.fzn-users .page-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.fzn-users .page-btn.active {
+    color: #fff;
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+/* ================= MODAL ================= */
+
+.fzn-users-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: rgba(15,23,42,.55);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.fzn-users-modal.show {
+    display: flex;
+}
+
+.fzn-users-modal .modal {
+    width: 100%;
+    max-width: 900px;
+    max-height: 92vh;
+    overflow: hidden;
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 25px 60px rgba(0,0,0,.2);
+}
+
+.fzn-users-modal .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.fzn-users-modal .modal-title {
+    font-size: 15px;
+    font-weight: 750;
+}
+
+.fzn-users-modal .close {
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    font-size: 23px;
+    cursor: pointer;
+}
+
+.fzn-users-modal .modal-body {
+    padding: 18px;
+    overflow-y: auto;
+    max-height: calc(92vh - 65px);
+}
+
+.fzn-users-modal .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.fzn-users-modal .detail-box {
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 14px;
+    background: #fbfdff;
+}
+
+.fzn-users-modal .detail-box h4 {
+    margin: 0 0 11px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #cbd5e1;
+    color: #64748b;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.fzn-users-modal .detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 7px;
+    font-size: 12px;
+}
+
+.fzn-users-modal .detail-row span:first-child {
+    color: #64748b;
+}
+
+.fzn-users-modal .detail-row span:last-child {
+    color: #0f172a;
+    font-weight: 650;
+    text-align: right;
+    word-break: break-word;
+}
+
+.fzn-users-modal .modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 16px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 1000px) {
+
+    .fzn-users .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .fzn-users .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .fzn-users {
+        padding: 10px;
+    }
+
+    .fzn-users .page-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .fzn-users .header-actions {
+        width: 100%;
+    }
+
+    .fzn-users .header-actions .btn {
+        flex: 1;
+    }
+
+    .fzn-users .stats {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .fzn-users .stat {
+        padding: 12px;
+    }
+
+    .fzn-users .stat-number {
+        font-size: 20px;
+    }
+
+    .fzn-users .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fzn-users-modal {
+        padding: 10px;
+    }
+
+    .fzn-users-modal .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
-<div class="fzn-card">
-    <div class="fzn-header">
-        <h2><i class="fa-solid fa-users"></i> হটস্পট ও ইউজার তালিকা</h2>
-        <button class="fzn-btn" onclick="fznLoadUsers()"><i class="fa-solid fa-rotate"></i> রিফ্রেশ</button>
-    </div>
 
-    <!-- লডিং ইন্ডিকেটর -->
-    <div id="fznLoading" style="display: none; text-align: center; padding: 25px; color: #0ea5e9;">
-        <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
-        <div style="margin-top: 8px; font-size: 14px;">ডাটা প্রসেস হচ্ছে...</div>
-    </div>
+<!-- =========================================================
+     PAGE
+     ========================================================= -->
 
-    <!-- টেবিল এরিয়া -->
-    <div id="fznTableArea" style="overflow-x: auto;">
-        <table class="fzn-table">
-            <thead>
-                <tr>
-                    <th>ইউজারনেম</th>
-                    <th>নাম</th>
-                    <th>প্যাকেজ</th>
-                    <th>স্ট্যাটাস</th>
-                    <th>আপটাইম</th>
-                    <th>আইপি অ্যাড্রেস</th>
-                    <th>অ্যাকশন</th>
-                </tr>
-            </thead>
-            <tbody id="fznUserTbody"></tbody>
-        </table>
-    </div>
-</div>
+<div class="fzn-users">
 
-<!-- Modal -->
-<div id="fznModal" class="fzn-modal">
-    <div class="fzn-modal-content">
-        <div class="fzn-modal-header">
-            <h3 style="margin:0; font-size:16px;"><i class="fa-solid fa-id-card"></i> ইউজার বিস্তারিত ও অ্যাকশন</h3>
-            <span onclick="fznCloseModal()" style="font-size:24px; cursor:pointer; color:#64748b;">&times;</span>
-        </div>
-        <div class="fzn-modal-body">
-            <div class="fzn-grid">
-                <div class="fzn-box">
-                    <h4>বেসিক তথ্য</h4>
-                    <div class="fzn-row"><span>ইউজারনেম:</span> <span id="m_user">-</span></div>
-                    <div class="fzn-row"><span>নাম:</span> <span id="m_name">-</span></div>
-                    <div class="fzn-row"><span>মোবাইল:</span> <span id="m_phone">-</span></div>
-                    <div class="fzn-row"><span>ঠিকানা:</span> <span id="m_address">-</span></div>
+    <div class="container">
+
+        <!-- HEADER -->
+
+        <div class="page-header">
+
+            <div class="title-area">
+
+                <div class="title-icon">
+                    <i class="fa-solid fa-users"></i>
                 </div>
-                <div class="fzn-box">
-                    <h4>কানেকশন</h4>
-                    <div class="fzn-row"><span>স্ট্যাটাস:</span> <span id="m_status">-</span></div>
-                    <div class="fzn-row"><span>আইপি:</span> <span id="m_ip">-</span></div>
-                    <div class="fzn-row"><span>ম্যাক:</span> <span id="m_mac">-</span></div>
-                    <div class="fzn-row"><span>আপটাইম:</span> <span id="m_uptime">-</span></div>
+
+                <div>
+                    <h1>Hotspot Users</h1>
+                    <div class="subtitle">
+                        Manage all hotspot customers and connection accounts
+                    </div>
                 </div>
-                <div class="fzn-box">
-                    <h4>প্যাকেজ ও মেয়াদ</h4>
-                    <div class="fzn-row"><span>প্যাকেজ:</span> <span id="m_pkg">-</span></div>
-                    <div class="fzn-row"><span>মূল্য:</span> <span id="m_price">-</span></div>
-                    <div class="fzn-row"><span>মেয়াদ শেষ:</span> <span id="m_exp">-</span></div>
-                </div>
-                <div class="fzn-box">
-                    <h4>ডেটা ও পেমেন্ট</h4>
-                    <div class="fzn-row"><span>ডাউনলোড:</span> <span id="m_down">-</span></div>
-                    <div class="fzn-row"><span>আপলোড:</span> <span id="m_up">-</span></div>
-                    <div class="fzn-row"><span>শেষ পেমেন্ট:</span> <span id="m_pay">-</span></div>
-                </div>
+
             </div>
 
-            <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
-                <button class="fzn-btn fzn-btn-danger fzn-btn-sm" onclick="alert('Disconnected!')"><i class="fa-solid fa-power-off"></i> Disconnect</button>
-                <button class="fzn-btn fzn-btn-warning fzn-btn-sm" onclick="alert('Status Toggled!')"><i class="fa-solid fa-ban"></i> Enable / Disable</button>
-                <button class="fzn-btn fzn-btn-outline fzn-btn-sm" onclick="alert('Change Package')"><i class="fa-solid fa-arrow-right-arrow-left"></i> Change Package</button>
-                <button class="fzn-btn fzn-btn-success fzn-btn-sm" onclick="alert('User Renewed')"><i class="fa-solid fa-arrows-rotate"></i> Renew</button>
+            <div class="header-actions">
+
+                <button class="btn" onclick="fznLoadUsers()">
+                    <i class="fa-solid fa-rotate"></i>
+                    Refresh
+                </button>
+
+                <button class="btn" onclick="fznExportCSV()">
+                    <i class="fa-solid fa-file-csv"></i>
+                    Export
+                </button>
+
+                <button class="btn btn-primary"
+                        onclick="fznAddUser()">
+                    <i class="fa-solid fa-plus"></i>
+                    Add User
+                </button>
+
             </div>
+
         </div>
+
+
+        <!-- STATISTICS -->
+
+        <div class="stats">
+
+            <div class="stat">
+
+                <div class="stat-top">
+
+                    <div class="stat-label">
+                        TOTAL USERS
+                    </div>
+
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+
+                </div>
+
+                <div class="stat-number"
+                     id="statTotal">
+                    0
+                </div>
+
+                <div class="stat-note">
+                    Registered hotspot users
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-top">
+
+                    <div class="stat-label">
+                        ONLINE NOW
+                    </div>
+
+                    <div class="stat-icon"
+                         style="color:#059669;background:#ecfdf5">
+                        <i class="fa-solid fa-wifi"></i>
+                    </div>
+
+                </div>
+
+                <div class="stat-number"
+                     id="statOnline">
+                    0
+                </div>
+
+                <div class="stat-note">
+                    Currently connected
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-top">
+
+                    <div class="stat-label">
+                        OFFLINE
+                    </div>
+
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-power-off"></i>
+                    </div>
+
+                </div>
+
+                <div class="stat-number"
+                     id="statOffline">
+                    0
+                </div>
+
+                <div class="stat-note">
+                    Not currently connected
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-top">
+
+                    <div class="stat-label">
+                        DISABLED / EXPIRED
+                    </div>
+
+                    <div class="stat-icon"
+                         style="color:#dc2626;background:#fef2f2">
+                        <i class="fa-solid fa-ban"></i>
+                    </div>
+
+                </div>
+
+                <div class="stat-number"
+                     id="statDisabled">
+                    0
+                </div>
+
+                <div class="stat-note">
+                    Accounts requiring attention
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- MAIN CARD -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <div>
+
+                    <div class="card-title">
+                        All Hotspot Users
+                    </div>
+
+                    <div class="card-subtitle">
+                        Search, filter and manage customer accounts
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- FILTERS -->
+
+            <div class="filters">
+
+                <div class="filter-grid">
+
+                    <div class="field">
+
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+
+                        <input
+                            id="fznSearch"
+                            class="search"
+                            type="text"
+                            placeholder="Search username, name, phone, IP..."
+                        >
+
+                    </div>
+
+
+                    <select id="fznStatus">
+
+                        <option value="all">
+                            All Status
+                        </option>
+
+                        <option value="online">
+                            Online
+                        </option>
+
+                        <option value="offline">
+                            Offline
+                        </option>
+
+                        <option value="disabled">
+                            Disabled
+                        </option>
+
+                        <option value="expired">
+                            Expired
+                        </option>
+
+                    </select>
+
+
+                    <select id="fznPackage">
+
+                        <option value="all">
+                            All Packages
+                        </option>
+
+                    </select>
+
+
+                    <select id="fznExpiry">
+
+                        <option value="all">
+                            All Expiry
+                        </option>
+
+                        <option value="today">
+                            Expire Today
+                        </option>
+
+                        <option value="soon">
+                            Expire Soon
+                        </option>
+
+                        <option value="valid">
+                            Valid
+                        </option>
+
+                        <option value="expired">
+                            Expired
+                        </option>
+
+                    </select>
+
+
+                    <button class="btn btn-sm"
+                            onclick="fznApplyFilters()">
+
+                        <i class="fa-solid fa-filter"></i>
+                        Filter
+
+                    </button>
+
+
+                    <button class="btn btn-sm"
+                            onclick="fznResetFilters()">
+
+                        Reset
+
+                    </button>
+
+                </div>
+
+
+                <div class="filter-info">
+
+                    <div>
+                        Showing
+                        <strong id="fznShowing">
+                            0
+                        </strong>
+                        users
+                    </div>
+
+                    <label class="live">
+
+                        <input
+                            type="checkbox"
+                            id="fznAutoRefresh"
+                        >
+
+                        Auto refresh every 30 sec
+
+                    </label>
+
+                </div>
+
+            </div>
+
+
+            <!-- TABLE -->
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                <input
+                                    class="check"
+                                    type="checkbox"
+                                    id="fznSelectAll"
+                                >
+                            </th>
+
+                            <th>
+                                User
+                            </th>
+
+                            <th>
+                                Package
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                IP Address
+                            </th>
+
+                            <th>
+                                MAC Address
+                            </th>
+
+                            <th>
+                                Usage
+                            </th>
+
+                            <th>
+                                Expiry
+                            </th>
+
+                            <th>
+                                Uptime
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="fznUserTbody">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <!-- FOOTER -->
+
+            <div class="table-footer">
+
+                <div class="page-info"
+                     id="fznPageInfo">
+                    0 users
+                </div>
+
+                <div class="pagination">
+
+                    <button
+                        class="page-btn"
+                        onclick="fznPrevPage()">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+
+                    <button
+                        class="page-btn active"
+                        id="fznPageNumber">
+                        1
+                    </button>
+
+                    <button
+                        class="page-btn"
+                        onclick="fznNextPage()">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
+
 </div>
+
+
+<!-- =========================================================
+     USER DETAILS MODAL
+     ========================================================= -->
+
+<div class="fzn-users-modal"
+     id="fznModal">
+
+    <div class="modal">
+
+        <div class="modal-header">
+
+            <div class="modal-title">
+
+                <i class="fa-solid fa-id-card"
+                   style="color:#0f766e"></i>
+
+                User Details
+
+            </div>
+
+            <button class="close"
+                    onclick="fznCloseModal()">
+
+                &times;
+
+            </button>
+
+        </div>
+
+
+        <div class="modal-body">
+
+            <div class="detail-grid">
+
+
+                <!-- BASIC -->
+
+                <div class="detail-box">
+
+                    <h4>
+                        <i class="fa-solid fa-user"></i>
+                        Basic Information
+                    </h4>
+
+                    <div class="detail-row">
+                        <span>Username</span>
+                        <span id="m_user">-</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Name</span>
+                        <span id="m_name">-</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Mobile</span>
+                        <span id="m_phone">-</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Address</span>
+                        <span id="m_address">-</span>
+                    </div>
+
+                </div>
+
+
+                <!-- CONNECTION -->
+
+                <div class="detail-box">
+
+                    <h4>
+                        <i class="fa-solid fa-wifi"></i>
+                        Live Connection
+                    </h4>
+
+                    <div class="detail-row">
+                        <span>Status</span>
+                        <span id="m_status">-</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>IP Address</span>
+                        <span id="m_ip">-</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>MAC Address</span>
+                        <span id="m_mac">-</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Uptime</span>
+                        <span id="m_uptime">-</span>
+                    </div>
+
+                </div>
+
+
+                <!-- PACKAGE -->
+
+                <div class="detail-box">
+
+                    <h4>
+                        <i class="fa-solid fa-box"></i>
+                        Package & Validity
+                    </h4>
+
+                    <div class="detail-row">
+                        <span>Package</span>
+                        <span id="m_pkg">-</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Price</span>
+                        <span id="m_price">-</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Expiry Date</span>
+                        <span id="m_exp">-</span>
+                    </div>
+
+                </div>
+
+
+                <!-- USAGE -->
+
+                <div class="detail-box">
+
+                    <h4>
+                        <i class="fa-solid fa-chart-line"></i>
+                        Usage & Payment
+                    </h4>
+
+                    <div class="detail-row">
+                        <span>Download</span>
+                        <span id="m_down">-</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Upload</span>
+                        <span id="m_up">-</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Last Payment</span>
+                        <span id="m_pay">-</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ACTIONS -->
+
+            <div class="modal-actions">
+
+                <button class="btn btn-danger"
+                        onclick="fznDisconnect()">
+
+                    <i class="fa-solid fa-power-off"></i>
+                    Disconnect
+
+                </button>
+
+
+                <button class="btn btn-warning"
+                        onclick="fznToggleUser()">
+
+                    <i class="fa-solid fa-ban"></i>
+                    Enable / Disable
+
+                </button>
+
+
+                <button class="btn"
+                        onclick="fznChangePackage()">
+
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    Change Package
+
+                </button>
+
+
+                <button class="btn btn-success"
+                        onclick="fznRenewUser()">
+
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    Renew
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 
 <script>
-var usersList = [];
+/* =========================================================
+   FAZ NETWORK - HOTSPOT USERS JAVASCRIPT
+   ========================================================= */
 
-// ফাস্ট ফেচ উইথ শর্ট টাইমআউট
-function quickFetch(url, ms) {
-    return new Promise((resolve) => {
-        const timer = setTimeout(() => resolve([]), ms);
-        fetch(url)
-            .then(res => res.ok ? res.json() : [])
-            .then(data => {
-                clearTimeout(timer);
-                resolve(data);
-            })
-            .catch(() => {
-                clearTimeout(timer);
+var fznUsers = [];
+var fznFiltered = [];
+var fznCurrentUser = null;
+
+var fznPage = 1;
+var fznPerPage = 25;
+var fznRefreshTimer = null;
+
+
+/* =========================================================
+   SAFE FETCH
+   ========================================================= */
+
+function fznFetch(url, timeout) {
+
+    timeout = timeout || 5000;
+
+    return new Promise(function(resolve) {
+
+        var finished = false;
+
+        var timer = setTimeout(function() {
+
+            if (!finished) {
+                finished = true;
                 resolve([]);
-            });
+            }
+
+        }, timeout);
+
+
+        fetch(url, {
+            cache: "no-store"
+        })
+
+        .then(function(res) {
+
+            if (!res.ok) {
+                throw new Error("HTTP " + res.status);
+            }
+
+            return res.json();
+
+        })
+
+        .then(function(data) {
+
+            if (!finished) {
+
+                finished = true;
+
+                clearTimeout(timer);
+
+                resolve(
+                    Array.isArray(data)
+                        ? data
+                        : []
+                );
+
+            }
+
+        })
+
+        .catch(function() {
+
+            if (!finished) {
+
+                finished = true;
+
+                clearTimeout(timer);
+
+                resolve([]);
+
+            }
+
+        });
+
     });
+
 }
+
+
+/* =========================================================
+   LOAD USERS
+   ========================================================= */
 
 window.fznLoadUsers = async function() {
-    var loading = document.getElementById('fznLoading');
-    var tableArea = document.getElementById('fznTableArea');
-    
-    if (loading) loading.style.display = 'block';
+
+    var tbody =
+        document.getElementById("fznUserTbody");
+
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="10">
+
+                <div class="state">
+
+                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+
+                    <strong>Loading users...</strong>
+
+                    <span>
+                        Connecting to hotspot server
+                    </span>
+
+                </div>
+
+            </td>
+        </tr>
+    `;
+
 
     try {
-        // সর্বোচ্চ ২৫০০ms অপেক্ষা করবে, রাউটার স্লো হলেও পেজ হ্যাং হবে না
-        const results = await Promise.all([
-            quickFetch('/api/hotspot/users', 2500),
-            quickFetch('/api/customers', 2500)
+
+        var results = await Promise.all([
+
+            fznFetch(
+                "/api/hotspot/users",
+                5000
+            ),
+
+            fznFetch(
+                "/api/customers",
+                5000
+            )
+
         ]);
 
-        var hsData = Array.isArray(results[0]) ? results[0] : [];
-        var custData = Array.isArray(results[1]) ? results[1] : [];
 
-        // যদি রাউটার লাইভ না দেয় তবে লোকাল কাস্টমার ডাটা দিয়ে প্রিফিল করবে
-        if (hsData.length === 0 && custData.length > 0) {
-            usersList = custData.map(c => ({
-                username: c.username || '-',
-                name: c.name || '-',
-                phone: c.phone || '-',
-                address: c.address || '-',
-                profile: c.package || 'Default',
-                uptime: c.uptime || 'Offline',
-                ip: c.ipAddress || '-',
-                mac: c.callerId || '-',
-                bytesIn: '0 B',
-                bytesOut: '0 B',
-                disabled: c.status === 'Disabled',
-                isOnline: c.onlineStatus === 'Online',
-                expiryDate: c.expiryDate || '-',
-                price: c.price || '-',
-                lastPayment: '-'
-            }));
-        } else {
-            usersList = hsData.map(u => {
-                var c = custData.find(item => item.username === u.username) || {};
+        var hotspotData =
+            Array.isArray(results[0])
+                ? results[0]
+                : [];
+
+
+        var customerData =
+            Array.isArray(results[1])
+                ? results[1]
+                : [];
+
+
+        /*
+         * If MikroTik hotspot data exists,
+         * merge it with customer data.
+         */
+
+        if (hotspotData.length > 0) {
+
+            fznUsers = hotspotData.map(function(u) {
+
+                var customer =
+                    customerData.find(function(c) {
+
+                        return String(c.username || "")
+                            .toLowerCase()
+                            ===
+                            String(u.username || u.name || "")
+                            .toLowerCase();
+
+                    }) || {};
+
+
                 return {
-                    username: u.username || u.name || '-',
-                    name: c.name || u.comment || 'N/A',
-                    phone: c.phone || '-',
-                    address: c.address || '-',
-                    profile: u.profile || c.package || 'Default',
-                    uptime: u.uptime || '-',
-                    ip: c.ipAddress || '-',
-                    mac: c.callerId || '-',
-                    bytesIn: u.bytesIn || '0 B',
-                    bytesOut: u.bytesOut || '0 B',
-                    disabled: !!u.disabled,
-                    isOnline: u.uptime && u.uptime !== '0s' && u.uptime !== '-',
-                    expiryDate: c.expiryDate || '-',
-                    price: c.price || '-',
-                    lastPayment: c.lastPayment || '-'
+
+                    username:
+                        u.username ||
+                        u.name ||
+                        "-",
+
+                    name:
+                        customer.name ||
+                        u.comment ||
+                        "-",
+
+                    phone:
+                        customer.phone ||
+                        "-",
+
+                    address:
+                        customer.address ||
+                        "-",
+
+                    profile:
+                        u.profile ||
+                        customer.package ||
+                        "Default",
+
+                    price:
+                        customer.price ||
+                        "-",
+
+                    uptime:
+                        u.uptime ||
+                        "-",
+
+                    ip:
+                        u.ip ||
+                        u.address ||
+                        customer.ipAddress ||
+                        "-",
+
+                    mac:
+                        u.mac ||
+                        u.callerId ||
+                        customer.callerId ||
+                        "-",
+
+                    bytesIn:
+                        u.bytesIn ||
+                        "0 B",
+
+                    bytesOut:
+                        u.bytesOut ||
+                        "0 B",
+
+                    disabled:
+                        !!u.disabled ||
+                        customer.status === "Disabled",
+
+                    isOnline:
+                        !!(
+                            u.uptime &&
+                            u.uptime !== "0s" &&
+                            u.uptime !== "-"
+                        ),
+
+                    expiryDate:
+                        customer.expiryDate ||
+                        u.expiryDate ||
+                        "-",
+
+                    lastPayment:
+                        customer.lastPayment ||
+                        "-"
+
                 };
+
             });
+
         }
 
-        fznRender();
-    } catch (err) {
-        console.error('Data error:', err);
-    } finally {
-        if (loading) loading.style.display = 'none';
-        if (tableArea) tableArea.style.display = 'block';
+        /*
+         * If hotspot API is empty,
+         * use customer database.
+         */
+
+        else {
+
+            fznUsers =
+                customerData.map(function(c) {
+
+                    return {
+
+                        username:
+                            c.username || "-",
+
+                        name:
+                            c.name || "-",
+
+                        phone:
+                            c.phone || "-",
+
+                        address:
+                            c.address || "-",
+
+                        profile:
+                            c.package || "Default",
+
+                        price:
+                            c.price || "-",
+
+                        uptime:
+                            c.uptime || "Offline",
+
+                        ip:
+                            c.ipAddress || "-",
+
+                        mac:
+                            c.callerId || "-",
+
+                        bytesIn:
+                            "0 B",
+
+                        bytesOut:
+                            "0 B",
+
+                        disabled:
+                            c.status === "Disabled",
+
+                        isOnline:
+                            c.onlineStatus === "Online",
+
+                        expiryDate:
+                            c.expiryDate || "-",
+
+                        lastPayment:
+                            c.lastPayment || "-"
+
+                    };
+
+                });
+
+        }
+
+
+        fznBuildPackages();
+
+        fznApplyFilters();
+
     }
+
+    catch (error) {
+
+        console.error(
+            "Hotspot users error:",
+            error
+        );
+
+        fznUsers = [];
+
+        fznApplyFilters();
+
+    }
+
 };
 
-function fznRender() {
-    var tbody = document.getElementById('fznUserTbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
 
-    if (usersList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px; color:#64748b;">কোনো ইউজার ডাটা পাওয়া যায়নি। রিফ্রেশ করে আবার চেষ্টা করুন।</td></tr>';
-        return;
+/* =========================================================
+   PACKAGE FILTER
+   ========================================================= */
+
+function fznBuildPackages() {
+
+    var select =
+        document.getElementById("fznPackage");
+
+    if (!select) return;
+
+
+    var current =
+        select.value;
+
+
+    var packages = [];
+
+
+    fznUsers.forEach(function(u) {
+
+        if (
+            u.profile &&
+            u.profile !== "-"
+        ) {
+
+            if (
+                !packages.includes(
+                    u.profile
+                )
+            ) {
+
+                packages.push(
+                    u.profile
+                );
+
+            }
+
+        }
+
+    });
+
+
+    packages.sort();
+
+
+    select.innerHTML = `
+        <option value="all">
+            All Packages
+        </option>
+    `;
+
+
+    packages.forEach(function(pkg) {
+
+        var option =
+            document.createElement("option");
+
+        option.value = pkg;
+
+        option.textContent = pkg;
+
+        select.appendChild(option);
+
+    });
+
+
+    if (
+        packages.includes(current)
+    ) {
+
+        select.value = current;
+
     }
 
-    usersList.forEach((u, i) => {
-        var tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>${u.username}</strong></td>
-            <td>${u.name}</td>
-            <td><span class="fzn-badge fzn-badge-offline">${u.profile}</span></td>
-            <td>
-                ${u.disabled 
-                    ? '<span class="fzn-badge fzn-badge-disabled">Disabled</span>' 
-                    : (u.isOnline ? '<span class="fzn-badge fzn-badge-online">Online</span>' : '<span class="fzn-badge fzn-badge-offline">Offline</span>')}
-            </td>
-            <td>${u.uptime}</td>
-            <td>${u.ip}</td>
-            <td>
-                <button class="fzn-btn fzn-btn-outline fzn-btn-sm" onclick="fznShowDetails(${i})">
-                    <i class="fa-solid fa-circle-info"></i> বিস্তারিত
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
 }
 
-window.fznShowDetails = function(i) {
-    var u = usersList[i];
-    if (!u) return;
-    document.getElementById('m_user').innerText = u.username;
-    document.getElementById('m_name').innerText = u.name;
-    document.getElementById('m_phone').innerText = u.phone;
-    document.getElementById('m_address').innerText = u.address;
-    document.getElementById('m_status').innerText = u.isOnline ? 'Online' : 'Offline';
-    document.getElementById('m_ip').innerText = u.ip;
-    document.getElementById('m_mac').innerText = u.mac;
-    document.getElementById('m_uptime').innerText = u.uptime;
-    document.getElementById('m_pkg').innerText = u.profile;
-    document.getElementById('m_price').innerText = u.price !== '-' ? u.price + ' ৳' : 'N/A';
-    document.getElementById('m_exp').innerText = u.expiryDate;
-    document.getElementById('m_down').innerText = u.bytesIn;
-    document.getElementById('m_up').innerText = u.bytesOut;
-    document.getElementById('m_pay').innerText = u.lastPayment !== '-' ? u.lastPayment + ' ৳' : 'N/A';
 
-    var modal = document.getElementById('fznModal');
-    if (modal) modal.style.display = 'flex';
+/* =========================================================
+   FILTER
+   ========================================================= */
+
+window.fznApplyFilters = function() {
+
+    var search =
+        (
+            document.getElementById("fznSearch")
+                ?.value || ""
+        )
+        .toLowerCase()
+        .trim();
+
+
+    var status =
+        document.getElementById("fznStatus")
+            ?.value || "all";
+
+
+    var pkg =
+        document.getElementById("fznPackage")
+            ?.value || "all";
+
+
+    var expiry =
+        document.getElementById("fznExpiry")
+            ?.value || "all";
+
+
+    fznFiltered =
+        fznUsers.filter(function(u) {
+
+
+            /* SEARCH */
+
+            var searchable = [
+
+                u.username,
+                u.name,
+                u.phone,
+                u.ip,
+                u.mac,
+                u.profile
+
+            ]
+            .join(" ")
+            .toLowerCase();
+
+
+            if (
+                search &&
+                !searchable.includes(search)
+            ) {
+
+                return false;
+
+            }
+
+
+            /* STATUS */
+
+            var actualStatus =
+                u.disabled
+                    ? "disabled"
+                    : fznIsExpired(u.expiryDate)
+                        ? "expired"
+                        : u.isOnline
+                            ? "online"
+                            : "offline";
+
+
+            if (
+                status !== "all" &&
+                status !== actualStatus
+            ) {
+
+                return false;
+
+            }
+
+
+            /* PACKAGE */
+
+            if (
+                pkg !== "all" &&
+                u.profile !== pkg
+            ) {
+
+                return false;
+
+            }
+
+
+            /* EXPIRY */
+
+            if (
+                expiry !== "all" &&
+                !fznExpiryMatch(
+                    u.expiryDate,
+                    expiry
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            return true;
+
+        });
+
+
+    fznPage = 1;
+
+    fznRender();
+
 };
+
+
+/* =========================================================
+   EXPIRY
+   ========================================================= */
+
+function fznIsExpired(dateValue) {
+
+    if (
+        !dateValue ||
+        dateValue === "-"
+    ) {
+
+        return false;
+
+    }
+
+
+    var date =
+        new Date(dateValue);
+
+
+    if (
+        isNaN(date.getTime())
+    ) {
+
+        return false;
+
+    }
+
+
+    return date < new Date();
+
+}
+
+
+function fznExpiryMatch(
+    dateValue,
+    type
+) {
+
+    if (
+        !dateValue ||
+        dateValue === "-"
+    ) {
+
+        return false;
+
+    }
+
+
+    var date =
+        new Date(dateValue);
+
+
+    if (
+        isNaN(date.getTime())
+    ) {
+
+        return false;
+
+    }
+
+
+    var now =
+        new Date();
+
+
+    var today =
+        new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate()
+        );
+
+
+    var target =
+        new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate()
+        );
+
+
+    var days =
+        Math.ceil(
+            (
+                target - today
+            ) /
+            86400000
+        );
+
+
+    if (type === "expired")
+        return days < 0;
+
+    if (type === "today")
+        return days === 0;
+
+    if (type === "soon")
+        return days >= 0 && days <= 7;
+
+    if (type === "valid")
+        return days > 7;
+
+    return true;
+
+}
+
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+
+function fznRender() {
+
+    var tbody =
+        document.getElementById(
+            "fznUserTbody"
+        );
+
+
+    if (!tbody) return;
+
+
+    tbody.innerHTML = "";
+
+
+    var total =
+        fznFiltered.length;
+
+
+    var start =
+        (fznPage - 1) *
+        fznPerPage;
+
+
+    var end =
+        start +
+        fznPerPage;
+
+
+    var pageUsers =
+        fznFiltered.slice(
+            start,
+            end
+        );
+
+
+    if (!pageUsers.length) {
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10">
+
+                    <div class="state">
+
+                        <i class="fa-solid fa-users-slash"></i>
+
+                        <strong>
+                            No users found
+                        </strong>
+
+                        <span>
+                            Try changing your search or filters.
+                        </span>
+
+                    </div>
+
+                </td>
+            </tr>
+        `;
+
+    }
+
+
+    pageUsers.forEach(function(u, index) {
+
+        var realIndex =
+            start + index;
+
+
+        var statusHTML =
+            fznStatusHTML(u);
+
+
+        var expiryClass =
+            fznExpiryClass(
+                u.expiryDate
+            );
+
+
+        var avatar =
+            (
+                u.name ||
+                u.username ||
+                "U"
+            )
+            .charAt(0)
+            .toUpperCase();
+
+
+        var tr =
+            document.createElement("tr");
+
+
+        tr.innerHTML = `
+
+            <td>
+
+                <input
+                    class="check fzn-user-check"
+                    type="checkbox"
+                    data-index="${realIndex}"
+                >
+
+            </td>
+
+
+            <td>
+
+                <div class="user-cell">
+
+                    <div class="avatar">
+                        ${fznEscape(avatar)}
+                    </div>
+
+                    <div>
+
+                        <div class="username">
+                            ${fznEscape(u.username)}
+                        </div>
+
+                        <div class="user-meta">
+                            ${fznEscape(u.name)}
+                            ${u.phone !== "-" ? " • " + fznEscape(u.phone) : ""}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </td>
+
+
+            <td>
+
+                <div class="package-name">
+                    ${fznEscape(u.profile)}
+                </div>
+
+                <div class="package-price">
+                    ${u.price !== "-" ? "৳" + fznEscape(u.price) : "—"}
+                </div>
+
+            </td>
+
+
+            <td>
+                ${statusHTML}
+            </td>
+
+
+            <td>
+                ${fznEscape(u.ip)}
+            </td>
+
+
+            <td>
+                ${fznEscape(u.mac)}
+            </td>
+
+
+            <td>
+
+                <div>
+                    ↓ ${fznEscape(u.bytesIn)}
+                </div>
+
+                <div style="color:#94a3b8;font-size:10px">
+                    ↑ ${fznEscape(u.bytesOut)}
+                </div>
+
+            </td>
+
+
+            <td class="${expiryClass}">
+                ${fznEscape(u.expiryDate)}
+            </td>
+
+
+            <td>
+                ${fznEscape(u.uptime)}
+            </td>
+
+
+            <td>
+
+                <div class="actions">
+
+                    <button
+                        class="action-btn action-view"
+                        title="View details"
+                        onclick="fznShowDetails(${realIndex})">
+
+                        <i class="fa-solid fa-eye"></i>
+
+                    </button>
+
+
+                    <button
+                        class="action-btn"
+                        title="Disconnect"
+                        onclick="fznDisconnect(${realIndex})">
+
+                        <i class="fa-solid fa-power-off"></i>
+
+                    </button>
+
+                </div>
+
+            </td>
+
+        `;
+
+
+        tbody.appendChild(tr);
+
+    });
+
+
+    fznUpdateStats();
+
+    fznUpdatePagination();
+
+}
+
+
+/* =========================================================
+   STATUS HTML
+   ========================================================= */
+
+function fznStatusHTML(u) {
+
+    if (u.disabled) {
+
+        return `
+            <span class="status disabled">
+                <span class="dot"></span>
+                Disabled
+            </span>
+        `;
+
+    }
+
+
+    if (fznIsExpired(u.expiryDate)) {
+
+        return `
+            <span class="status expired">
+                <span class="dot"></span>
+                Expired
+            </span>
+        `;
+
+    }
+
+
+    if (u.isOnline) {
+
+        return `
+            <span class="status online">
+                <span class="dot"></span>
+                Online
+            </span>
+        `;
+
+    }
+
+
+    return `
+        <span class="status offline">
+            <span class="dot"></span>
+            Offline
+        </span>
+    `;
+
+}
+
+
+/* =========================================================
+   EXPIRY CLASS
+   ========================================================= */
+
+function fznExpiryClass(dateValue) {
+
+    if (
+        !dateValue ||
+        dateValue === "-"
+    ) {
+
+        return "";
+
+    }
+
+
+    var date =
+        new Date(dateValue);
+
+
+    if (
+        isNaN(date.getTime())
+    ) {
+
+        return "";
+
+    }
+
+
+    var days =
+        Math.ceil(
+            (
+                date -
+                new Date()
+            ) /
+            86400000
+        );
+
+
+    if (days < 0)
+        return "expiry-warning";
+
+    if (days <= 7)
+        return "expiry-warning";
+
+    return "";
+
+}
+
+
+/* =========================================================
+   STATISTICS
+   ========================================================= */
+
+function fznUpdateStats() {
+
+    var total =
+        fznUsers.length;
+
+
+    var online =
+        fznUsers.filter(function(u) {
+
+            return !u.disabled &&
+                   u.isOnline;
+
+        }).length;
+
+
+    var offline =
+        fznUsers.filter(function(u) {
+
+            return !u.disabled &&
+                   !u.isOnline &&
+                   !fznIsExpired(
+                       u.expiryDate
+                   );
+
+        }).length;
+
+
+    var disabled =
+        fznUsers.filter(function(u) {
+
+            return u.disabled ||
+                   fznIsExpired(
+                       u.expiryDate
+                   );
+
+        }).length;
+
+
+    document.getElementById(
+        "statTotal"
+    ).textContent = total;
+
+
+    document.getElementById(
+        "statOnline"
+    ).textContent = online;
+
+
+    document.getElementById(
+        "statOffline"
+    ).textContent = offline;
+
+
+    document.getElementById(
+        "statDisabled"
+    ).textContent = disabled;
+
+
+    document.getElementById(
+        "fznShowing"
+    ).textContent =
+        fznFiltered.length;
+
+
+}
+
+
+/* =========================================================
+   PAGINATION
+   ========================================================= */
+
+function fznUpdatePagination() {
+
+    var totalPages =
+        Math.max(
+            1,
+            Math.ceil(
+                fznFiltered.length /
+                fznPerPage
+            )
+        );
+
+
+    document.getElementById(
+        "fznPageNumber"
+    ).textContent =
+        fznPage;
+
+
+    document.getElementById(
+        "fznPageInfo"
+    ).textContent =
+        "Page " +
+        fznPage +
+        " of " +
+        totalPages +
+        " • " +
+        fznFiltered.length +
+        " users";
+
+}
+
+
+window.fznPrevPage = function() {
+
+    if (fznPage > 1) {
+
+        fznPage--;
+
+        fznRender();
+
+    }
+
+};
+
+
+window.fznNextPage = function() {
+
+    var totalPages =
+        Math.max(
+            1,
+            Math.ceil(
+                fznFiltered.length /
+                fznPerPage
+            )
+        );
+
+
+    if (
+        fznPage < totalPages
+    ) {
+
+        fznPage++;
+
+        fznRender();
+
+    }
+
+};
+
+
+/* =========================================================
+   USER DETAILS
+   ========================================================= */
+
+window.fznShowDetails = function(index) {
+
+    var u =
+        fznFiltered[index];
+
+    /*
+     * If pagination is active,
+     * index belongs to filtered list.
+     */
+
+    if (!u) {
+
+        var start =
+            (fznPage - 1) *
+            fznPerPage;
+
+        u =
+            fznFiltered[
+                start + index
+            ];
+
+    }
+
+
+    if (!u) return;
+
+
+    fznCurrentUser = u;
+
+
+    document.getElementById(
+        "m_user"
+    ).textContent =
+        u.username || "-";
+
+
+    document.getElementById(
+        "m_name"
+    ).textContent =
+        u.name || "-";
+
+
+    document.getElementById(
+        "m_phone"
+    ).textContent =
+        u.phone || "-";
+
+
+    document.getElementById(
+        "m_address"
+    ).textContent =
+        u.address || "-";
+
+
+    document.getElementById(
+        "m_status"
+    ).innerHTML =
+        fznStatusHTML(u);
+
+
+    document.getElementById(
+        "m_ip"
+    ).textContent =
+        u.ip || "-";
+
+
+    document.getElementById(
+        "m_mac"
+    ).textContent =
+        u.mac || "-";
+
+
+    document.getElementById(
+        "m_uptime"
+    ).textContent =
+        u.uptime || "-";
+
+
+    document.getElementById(
+        "m_pkg"
+    ).textContent =
+        u.profile || "-";
+
+
+    document.getElementById(
+        "m_price"
+    ).textContent =
+        u.price !== "-"
+            ? "৳" + u.price
+            : "-";
+
+
+    document.getElementById(
+        "m_exp"
+    ).textContent =
+        u.expiryDate || "-";
+
+
+    document.getElementById(
+        "m_down"
+    ).textContent =
+        u.bytesIn || "0 B";
+
+
+    document.getElementById(
+        "m_up"
+    ).textContent =
+        u.bytesOut || "0 B";
+
+
+    document.getElementById(
+        "m_pay"
+    ).textContent =
+        u.lastPayment !== "-"
+            ? "৳" + u.lastPayment
+            : "-";
+
+
+    document.getElementById(
+        "fznModal"
+    ).classList.add("show");
+
+};
+
 
 window.fznCloseModal = function() {
-    var modal = document.getElementById('fznModal');
-    if (modal) modal.style.display = 'none';
+
+    document.getElementById(
+        "fznModal"
+    ).classList.remove("show");
+
+    fznCurrentUser = null;
+
 };
 
-// ইনিশিয়াল কল
-setTimeout(function() {
-    window.fznLoadUsers();
-}, 200);
+
+/* Close by clicking overlay */
+
+document.getElementById(
+    "fznModal"
+).addEventListener(
+    "click",
+    function(e) {
+
+        if (
+            e.target === this
+        ) {
+
+            fznCloseModal();
+
+        }
+
+    }
+);
+
+
+/* ESC */
+
+document.addEventListener(
+    "keydown",
+    function(e) {
+
+        if (
+            e.key === "Escape"
+        ) {
+
+            fznCloseModal();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+
+window.fznDisconnect = function(index) {
+
+    var u =
+        typeof index === "number"
+            ? fznFiltered[index]
+            : fznCurrentUser;
+
+
+    if (!u) return;
+
+
+    if (
+        !confirm(
+            "Disconnect user " +
+            u.username +
+            "?"
+        )
+    ) return;
+
+
+    /*
+     * Connect your real MikroTik
+     * disconnect endpoint here.
+     *
+     * Example:
+     *
+     * fetch('/api/hotspot/disconnect', {
+     *   method:'POST',
+     *   headers:{'Content-Type':'application/json'},
+     *   body:JSON.stringify({
+     *      username:u.username
+     *   })
+     * });
+     */
+
+    alert(
+        "Disconnect action ready for API: " +
+        u.username
+    );
+
+};
+
+
+window.fznToggleUser = function() {
+
+    if (!fznCurrentUser)
+        return;
+
+
+    alert(
+        "Enable / Disable API ready for: " +
+        fznCurrentUser.username
+    );
+
+};
+
+
+window.fznChangePackage = function() {
+
+    if (!fznCurrentUser)
+        return;
+
+
+    alert(
+        "Change Package action ready for: " +
+        fznCurrentUser.username
+    );
+
+};
+
+
+window.fznRenewUser = function() {
+
+    if (!fznCurrentUser)
+        return;
+
+
+    alert(
+        "Renew action ready for: " +
+        fznCurrentUser.username
+    );
+
+};
+
+
+window.fznAddUser = function() {
+
+    /*
+     * Connect this button to your
+     * Add Hotspot User page/modal.
+     */
+
+    alert(
+        "Add User page can be connected here."
+    );
+
+};
+
+
+/* =========================================================
+   EXPORT CSV
+   ========================================================= */
+
+window.fznExportCSV = function() {
+
+    if (!fznFiltered.length) {
+
+        alert(
+            "No users available to export."
+        );
+
+        return;
+
+    }
+
+
+    var headers = [
+
+        "Username",
+        "Name",
+        "Phone",
+        "Package",
+        "Status",
+        "IP Address",
+        "MAC Address",
+        "Download",
+        "Upload",
+        "Expiry",
+        "Uptime"
+
+    ];
+
+
+    var rows =
+        fznFiltered.map(function(u) {
+
+            var status =
+                u.disabled
+                    ? "Disabled"
+                    : fznIsExpired(
+                        u.expiryDate
+                    )
+                        ? "Expired"
+                        : u.isOnline
+                            ? "Online"
+                            : "Offline";
+
+
+            return [
+
+                u.username,
+                u.name,
+                u.phone,
+                u.profile,
+                status,
+                u.ip,
+                u.mac,
+                u.bytesIn,
+                u.bytesOut,
+                u.expiryDate,
+                u.uptime
+
+            ]
+            .map(function(v) {
+
+                return '"' +
+                    String(v || "")
+                        .replace(
+                            /"/g,
+                            '""'
+                        ) +
+                    '"';
+
+            })
+            .join(",");
+
+        });
+
+
+    var csv =
+        [
+            headers.join(",")
+        ]
+        .concat(rows)
+        .join("\n");
+
+
+    var blob =
+        new Blob(
+            [csv],
+            {
+                type:
+                    "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    var url =
+        URL.createObjectURL(blob);
+
+
+    var a =
+        document.createElement("a");
+
+
+    a.href = url;
+
+    a.download =
+        "faz-network-hotspot-users.csv";
+
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    a.remove();
+
+    URL.revokeObjectURL(url);
+
+};
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+window.fznResetFilters = function() {
+
+    document.getElementById(
+        "fznSearch"
+    ).value = "";
+
+
+    document.getElementById(
+        "fznStatus"
+    ).value = "all";
+
+
+    document.getElementById(
+        "fznPackage"
+    ).value = "all";
+
+
+    document.getElementById(
+        "fznExpiry"
+    ).value = "all";
+
+
+    fznApplyFilters();
+
+};
+
+
+/* =========================================================
+   SELECT ALL
+   ========================================================= */
+
+document.getElementById(
+    "fznSelectAll"
+).addEventListener(
+    "change",
+    function() {
+
+        var checked =
+            this.checked;
+
+
+        document
+            .querySelectorAll(
+                ".fzn-user-check"
+            )
+            .forEach(function(c) {
+
+                c.checked =
+                    checked;
+
+            });
+
+    }
+);
+
+
+/* =========================================================
+   SEARCH EVENTS
+   ========================================================= */
+
+document.getElementById(
+    "fznSearch"
+).addEventListener(
+    "input",
+    function() {
+
+        fznApplyFilters();
+
+    }
+);
+
+
+document.getElementById(
+    "fznStatus"
+).addEventListener(
+    "change",
+    fznApplyFilters
+);
+
+
+document.getElementById(
+    "fznPackage"
+).addEventListener(
+    "change",
+    fznApplyFilters
+);
+
+
+document.getElementById(
+    "fznExpiry"
+).addEventListener(
+    "change",
+    fznApplyFilters
+);
+
+
+/* =========================================================
+   AUTO REFRESH
+   ========================================================= */
+
+document.getElementById(
+    "fznAutoRefresh"
+).addEventListener(
+    "change",
+    function() {
+
+        if (this.checked) {
+
+            if (fznRefreshTimer) {
+
+                clearInterval(
+                    fznRefreshTimer
+                );
+
+            }
+
+
+            fznRefreshTimer =
+                setInterval(
+                    function() {
+
+                        fznLoadUsers();
+
+                    },
+                    30000
+                );
+
+        }
+
+        else {
+
+            if (fznRefreshTimer) {
+
+                clearInterval(
+                    fznRefreshTimer
+                );
+
+                fznRefreshTimer =
+                    null;
+
+            }
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   ESCAPE HTML
+   ========================================================= */
+
+function fznEscape(value) {
+
+    var div =
+        document.createElement("div");
+
+    div.textContent =
+        value == null
+            ? ""
+            : String(value);
+
+    return div.innerHTML;
+
+}
+
+
+/* =========================================================
+   INITIAL LOAD
+   ========================================================= */
+
+setTimeout(
+    function() {
+
+        fznLoadUsers();
+
+    },
+    150
+);
+
 </script>
