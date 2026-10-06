@@ -3,182 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAZ NETWORK - অ্যাডমিন ম্যানেজমেন্ট</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>FAZ NETWORK - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        .header-bar { background: #0a3d2e; color: #fff; padding: 15px 20px; }
-        .stat-card { border-radius: 10px; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .stat-num { font-size: 24px; font-weight: bold; }
-        .customer-link { color: #059669; text-decoration: none; font-weight: bold; }
-        .customer-link:hover { text-decoration: underline; }
+        :root {
+            --primary-color: #0a3d2e;
+            --sidebar-width: 250px;
+        }
+        body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--primary-color);
+            color: #fff;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 15px 20px;
+            font-size: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-menu { list-style: none; padding: 0; margin-top: 20px; }
+        .menu-item a, .menu-item .dropdown-toggle {
+            color: #a7f3d0;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+        .menu-item a:hover, .menu-item a.active, .menu-item .dropdown-toggle:hover {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #fff;
+        }
+        .menu-item i { margin-right: 15px; font-size: 18px; }
+        
+        /* Submenu */
+        .submenu {
+            background-color: rgba(0, 0, 0, 0.2);
+            list-style: none;
+            padding: 0;
+            display: none;
+        }
+        .submenu.show { display: block; }
+        .submenu a { padding-left: 55px; font-size: 14px; }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s ease;
+            padding: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar { left: calc(-1 * var(--sidebar-width)); }
+            .sidebar.show { left: 0; }
+            .main-content { margin-left: 0; }
+        }
     </style>
 </head>
 <body>
 
-<div class="header-bar d-flex justify-content-between align-items-center">
-    <h4 class="m-0"><i class="fas fa-network-wired me-2"></i>FAZ NETWORK - গ্রাহক ম্যানেজমেন্ট</h4>
-    <button class="btn btn-outline-light btn-sm" onclick="loadDashboard()"><i class="fas fa-sync-alt"></i> রিফ্রেশ</button>
-</div>
-
-<div class="container-fluid py-4">
-
-    <!-- SMS Gateway Config Bar -->
-    <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-body">
-            <h6 class="card-title text-success"><i class="fas fa-sms me-2"></i>FAZ SMS Gateway ওয়েবহুক সেটিংস</h6>
-            <div class="input-group">
-                <input type="text" id="gatewayUrlInput" class="form-control" placeholder="আপনার ফোন অ্যাপের Webhook URL (যেমন: http://192.168.1.50:8080/send বা পাবলিক ইউআরএল)">
-                <button class="btn btn-success" onclick="saveGatewayUrl()"><i class="fas fa-save"></i> সেভ করুন</button>
-            </div>
-            <small class="text-muted">আপনার অ্যান্ড্রয়েড ফোন থেকে এই ইউআরএলের মাধ্যমেই সিম ব্যবহার করে মেসেজ পাঠানো হবে।</small>
-        </div>
-    </div>
-
-    <!-- Stats Summary -->
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div class="card stat-card p-3 border-start border-success border-4">
-                <span class="text-muted small">অনলাইন গ্রাহক</span>
-                <span class="stat-num text-success" id="stat-online">0</span>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card stat-card p-3 border-start border-secondary border-4">
-                <span class="text-muted small">অফলাইন</span>
-                <span class="stat-num text-secondary" id="stat-offline">0</span>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card stat-card p-3 border-start border-primary border-4">
-                <span class="text-muted small">মোট গ্রাহক</span>
-                <span class="stat-num text-primary" id="stat-total">0</span>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card stat-card p-3 border-start border-danger border-4">
-                <span class="text-muted small">সাসপেন্ডেড / এক্সপায়ার্ড</span>
-                <span class="stat-num text-danger" id="stat-suspended">0</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Customer Table -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold"><i class="fas fa-users me-2"></i>গ্রাহক তালিকা</h6>
-            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newCustomerModal">
-                <i class="fas fa-user-plus me-1"></i> কাস্টমার যোগ
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span>FAZ NETWORK</span>
+            <button class="btn btn-link text-white d-md-none" onclick="toggleSidebar()">
+                <i class="bi bi-x"></i>
             </button>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>ইউজারনেম / নাম (ক্লিক করুন)</th>
-                            <th>মোবাইল নম্বর</th>
-                            <th>প্যাকেজ</th>
-                            <th>স্ট্যাটাস</th>
-                            <th>অ্যাকশন</th>
-                        </tr>
-                    </thead>
-                    <tbody id="customerTableBody">
-                        <tr><td colspan="6" class="text-center py-4">ডেটা লোড হচ্ছে...</td></tr>
-                    </tbody>
-                </table>
+
+        <ul class="sidebar-menu">
+            <!-- Dashboard -->
+            <li class="menu-item">
+                <a href="/dashboard" class="active">
+                    <i class="bi bi-speedometer2"></i> ড্যাশবোর্ড
+                </a>
+            </li>
+
+            <!-- Customer Management Dropdown -->
+            <li class="menu-item">
+                <button class="dropdown-toggle" onclick="toggleSubmenu(this)">
+                    <i class="bi bi-people"></i> কাস্টমার
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </button>
+                <ul class="submenu">
+                    <li><a href="/customers/all"><i class="bi bi-list"></i> অল কাস্টমার</a></li>
+                    <li><a href="/customers/add"><i class="bi bi-person-plus"></i> অ্যাড কাস্টমার</a></li>
+                    <li><a href="/customers/online"><i class="bi bi-circle-fill text-success fs-6 me-2"></i> অনলাইন কাস্টমার</a></li>
+                    <li><a href="/customers/offline"><i class="bi bi-circle-fill text-secondary fs-6 me-2"></i> অফলাইন কাস্টমার</a></li>
+                    <li><a href="/customers/active"><i class="bi bi-check-circle"></i> অ্যাক্টিভ কাস্টমার</a></li>
+                    <li><a href="/customers/left"><i class="bi bi-person-dash"></i> লেফট কাস্টমার</a></li>
+                    <li><a href="/customers/expire"><i class="bi bi-x-circle"></i> এক্সপায়ার কাস্টমার</a></li>
+                    <li><a href="/customers/expire-today-yesterday"><i class="bi bi-calendar-event"></i> এক্সপায়ার ইন টুডে অ্যান্ড ইয়েস্টারডে</a></li>
+                    <li><a href="/customers/expire-7-days"><i class="bi bi-calendar-week"></i> এক্সপায়ার ইন সেভেন ডেস</a></li>
+                    <li><a href="/customers/new"><i class="bi bi-star"></i> নিউ কাস্টমার</a></li>
+                    <li><a href="/customers/due-collection"><i class="bi bi-cash-stack"></i> ডিউ কালেকশন</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white rounded shadow-sm mb-4 p-2">
+            <div class="container-fluid">
+                <button class="btn btn-outline-success d-md-none" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="ms-auto">
+                    <button class="btn btn-outline-dark" id="mikrotikToggle">
+                        <i class="bi bi-router"></i> MikroTik
+                    </button>
+                </div>
             </div>
+        </nav>
+        
+        <div class="container-fluid">
+            <!-- Content will be rendered here -->
+            <h3>স্বাগতম, FAZ NETWORK অ্যাডমিন প্যানেল</h3>
         </div>
     </div>
-</div>
 
-<script>
-    async function loadGatewaySettings() {
-        try {
-            const res = await fetch('/api/settings');
-            const data = await res.json();
-            if (data.smsGatewayUrl) {
-                document.getElementById('gatewayUrlInput').value = data.smsGatewayUrl;
-            }
-        } catch(e) { console.error(e); }
-    }
-
-    async function saveGatewayUrl() {
-        const url = document.getElementById('gatewayUrlInput').value.trim();
-        try {
-            const res = await fetch('/api/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ smsGatewayUrl: url })
-            });
-            const data = await res.json();
-            alert(data.message || 'সংরক্ষণ সম্পন্ন!');
-        } catch (e) {
-            alert('সংরক্ষণ ব্যর্থ হয়েছে!');
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
         }
-    }
 
-    async function loadDashboard() {
-        try {
-            const res = await fetch('/api/customers');
-            const customers = await res.json();
-            const tbody = document.getElementById('customerTableBody');
-
-            let online = 0, offline = 0, suspended = 0;
-            tbody.innerHTML = '';
-
-            if (customers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">কোনো গ্রাহকের তথ্য পাওয়া যায়নি।</td></tr>';
-                return;
-            }
-
-            customers.forEach((c, idx) => {
-                if (c.status === 'Active') online++;
-                else if (c.status === 'Suspended') suspended++;
-                else offline++;
-
-                const row = `
-                    <tr>
-                        <td>${idx + 1}</td>
-                        <td>
-                            <a href="customer-details.html?user=${encodeURIComponent(c.username)}" target="_blank" class="customer-link">
-                                ${c.name || c.username}
-                            </a>
-                            <div class="text-muted small">${c.username}</div>
-                        </td>
-                        <td>${c.phone || '-'}</td>
-                        <td><span class="badge bg-info text-dark">${c.package || 'Default'}</span></td>
-                        <td>
-                            <span class="badge ${c.status === 'Active' ? 'bg-success' : 'bg-danger'}">
-                                ${c.status || 'Active'}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="customer-details.html?user=${encodeURIComponent(c.username)}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                <i class="fas fa-eye"></i> বিস্তারিত
-                            </a>
-                        </td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-
-            document.getElementById('stat-total').innerText = customers.length;
-            document.getElementById('stat-online').innerText = online;
-            document.getElementById('stat-offline').innerText = offline;
-            document.getElementById('stat-suspended').innerText = suspended;
-
-        } catch (e) {
-            console.error(e);
+        function toggleSubmenu(button) {
+            const submenu = button.nextElementSibling;
+            button.querySelector('.bi-chevron-down').classList.toggle('bi-chevron-up');
+            submenu.classList.toggle('show');
         }
-    }
-
-    window.onload = () => {
-        loadGatewaySettings();
-        loadDashboard();
-    };
-</script>
+    </script>
 </body>
 </html>
