@@ -15,7 +15,6 @@
     </div>
     
     <div class="card-body p-0">
-        <!-- Search and Filter Bar -->
         <div class="p-3 border-bottom bg-light d-flex flex-wrap gap-2 justify-content-between align-items-center">
             <div class="input-group" style="max-width: 320px;">
                 <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
@@ -26,7 +25,6 @@
             </div>
         </div>
 
-        <!-- User Table -->
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
@@ -73,12 +71,16 @@
                         <input type="password" id="newHsPass" class="form-control" placeholder="Optional or PIN">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Profile</label>
-                        <input type="text" id="newHsProfile" class="form-control" placeholder="default" value="default">
+                        <label class="form-label">Profile *</label>
+                        <select id="newHsProfile" class="form-select" required>
+                            <option value="" disabled selected>Loading profiles...</option>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Server</label>
-                        <input type="text" id="newHsServer" class="form-control" placeholder="all" value="all">
+                        <label class="form-label">Server *</label>
+                        <select id="newHsServer" class="form-select" required>
+                            <option value="" disabled selected>Loading servers...</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Limit Uptime (Optional)</label>
@@ -101,7 +103,6 @@
 <script>
     let hotspotUsersList = [];
 
-    // MikroTik থেকে লাইভ ইউজার ফেচ করা
     function fetchHotspotUsers() {
         const tableBody = document.getElementById('userTableBody');
         tableBody.innerHTML = `
@@ -188,7 +189,6 @@
         renderUserTable(filtered);
     }
 
-    // MikroTik থেকে ইউজার সরাসরি ডিলিট করা
     function deleteHotspotUser(username) {
         if (!confirm(`আপনি কি নিশ্চিত যে MikroTik থেকে "${username}" ইউজারটি ডিলিট করতে চান?`)) {
             return;
@@ -210,6 +210,7 @@
     }
 
     function openAddUserModal() {
+        loadModalDropdowns();
         const modalEl = document.getElementById('addHotspotUserModal');
         if (window.bootstrap && bootstrap.Modal) {
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -219,14 +220,36 @@
         }
     }
 
-    // নতুন ইউজার সরাসরি MikroTik-এ সংরক্ষণ
+    function loadModalDropdowns() {
+        const profileSelect = document.getElementById('newHsProfile');
+        const serverSelect = document.getElementById('newHsServer');
+
+        fetch('/api/hotspot/profiles')
+            .then(res => res.json())
+            .then(profiles => {
+                profileSelect.innerHTML = '<option value="" disabled selected>Select Profile</option>';
+                profiles.forEach(p => {
+                    profileSelect.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+                });
+            });
+
+        fetch('/api/hotspot/server-profiles')
+            .then(res => res.json())
+            .then(servers => {
+                serverSelect.innerHTML = '<option value="" disabled selected>Select Server</option>';
+                servers.forEach(s => {
+                    serverSelect.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+                });
+            });
+    }
+
     document.getElementById('hotspotAddUserForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const payload = {
             username: document.getElementById('newHsUser').value.trim(),
             password: document.getElementById('newHsPass').value.trim(),
-            profile: document.getElementById('newHsProfile').value.trim(),
-            server: document.getElementById('newHsServer').value.trim(),
+            profile: document.getElementById(document.getElementById('newHsProfile').value,
+            server: document.getElementById('newHsServer').value,
             limitUptime: document.getElementById('newHsLimitUptime').value.trim(),
             comment: document.getElementById('newHsComment').value.trim()
         };
@@ -252,6 +275,5 @@
         .catch(err => alert('API রিকোয়েস্টে সমস্যা: ' + err.message));
     });
 
-    // ইনিশিয়াল লোড
     fetchHotspotUsers();
 </script>
