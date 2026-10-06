@@ -43,7 +43,7 @@ function rateLimiter(req, res, next) {
             if (requestTracker[ip].count > 10) {
                 return res.status(429).json({
                     success: false,
-                    message: 'অতিরিক্ত চেষ্টা করা হয়েছে। অনুগ্রহ করে ১ মিনিট পর আবার চেষ্টা করুন।'
+                    message: 'অতিরিক্ত চেষ্টা করা হয়েছে। অনুগ্রহ করে ১ মিনিট পর আবার চেষ্টা করুন।'
                 });
             }
         }
@@ -217,7 +217,7 @@ function addDaysToDate(baseDateStr, daysToAdd) {
     return base.toISOString().split('T')[0];
 }
 
-// হটস্পট ফাংশনসমূহ (অপরিবর্তিত)
+// হটস্পট ফাংশনসমূহ
 async function ensureUser(username, comment = '') {
     const cmd = ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=group=Hotspot`];
     if (comment) cmd.push(`=comment=${comment}`);
@@ -254,7 +254,7 @@ app.post('/api/verify-trx', rateLimiter, async (req, res) => {
         const transaction = store[cleanTrx];
 
         if (!transaction) return res.status(404).json({ success: false, message: `ট্রানজেকশন আইডি (${cleanTrx}) পাওয়া যায়নি!` });
-        if (transaction.used) return res.status(400).json({ success: false, message: 'এই আইডি দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।' });
+        if (transaction.used) return res.status(400).json({ success: false, message: 'এই আইডি দিয়ে আগেই ইন্টারনেট সক্রিয় করা হয়েছে।' });
 
         const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
         const senderInfo = transaction.phone ? ` | Payer: ${transaction.phone}` : '';
@@ -272,7 +272,7 @@ app.post('/api/verify-trx', rateLimiter, async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
+            message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
             username: cleanUser,
             password: cleanUser,
             profile: profile
@@ -282,7 +282,7 @@ app.post('/api/verify-trx', rateLimiter, async (req, res) => {
     }
 });
 
-// MacroDroid SMS Forward Webhook (PPPoE + Hotspot অটোমেশন)
+// MacroDroid SMS Forward Webhook
 app.post('/forward', async (req, res) => {
     try {
         let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
@@ -306,7 +306,7 @@ app.post('/forward', async (req, res) => {
         if (trxId && amount) {
             const customers = loadJSON(CUSTOMERS_FILE);
 
-            // PPPoE কাস্টমার পাওয়া গেলে
+            // PPPoE কাস্টমার পাওয়া গেলে
             if (referenceUser && (customers[referenceUser] || referenceUser === '100001')) {
                 let cust = customers[referenceUser] || {
                     name: referenceUser,
@@ -353,7 +353,7 @@ app.post('/forward', async (req, res) => {
                 return res.status(200).json({ success: true, type: 'PPPoE', user: referenceUser, expireDate: newExp });
             }
 
-            // অন্যথায় হটস্পট ট্রানজেকশনে জমা হবে
+            // অন্যথায় হটস্পট ট্রানজেকশনে জমা হবে
             const store = loadJSON(DB_FILE);
             store[trxId] = {
                 amount: amount,
@@ -445,7 +445,7 @@ app.post('/api/admin/customers/add', async (req, res) => {
     try {
         const { name, username, password, connectionType, phone, profile, bill, expireDate } = req.body;
         if (!username || !password || !profile) {
-            return res.status(400).json({ success: false, message: 'ইউজারনেম, পাসওয়ার্ড ও প্রোফাইল আবশ্যক।' });
+            return res.status(400).json({ success: false, message: 'ইউজারনেম, পাসওয়ার্ড ও প্রোফাইল আবশ্যক।' });
         }
 
         const customers = loadJSON(CUSTOMERS_FILE);
@@ -481,7 +481,7 @@ app.post('/api/admin/customers/add', async (req, res) => {
         };
 
         saveJSON(CUSTOMERS_FILE, customers);
-        res.json({ success: true, message: 'কাস্টমার সফলভাবে তৈরি হয়েছে!' });
+        res.json({ success: true, message: 'কাস্টমার সফলভাবে তৈরি হয়েছে!' });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
@@ -494,7 +494,7 @@ app.post('/api/admin/customers/action', async (req, res) => {
         const customers = loadJSON(CUSTOMERS_FILE);
         const cust = customers[username];
 
-        if (!cust) return res.status(404).json({ success: false, message: 'কাস্টমার পাওয়া যায়নি।' });
+        if (!cust) return res.status(404).json({ success: false, message: 'কাস্টমার পাওয়া যায়নি।' });
 
         if (action === 'renew') {
             const addDays = parseInt(days) || 30;
@@ -539,11 +539,11 @@ app.post('/api/admin/customers/action', async (req, res) => {
         } else if (action === 'send-notice') {
             if (!cust.phone) return res.status(400).json({ success: false, message: 'কাস্টমারের ফোন নম্বর নেই।' });
             await sendGatewaySMS(cust.phone, `Prio Grahok (User: ${username}), apnar internet package-er meyad shesh hoyeche. Shongjog shochol rakhte bKash/Nagad Send Money-te Reference-e "${username}" likhe bill porishodh korun.`);
-            return res.json({ success: true, message: 'নোটিশ এসএমএস পাঠানো হয়েছে!' });
+            return res.json({ success: true, message: 'নোটিশ এসএমএস পাঠানো হয়েছে!' });
         }
 
         saveJSON(CUSTOMERS_FILE, customers);
-        res.json({ success: true, message: 'অ্যাকশন সফল হয়েছে!' });
+        res.json({ success: true, message: 'অ্যাকশন সফল হয়েছে!' });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
@@ -565,7 +565,7 @@ app.post('/api/admin/pools/add', async (req, res) => {
         if (!name || !ranges) return res.status(400).json({ success: false, message: 'নাম ও রেঞ্জ দিন।' });
 
         await executeSingleCommand(['/ip/pool/add', `=name=${name}`, `=ranges=${ranges}`]);
-        res.json({ success: true, message: 'IP Pool ১ সেকেন্ডে যুক্ত হয়েছে!' });
+        res.json({ success: true, message: 'IP Pool ১ সেকেন্ডে যুক্ত হয়েছে!' });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
