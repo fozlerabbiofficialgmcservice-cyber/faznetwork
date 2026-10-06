@@ -44,15 +44,6 @@ const PRICE_PROFILE_MAP = {
     '350': 'Profile-300GB'
 };
 
-const PACKAGE_PRICE_MAP = {
-    'FZN 10 Mbps': 400,
-    'FZN 15 Mbps': 500,
-    'FZN 20 Mbps': 600,
-    'FZN 25 Mbps': 700,
-    'FZN 30 Mbps': 800,
-    'FZN 40 Mbps': 1000,
-    'FZN 50 Mbps': 1200
-};
 
 const DB_FILE = path.join(__dirname, 'transactions.json');
 const CUSTOMERS_FILE = path.join(__dirname, 'customers.json');
@@ -519,11 +510,6 @@ app.get('/api/dashboard/stats', async (req, res) => {
     }
 });
 
-// =========================================================
-// HOTSPOT & ROUTEROS COMPREHENSIVE ENDPOINTS
-// =========================================================
-
-// 1. GET ALL HOTSPOT USERS (Auto-Merged with Live Active IP, MAC, & Uptime)
 app.get('/api/hotspot/users', async (req, res) => {
     try {
         const [hsUsers, umUsers, hsActive, umActive] = await Promise.all([
@@ -533,7 +519,6 @@ app.get('/api/hotspot/users', async (req, res) => {
             runMikrotikApi(['/user-manager/session/print'])
         ]);
 
-        // Build active map for fast IP / MAC matching
         const activeMap = {};
         (hsActive || []).forEach(a => {
             const u = (a.user || a.name || '').trim().toLowerCase();
@@ -543,8 +528,7 @@ app.get('/api/hotspot/users', async (req, res) => {
                     mac: a['mac-address'] || a.mac || '-',
                     uptime: a.uptime || '-',
                     bytesIn: formatBytes(a['bytes-in']),
-                    bytesOut: formatBytes(a['bytes-out']),
-                    isOnline: true
+                    bytesOut: formatBytes(a['bytes-out'])
                 };
             }
         });
@@ -557,14 +541,12 @@ app.get('/api/hotspot/users', async (req, res) => {
                     mac: s['calling-station-id'] || s.mac || '-',
                     uptime: s.uptime || '-',
                     bytesIn: formatBytes(s['download'] || s['bytes-in']),
-                    bytesOut: formatBytes(s['upload'] || s['bytes-out']),
-                    isOnline: true
+                    bytesOut: formatBytes(s['upload'] || s['bytes-out'])
                 };
             }
         });
 
         const list = [];
-
         (hsUsers || []).forEach(u => {
             const uname = (u.name || u.username || '').trim();
             if (!uname || uname.toLowerCase() === 'default-trial' || uname.toLowerCase() === 'default') return;
@@ -576,11 +558,10 @@ app.get('/api/hotspot/users', async (req, res) => {
                 server: u.server || 'all',
                 name: uname,
                 username: uname,
-                password: u.password || '***',
                 profile: u.profile || 'default',
-                ip: live ? live.ip : (u.address || '-'),
+                ip: live ? live.ip : '-',
                 mac: live ? live.mac : (u['mac-address'] || '-'),
-                uptime: live ? live.uptime : (u.uptime || '0s'),
+                uptime: live ? live.uptime : '-',
                 limitUptime: u['limit-uptime'] || 'Unlimited',
                 bytesIn: live ? live.bytesIn : formatBytes(u['bytes-in']),
                 bytesOut: live ? live.bytesOut : formatBytes(u['bytes-out']),
@@ -601,11 +582,10 @@ app.get('/api/hotspot/users', async (req, res) => {
                 server: 'User-Manager',
                 name: uname,
                 username: uname,
-                password: u.password || '***',
                 profile: u.group || u.profile || 'Hotspot',
                 ip: live ? live.ip : '-',
                 mac: live ? live.mac : (u['caller-id'] || '-'),
-                uptime: live ? live.uptime : (u.uptime || '0s'),
+                uptime: live ? live.uptime : '-',
                 limitUptime: 'Managed',
                 bytesIn: live ? live.bytesIn : '-',
                 bytesOut: live ? live.bytesOut : '-',
@@ -617,66 +597,10 @@ app.get('/api/hotspot/users', async (req, res) => {
 
         res.json(list);
     } catch (err) {
-        console.error('Error fetching hotspot users:', err);
         res.status(500).json([]);
     }
 });
 
-// 2. GET LIVE ACTIVE SESSIONS (Actual IP, MAC, Uptime)
-app.get('/api/hotspot/active', async (req, res) => {
-    try {
-        const [hsActive, umActive] = await Promise.all([
-            runMikrotikApi(['/ip/hotspot/active/print']),
-            runMikrotikApi(['/user-manager/session/print'])
-        ]);
-
-        const list = [];
-        (hsActive || []).forEach(a => {
-            list.push({
-                id: a['.id'],
-                server: a.server || 'hotspot',
-                user: a.user || a.name || '',
-                username: a.user || a.name || '',
-                address: a.address || a.ip || '-',
-                ip: a.address || a.ip || '-',
-                mac: a['mac-address'] || a.mac || '-',
-                'mac-address': a['mac-address'] || a.mac || '-',
-                uptime: a.uptime || '0s',
-                bytesIn: formatBytes(a['bytes-in']),
-                bytesOut: formatBytes(a['bytes-out']),
-                'bytes-in-nice': formatBytes(a['bytes-in']),
-                'bytes-out-nice': formatBytes(a['bytes-out']),
-                sessionTimeLeft: a['session-time-left'] || '-'
-            });
-        });
-
-        (umActive || []).forEach(s => {
-            list.push({
-                id: s['.id'],
-                server: 'User-Manager',
-                user: s.user || s.username || '',
-                username: s.user || s.username || '',
-                address: s['host-ip'] || s.address || '-',
-                ip: s['host-ip'] || s.address || '-',
-                mac: s['calling-station-id'] || s.mac || '-',
-                'mac-address': s['calling-station-id'] || s.mac || '-',
-                uptime: s.uptime || '0s',
-                bytesIn: formatBytes(s['download'] || s['bytes-in']),
-                bytesOut: formatBytes(s['upload'] || s['bytes-out']),
-                'bytes-in-nice': formatBytes(s['download'] || s['bytes-in']),
-                'bytes-out-nice': formatBytes(s['upload'] || s['bytes-out']),
-                sessionTimeLeft: '-'
-            });
-        });
-
-        res.json(list);
-    } catch (err) {
-        console.error('Error fetching active sessions:', err);
-        res.status(500).json([]);
-    }
-});
-
-// 3. DISCONNECT USER (Kicks active session from Router)
 app.post('/api/hotspot/active/remove', async (req, res) => {
     try {
         const { username } = req.body;
@@ -688,33 +612,28 @@ app.post('/api/hotspot/active/remove', async (req, res) => {
         ]);
 
         let disconnected = false;
-
         for (const act of (hsActives || [])) {
             if (act['.id']) {
                 await executeSingleCommand(['/ip/hotspot/active/remove', `=.id=${act['.id']}`]);
                 disconnected = true;
             }
         }
-
         for (const sess of (umSessions || [])) {
             if (sess['.id']) {
                 await executeSingleCommand(['/user-manager/session/remove', `=.id=${sess['.id']}`]);
                 disconnected = true;
             }
         }
-
-        res.json({ success: true, message: disconnected ? 'User disconnected' : 'User was not active' });
+        res.json({ success: true, message: disconnected ? 'User disconnected' : 'User not active' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// 4. ENABLE / DISABLE USER
 app.post('/api/hotspot/users/status', async (req, res) => {
     try {
         const { username, disabled } = req.body;
         if (!username) return res.status(400).json({ success: false, message: 'Username is required' });
-
         const disableVal = disabled ? 'yes' : 'no';
 
         const [hsUsers, umUsers] = await Promise.all([
@@ -724,170 +643,23 @@ app.post('/api/hotspot/users/status', async (req, res) => {
 
         for (const u of (hsUsers || [])) {
             if (u['.id']) {
-                await executeSingleCommand([
-                    '/ip/hotspot/user/set',
-                    `=.id=${u['.id']}`,
-                    `=disabled=${disableVal}`
-                ]);
+                await executeSingleCommand(['/ip/hotspot/user/set', `=.id=${u['.id']}`, `=disabled=${disableVal}`]);
             }
         }
-
         for (const u of (umUsers || [])) {
             if (u['.id']) {
-                await executeSingleCommand([
-                    '/user-manager/user/set',
-                    `=.id=${u['.id']}`,
-                    `=disabled=${disableVal}`
-                ]);
+                await executeSingleCommand(['/user-manager/user/set', `=.id=${u['.id']}`, `=disabled=${disableVal}`]);
             }
         }
-
-        // If disabling, also kick live active session
         if (disabled) {
             const actives = await runMikrotikApi(['/ip/hotspot/active/print', `?user=${username.trim()}`]);
             for (const a of (actives || [])) {
                 if (a['.id']) await executeSingleCommand(['/ip/hotspot/active/remove', `=.id=${a['.id']}`]);
             }
         }
-
-        res.json({ success: true, message: `User ${disabled ? 'disabled' : 'enabled'} successfully` });
+        res.json({ success: true, message: `User status updated` });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
-    }
-});
-
-// 5. CHANGE USER PACKAGE / PROFILE
-app.post('/api/hotspot/users/profile', async (req, res) => {
-    try {
-        const { username, profile } = req.body;
-        if (!username || !profile) {
-            return res.status(400).json({ success: false, message: 'Username & Profile are required' });
-        }
-
-        const [hsUsers, umUsers] = await Promise.all([
-            runMikrotikApi(['/ip/hotspot/user/print', `?name=${username.trim()}`]),
-            runMikrotikApi(['/user-manager/user/print', `?name=${username.trim()}`])
-        ]);
-
-        let updated = false;
-
-        for (const u of (hsUsers || [])) {
-            if (u['.id']) {
-                await executeSingleCommand([
-                    '/ip/hotspot/user/set',
-                    `=.id=${u['.id']}`,
-                    `=profile=${profile.trim()}`
-                ]);
-                updated = true;
-            }
-        }
-
-        for (const u of (umUsers || [])) {
-            if (u['.id']) {
-                await executeSingleCommand([
-                    '/user-manager/user/set',
-                    `=.id=${u['.id']}`,
-                    `=group=${profile.trim()}`
-                ]);
-                updated = true;
-            }
-        }
-
-        res.json({ success: updated, message: updated ? 'Profile changed' : 'User not found on router' });
-    } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
-
-// 6. RENEW USER / CUSTOMER (Extension of validity)
-app.post('/api/customers/renew', async (req, res) => {
-    try {
-        const { username, days = 30 } = req.body;
-        if (!username) return res.status(400).json({ success: false, message: 'Username is required' });
-
-        const customers = loadJson(CUSTOMERS_FILE, []);
-        const idx = customers.findIndex(c => c.username === username.trim());
-
-        const expDate = new Date();
-        expDate.setDate(expDate.getDate() + parseInt(days));
-        const newExpiry = expDate.toISOString().split('T')[0];
-
-        if (idx !== -1) {
-            customers[idx].expiryDate = newExpiry;
-            customers[idx].status = 'Active';
-            saveJson(CUSTOMERS_FILE, customers);
-        }
-
-        // Update comment on router
-        const comment = `Exp: ${newExpiry} | Renewed: ${new Date().toLocaleDateString('en-GB')}`;
-        const hsUsers = await runMikrotikApi(['/ip/hotspot/user/print', `?name=${username.trim()}`]);
-        for (const u of (hsUsers || [])) {
-            if (u['.id']) {
-                await executeSingleCommand([
-                    '/ip/hotspot/user/set',
-                    `=.id=${u['.id']}`,
-                    `=comment=${comment}`,
-                    `=disabled=no`
-                ]);
-            }
-        }
-
-        res.json({ success: true, message: `Renewed for ${days} days! New Expiry: ${newExpiry}`, expiryDate: newExpiry });
-    } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
-
-// 7. GET ALL HOTSPOT PROFILES
-app.get('/api/hotspot/profiles', async (req, res) => {
-    try {
-        const [hsProfiles, umProfiles] = await Promise.all([
-            runMikrotikApi(['/ip/hotspot/user/profile/print']),
-            runMikrotikApi(['/user-manager/profile/print'])
-        ]);
-        const combinedProfiles = [];
-        (hsProfiles || []).forEach(p => {
-            if (p.name && !combinedProfiles.some(cp => cp.name === p.name)) {
-                combinedProfiles.push({ name: p.name, sharedUsers: p['shared-users'] || '1', rateLimit: p['rate-limit'] || '-' });
-            }
-        });
-        (umProfiles || []).forEach(p => {
-            if (p.name && !combinedProfiles.some(cp => cp.name === p.name)) {
-                combinedProfiles.push({ name: p.name, sharedUsers: '1', rateLimit: p['rate-limit'] || '-' });
-            }
-        });
-        res.json(combinedProfiles);
-    } catch (err) {
-        res.status(500).json([]);
-    }
-});
-
-// 8. GET HOTSPOT HOSTS (Hardware & Bridge Level IP / MAC Mapping)
-app.get('/api/hotspot/hosts', async (req, res) => {
-    try {
-        const hosts = await runMikrotikApi(['/ip/hotspot/host/print']);
-        const list = (hosts || []).map(h => ({
-            mac: h['mac-address'] || '-',
-            ip: h.address || '-',
-            toAddress: h['to-address'] || '-',
-            server: h.server || '-',
-            bridge: h.bridge || false,
-            bypassed: h.bypassed === 'true',
-            authorized: h.authorized === 'true'
-        }));
-        res.json(list);
-    } catch (err) {
-        res.status(500).json([]);
-    }
-});
-
-// 9. GET IP BINDINGS (Bypass / Blocked MAC/IPs)
-app.get('/api/hotspot/bindings', async (req, res) => {
-    try {
-        const bindings = await runMikrotikApi(['/ip/hotspot/ip-binding/print']);
-        res.json(bindings || []);
-    } catch (err) {
-        res.status(500).json([]);
     }
 });
 
@@ -927,6 +699,25 @@ app.delete('/api/hotspot/users/:name', async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+app.get('/api/hotspot/profiles', async (req, res) => {
+    try {
+        const [hsProfiles, umProfiles] = await Promise.all([
+            runMikrotikApi(['/ip/hotspot/user/profile/print']),
+            runMikrotikApi(['/user-manager/profile/print'])
+        ]);
+        const combinedProfiles = [];
+        (hsProfiles || []).forEach(p => combinedProfiles.push({ name: p.name }));
+        (umProfiles || []).forEach(p => {
+            if (!combinedProfiles.some(cp => cp.name === p.name)) {
+                combinedProfiles.push({ name: p.name });
+            }
+        });
+        res.json(combinedProfiles);
+    } catch (err) {
+        res.status(500).json([]);
     }
 });
 
@@ -1087,29 +878,17 @@ app.post('/api/customers', async (req, res) => {
 app.get('/api/packages', async (req, res) => {
     try {
         const profiles = await runMikrotikApi(['/ppp/profile/print']);
-        let packageList = [];
-        if (profiles && profiles.length > 0) {
-            packageList = profiles
-                .map(p => p.name)
-                .filter(name => name && !['default', 'default-encryption'].includes(name.toLowerCase()))
-                .map(name => ({
-                    name: name,
-                    price: PACKAGE_PRICE_MAP[name] || ''
-                }));
-        }
-
-        if (packageList.length === 0) {
-            packageList = [
-                { name: 'FZN 10 Mbps', price: 400 },
-                { name: 'FZN 15 Mbps', price: 500 },
-                { name: 'FZN 20 Mbps', price: 600 },
-                { name: 'FZN 30 Mbps', price: 800 }
-            ];
-        }
+        const packageList = (profiles || [])
+            .map(p => p.name)
+            .filter(name => name && !['default', 'default-encryption'].includes(name.toLowerCase()))
+            .map(name => ({
+                name: name,
+                price: ''
+            }));
 
         res.json({ success: true, packages: packageList });
     } catch (e) {
-        res.json({ success: true, packages: [{ name: 'FZN 10 Mbps', price: 400 }] });
+        res.json({ success: true, packages: [] });
     }
 });
 
