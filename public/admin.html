@@ -2,618 +2,183 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FAZ NETWORK - Admin Panel</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAZ NETWORK - অ্যাডমিন ম্যানেজমেন্ট</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #ffffff; color: #1e293b; font-family: system-ui, -apple-system, sans-serif; }
-        .navbar-custom { background-color: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 12px 16px; }
-        .stat-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; }
-        .table-custom th { background-color: #f8fafc; color: #475569; font-size: 13px; border-bottom: 2px solid #e2e8f0; }
-        .table-custom td { vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        .user-clickable { color: #0284c7; text-decoration: none; font-weight: 600; cursor: pointer; }
-        .user-clickable:hover { text-decoration: underline; }
-        .nav-tabs .nav-link { color: #64748b; font-weight: 600; border: none; border-bottom: 3px solid transparent; }
-        .nav-tabs .nav-link.active { color: #0284c7; border-bottom: 3px solid #0284c7; background: transparent; }
-        
-        @media (max-width: 768px) {
-            .navbar-custom { flex-direction: column; align-items: flex-start !important; gap: 10px; }
-            .navbar-custom .action-buttons { width: 100%; display: flex; justify-content: space-between; }
-            .stat-card h3 { font-size: 18px; }
-        }
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .header-bar { background: #0a3d2e; color: #fff; padding: 15px 20px; }
+        .stat-card { border-radius: 10px; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .stat-num { font-size: 24px; font-weight: bold; }
+        .customer-link { color: #059669; text-decoration: none; font-weight: bold; }
+        .customer-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
-    <!-- হেডার -->
-    <div class="navbar-custom d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-hdd-network text-success me-2"></i>FAZ NETWORK</h5>
-            <small class="text-muted">PPPoE & Hotspot ISP Management</small>
+<div class="header-bar d-flex justify-content-between align-items-center">
+    <h4 class="m-0"><i class="fas fa-network-wired me-2"></i>FAZ NETWORK - গ্রাহক ম্যানেজমেন্ট</h4>
+    <button class="btn btn-outline-light btn-sm" onclick="loadDashboard()"><i class="fas fa-sync-alt"></i> রিফ্রেশ</button>
+</div>
+
+<div class="container-fluid py-4">
+
+    <!-- SMS Gateway Config Bar -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <h6 class="card-title text-success"><i class="fas fa-sms me-2"></i>FAZ SMS Gateway ওয়েবহুক সেটিংস</h6>
+            <div class="input-group">
+                <input type="text" id="gatewayUrlInput" class="form-control" placeholder="আপনার ফোন অ্যাপের Webhook URL (যেমন: http://192.168.1.50:8080/send বা পাবলিক ইউআরএল)">
+                <button class="btn btn-success" onclick="saveGatewayUrl()"><i class="fas fa-save"></i> সেভ করুন</button>
+            </div>
+            <small class="text-muted">আপনার অ্যান্ড্রয়েড ফোন থেকে এই ইউআরএলের মাধ্যমেই সিম ব্যবহার করে মেসেজ পাঠানো হবে।</small>
         </div>
-        <div class="action-buttons d-flex gap-2">
-            <button class="btn btn-outline-primary btn-sm" onclick="loadDashboard()">
-                <i class="bi bi-arrow-clockwise"></i> রিফ্রেশ
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card stat-card p-3 border-start border-success border-4">
+                <span class="text-muted small">অনলাইন গ্রাহক</span>
+                <span class="stat-num text-success" id="stat-online">0</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card p-3 border-start border-secondary border-4">
+                <span class="text-muted small">অফলাইন</span>
+                <span class="stat-num text-secondary" id="stat-offline">0</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card p-3 border-start border-primary border-4">
+                <span class="text-muted small">মোট গ্রাহক</span>
+                <span class="stat-num text-primary" id="stat-total">0</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card p-3 border-start border-danger border-4">
+                <span class="text-muted small">সাসপেন্ডেড / এক্সপায়ার্ড</span>
+                <span class="stat-num text-danger" id="stat-suspended">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold"><i class="fas fa-users me-2"></i>গ্রাহক তালিকা</h6>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newCustomerModal">
+                <i class="fas fa-user-plus me-1"></i> কাস্টমার যোগ
             </button>
-            <button class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addPoolModal">
-                <i class="bi bi-diagram-3"></i> নতুন পুল
-            </button>
-            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addCustomerModal" onclick="fetchProfilesForSelect()">
-                <i class="bi bi-person-plus"></i> কাস্টমার যোগ
-            </button>
         </div>
-    </div>
-
-    <div class="container-fluid px-3">
-        <!-- ট্যাব -->
-        <ul class="nav nav-tabs mb-3">
-            <li class="nav-item">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-customers" onclick="loadDashboard()">
-                    <i class="bi bi-people me-1"></i> গ্রাহক তালিকা (PPPoE)
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-pools" onclick="loadPools()">
-                    <i class="bi bi-diagram-3 me-1"></i> আইপি পুল
-                </button>
-            </li>
-        </ul>
-
-        <div class="tab-content">
-            <!-- কাস্টমার তালিকা -->
-            <div class="tab-pane fade show active" id="tab-customers">
-                <!-- কাউন্টার কার্ড -->
-                <div class="row g-2 mb-3">
-                    <div class="col-md-3 col-6">
-                        <div class="stat-card border-start border-4 border-success">
-                            <span class="text-muted small">অনলাইন গ্রাহক</span>
-                            <h3 class="fw-bold text-success mb-0" id="onlineUsers">0</h3>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <div class="stat-card border-start border-4 border-secondary">
-                            <span class="text-muted small">অফলাইন</span>
-                            <h3 class="fw-bold text-secondary mb-0" id="offlineUsers">0</h3>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <div class="stat-card border-start border-4 border-primary">
-                            <span class="text-muted small">মোট গ্রাহক</span>
-                            <h3 class="fw-bold text-primary mb-0" id="totalUsers">0</h3>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <div class="stat-card border-start border-4 border-danger">
-                            <span class="text-muted small">মেয়াদ শেষ / বন্ধ</span>
-                            <h3 class="fw-bold text-danger mb-0" id="expiredUsers">0</h3>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- সার্চ ও ফিল্টার -->
-                <div class="card mb-3 border">
-                    <div class="card-body p-2">
-                        <div class="row g-2">
-                            <div class="col-md-4 col-12">
-                                <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="ইউজারনেম, মোবাইল, MAC বা আইপি খুঁজুন..." oninput="filterData()">
-                            </div>
-                            <div class="col-md-3 col-6">
-                                <select id="statusFilter" class="form-select form-select-sm" onchange="filterData()">
-                                    <option value="all">সব স্ট্যাটাস</option>
-                                    <option value="active">অনলাইন (Live)</option>
-                                    <option value="offline">অফলাইন</option>
-                                    <option value="expired">মেয়াদ শেষ</option>
-                                    <option value="suspended">সাসপেন্ডেড</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3 col-6">
-                                <select id="profileFilter" class="form-select form-select-sm" onchange="filterData()">
-                                    <option value="all">সব প্যাকেজ</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2 col-12 text-end">
-                                <span class="badge bg-light text-dark border p-2 w-100" id="customerCountBadge">ইউজার: 0</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- টেবিল -->
-                <div class="card border">
-                    <div class="table-responsive">
-                        <table class="table table-custom table-hover mb-0 align-middle">
-                            <thead>
-                                <tr>
-                                    <th class="text-center" style="width: 40px;">#</th>
-                                    <th>ইউজারনেম / নাম</th>
-                                    <th>মোবাইল</th>
-                                    <th>প্যাকেজ</th>
-                                    <th>MAC / কলার আইডি</th>
-                                    <th>আইপি</th>
-                                    <th>মেয়াদ</th>
-                                    <th>বিল</th>
-                                    <th>স্ট্যাটাস</th>
-                                    <th class="text-center">অ্যাকশন</th>
-                                </tr>
-                            </thead>
-                            <tbody id="customerTableBody">
-                                <tr>
-                                    <td colspan="10" class="text-center py-4 text-secondary">
-                                        <div class="spinner-border spinner-border-sm me-2 text-primary"></div> লোড হচ্ছে...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- পুল ট্যাব -->
-            <div class="tab-pane fade" id="tab-pools">
-                <div class="card border">
-                    <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
-                        <span class="fw-bold">আইপি পুল তালিকা</span>
-                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPoolModal">
-                            <i class="bi bi-plus-circle"></i> পুল যোগ
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-custom table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>নাম</th>
-                                    <th>আইপি রেঞ্জ</th>
-                                    <th>Next Pool</th>
-                                </tr>
-                            </thead>
-                            <tbody id="poolTableBody">
-                                <tr><td colspan="3" class="text-center py-3">লোড হচ্ছে...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>ইউজারনেম / নাম (ক্লিক করুন)</th>
+                            <th>মোবাইল নম্বর</th>
+                            <th>প্যাকেজ</th>
+                            <th>স্ট্যাটাস</th>
+                            <th>অ্যাকশন</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerTableBody">
+                        <tr><td colspan="6" class="text-center py-4">ডেটা লোড হচ্ছে...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- কাস্টমার ডিটেইলস ও এডিট মোডাল -->
-    <div class="modal fade" id="customerDetailModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold" id="detailUsername">কাস্টমার প্রোফাইল</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editCustForm" onsubmit="handleUpdateCustomer(event)">
-                        <input type="hidden" id="editUsername">
-                        <div class="mb-2">
-                            <label class="form-label small text-muted">নাম</label>
-                            <input type="text" id="editName" class="form-control form-control-sm" required>
-                        </div>
-                        <div class="row g-2 mb-2">
-                            <div class="col">
-                                <label class="form-label small text-muted">মোবাইল</label>
-                                <input type="text" id="editPhone" class="form-control form-control-sm" placeholder="017xxxxxxxx">
-                            </div>
-                            <div class="col">
-                                <label class="form-label small text-muted">পাসওয়ার্ড (পরিবর্তন করতে চাইলে)</label>
-                                <input type="text" id="editPassword" class="form-control form-control-sm">
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label small text-muted">ঠিকানা (Address)</label>
-                            <input type="text" id="editAddress" class="form-control form-control-sm" placeholder="গ্রাম/বাসা/রোড নম্বর">
-                        </div>
-                        <div class="row g-2 mb-2">
-                            <div class="col">
-                                <label class="form-label small text-muted">প্যাকেজ প্রোফাইল</label>
-                                <select id="editProfile" class="form-select form-select-sm" required></select>
-                            </div>
-                            <div class="col">
-                                <label class="form-label small text-muted">মাসিক বিল</label>
-                                <input type="number" id="editBill" class="form-control form-control-sm" required>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">মেয়াদ (Expire Date)</label>
-                            <input type="date" id="editExpire" class="form-control form-control-sm" required>
-                        </div>
-                        
-                        <div class="p-2 bg-light rounded border mb-3 small">
-                            <div><strong>লাইভ IP:</strong> <span id="viewIp">-</span></div>
-                            <div><strong>MAC / Caller ID:</strong> <span id="viewCallerId">-</span></div>
-                            <div><strong>বর্তমান স্ট্যাটাস:</strong> <span id="viewStatus">-</span></div>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-sm flex-grow-1">তথ্য আপডেট করুন</button>
-                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="handleDeleteCustomer()">মুছে ফেলুন</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: নতুন কাস্টমার যোগ -->
-    <div class="modal fade" id="addCustomerModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">নতুন কাস্টমার যোগ করুন</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addCustForm" onsubmit="handleAddCustomer(event)">
-                        <div class="mb-2">
-                            <label class="form-label small text-muted">গ্রাহকের নাম</label>
-                            <input type="text" id="custName" class="form-control form-control-sm" required>
-                        </div>
-                        <div class="row g-2 mb-2">
-                            <div class="col">
-                                <label class="form-label small text-muted">ইউজারনেম</label>
-                                <input type="text" id="custUsername" class="form-control form-control-sm" required>
-                            </div>
-                            <div class="col">
-                                <label class="form-label small text-muted">পাসওয়ার্ড</label>
-                                <input type="text" id="custPassword" class="form-control form-control-sm" value="1234" required>
-                            </div>
-                        </div>
-                        <div class="row g-2 mb-2">
-                            <div class="col">
-                                <label class="form-label small text-muted">মোবাইল নম্বর</label>
-                                <input type="text" id="custPhone" class="form-control form-control-sm" placeholder="017xxxxxxxx">
-                            </div>
-                            <div class="col">
-                                <label class="form-label small text-muted">প্যাকেজ প্রোফাইল</label>
-                                <select id="custProfile" class="form-select form-select-sm" required>
-                                    <option value="" disabled selected>লোড হচ্ছে...</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label small text-muted">ঠিকানা</label>
-                            <input type="text" id="custAddress" class="form-control form-control-sm">
-                        </div>
-                        <div class="row g-2 mb-3">
-                            <div class="col">
-                                <label class="form-label small text-muted">মাসিক বিল</label>
-                                <input type="number" id="custBill" class="form-control form-control-sm" value="500">
-                            </div>
-                            <div class="col">
-                                <label class="form-label small text-muted">মেয়াদ</label>
-                                <input type="date" id="custExpire" class="form-control form-control-sm">
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-success btn-sm w-100">সেভ করুন</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: পুল তৈরি -->
-    <div class="modal fade" id="addPoolModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">নতুন IP Pool তৈরি</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form onsubmit="handleAddPool(event)">
-                        <div class="mb-2">
-                            <label class="form-label small text-muted">পুল নাম</label>
-                            <input type="text" id="poolName" class="form-control form-control-sm" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">আইপি রেঞ্জ</label>
-                            <input type="text" id="poolRanges" class="form-control form-control-sm" placeholder="10.81.0.10-10.81.0.250" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-sm w-100">যুক্ত করুন</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let rawCustomersList = [];
-        let pppoeProfiles = [];
-
-        async function fetchProfilesForSelect() {
-            try {
-                const res = await fetch('/api/admin/pppoe-profiles');
-                const data = await res.json();
-                pppoeProfiles = data.profiles || [];
-                
-                const selectAdd = document.getElementById('custProfile');
-                selectAdd.innerHTML = '<option value="" disabled selected>প্যাকেজ বেছে নিন</option>';
-                pppoeProfiles.forEach(p => {
-                    selectAdd.innerHTML += `<option value="${p}">${p}</option>`;
-                });
-            } catch (e) {
-                console.error('Profile fetch failed', e);
+<script>
+    async function loadGatewaySettings() {
+        try {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+            if (data.smsGatewayUrl) {
+                document.getElementById('gatewayUrlInput').value = data.smsGatewayUrl;
             }
-        }
+        } catch(e) { console.error(e); }
+    }
 
-        async function loadDashboard() {
-            try {
-                fetchProfilesForSelect();
-                const res = await fetch('/api/admin/customers');
-                const data = await res.json();
-                rawCustomersList = Array.isArray(data.customers) ? data.customers : [];
-                
-                populateFilterProfiles(rawCustomersList);
-                filterData();
-            } catch (err) {
-                document.getElementById('customerTableBody').innerHTML = `
-                    <tr><td colspan="10" class="text-center py-4 text-danger">লোড করতে সমস্যা হয়েছে: ${err.message}</td></tr>
-                `;
-            }
-        }
-
-        function populateFilterProfiles(list) {
-            const select = document.getElementById('profileFilter');
-            const profiles = [...new Set(list.map(c => c.profile).filter(Boolean))];
-            select.innerHTML = '<option value="all">সব প্যাকেজ</option>';
-            profiles.forEach(p => {
-                select.innerHTML += `<option value="${p}">${p}</option>`;
+    async function saveGatewayUrl() {
+        const url = document.getElementById('gatewayUrlInput').value.trim();
+        try {
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ smsGatewayUrl: url })
             });
+            const data = await res.json();
+            alert(data.message || 'সংরক্ষণ সম্পন্ন!');
+        } catch (e) {
+            alert('সংরক্ষণ ব্যর্থ হয়েছে!');
         }
+    }
 
-        function filterData() {
-            const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-            const status = document.getElementById('statusFilter').value;
-            const profile = document.getElementById('profileFilter').value;
-
-            const filtered = rawCustomersList.filter(c => {
-                const matchQuery = 
-                    (c.username && c.username.toLowerCase().includes(query)) ||
-                    (c.name && c.name.toLowerCase().includes(query)) ||
-                    (c.phone && c.phone.includes(query)) ||
-                    (c.callerId && c.callerId.toLowerCase().includes(query)) ||
-                    (c.ipAddress && c.ipAddress.includes(query));
-
-                let matchStatus = true;
-                if (status !== 'all') matchStatus = (c.liveStatus === status);
-
-                const matchProfile = (profile === 'all' || c.profile === profile);
-                return matchQuery && matchStatus && matchProfile;
-            });
-
-            renderTable(filtered);
-            updateCounters(rawCustomersList);
-        }
-
-        function renderTable(list) {
+    async function loadDashboard() {
+        try {
+            const res = await fetch('/api/customers');
+            const customers = await res.json();
             const tbody = document.getElementById('customerTableBody');
-            document.getElementById('customerCountBadge').innerText = `ইউজার: ${list.length}`;
 
-            if (!list || list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-muted">কোনো গ্রাহকের তথ্য নেই।</td></tr>`;
+            let online = 0, offline = 0, suspended = 0;
+            tbody.innerHTML = '';
+
+            if (customers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">কোনো গ্রাহকের তথ্য পাওয়া যায়নি।</td></tr>';
                 return;
             }
 
-            let html = '';
-            list.forEach((c, index) => {
-                let badge = '';
-                if (c.liveStatus === 'active') badge = '<span class="badge bg-success">অনলাইন</span>';
-                else if (c.liveStatus === 'suspended') badge = '<span class="badge bg-danger">স্থগিত</span>';
-                else if (c.liveStatus === 'expired') badge = '<span class="badge bg-warning text-dark">মেয়াদ শেষ</span>';
-                else badge = '<span class="badge bg-secondary">অফলাইন</span>';
+            customers.forEach((c, idx) => {
+                if (c.status === 'Active') online++;
+                else if (c.status === 'Suspended') suspended++;
+                else offline++;
 
-                html += `
+                const row = `
                     <tr>
-                        <td class="text-center fw-bold text-muted">${index + 1}</td>
+                        <td>${idx + 1}</td>
                         <td>
-                            <a class="user-clickable" onclick="openProfileModal('${c.username}')">${c.username}</a>
-                            <small class="d-block text-muted">${c.name || ''}</small>
+                            <a href="customer-details.html?user=${encodeURIComponent(c.username)}" target="_blank" class="customer-link">
+                                ${c.name || c.username}
+                            </a>
+                            <div class="text-muted small">${c.username}</div>
                         </td>
                         <td>${c.phone || '-'}</td>
-                        <td><span class="badge bg-light text-dark border">${c.profile || '-'}</span></td>
-                        <td><code>${c.callerId || '-'}</code></td>
-                        <td><span class="badge bg-light text-primary border">${c.ipAddress || '-'}</span></td>
-                        <td>${c.expireDate || '-'}</td>
-                        <td>৳ ${c.bill || 0}</td>
-                        <td>${badge}</td>
-                        <td class="text-center">
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-success" title="৩০ দিন রিনিউ" onclick="triggerAction('${c.username}', 'renew', { days: 30 })">
-                                    <i class="bi bi-cash"></i>
-                                </button>
-                                <button class="btn btn-outline-warning" title="এসএমএস নোটিশ" onclick="triggerAction('${c.username}', 'send-notice')">
-                                    <i class="bi bi-chat-dots"></i>
-                                </button>
-                                <button class="btn btn-outline-danger" title="সাসপেন্ড / চালু" onclick="toggleStatus('${c.username}', '${c.status}')">
-                                    <i class="bi bi-power"></i>
-                                </button>
-                            </div>
+                        <td><span class="badge bg-info text-dark">${c.package || 'Default'}</span></td>
+                        <td>
+                            <span class="badge ${c.status === 'Active' ? 'bg-success' : 'bg-danger'}">
+                                ${c.status || 'Active'}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="customer-details.html?user=${encodeURIComponent(c.username)}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                <i class="fas fa-eye"></i> বিস্তারিত
+                            </a>
                         </td>
                     </tr>
                 `;
-            });
-            tbody.innerHTML = html;
-        }
-
-        function openProfileModal(username) {
-            const c = rawCustomersList.find(x => x.username === username);
-            if (!c) return;
-
-            document.getElementById('detailUsername').innerText = `প্রোফাইল: ${c.username}`;
-            document.getElementById('editUsername').value = c.username;
-            document.getElementById('editName').value = c.name || '';
-            document.getElementById('editPhone').value = c.phone || '';
-            document.getElementById('editPassword').value = '';
-            document.getElementById('editAddress').value = c.address || '';
-            document.getElementById('editBill').value = c.bill || 500;
-            document.getElementById('editExpire').value = c.expireDate || '';
-
-            document.getElementById('viewIp').innerText = c.ipAddress || 'N/A';
-            document.getElementById('viewCallerId').innerText = c.callerId || 'N/A';
-            document.getElementById('viewStatus').innerText = c.liveStatus;
-
-            const profileSelect = document.getElementById('editProfile');
-            profileSelect.innerHTML = '';
-            pppoeProfiles.forEach(p => {
-                profileSelect.innerHTML += `<option value="${p}" ${p === c.profile ? 'selected' : ''}>${p}</option>`;
+                tbody.innerHTML += row;
             });
 
-            new bootstrap.Modal(document.getElementById('customerDetailModal')).show();
+            document.getElementById('stat-total').innerText = customers.length;
+            document.getElementById('stat-online').innerText = online;
+            document.getElementById('stat-offline').innerText = offline;
+            document.getElementById('stat-suspended').innerText = suspended;
+
+        } catch (e) {
+            console.error(e);
         }
+    }
 
-        async function handleUpdateCustomer(e) {
-            e.preventDefault();
-            const payload = {
-                username: document.getElementById('editUsername').value,
-                name: document.getElementById('editName').value,
-                phone: document.getElementById('editPhone').value,
-                address: document.getElementById('editAddress').value,
-                profile: document.getElementById('editProfile').value,
-                bill: document.getElementById('editBill').value,
-                expireDate: document.getElementById('editExpire').value,
-                password: document.getElementById('editPassword').value
-            };
-
-            try {
-                const res = await fetch('/api/admin/customers/update', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                alert(data.message);
-                bootstrap.Modal.getInstance(document.getElementById('customerDetailModal')).hide();
-                loadDashboard();
-            } catch (err) {
-                alert('আপডেট ত্রুটি: ' + err.message);
-            }
-        }
-
-        async function handleDeleteCustomer() {
-            const username = document.getElementById('editUsername').value;
-            if (!confirm(`আপনি কি সত্যিই (${username}) গ্রাহককে সম্পূর্ণ মুছে ফেলতে চান?`)) return;
-
-            try {
-                const res = await fetch('/api/admin/customers/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username })
-                });
-                const data = await res.json();
-                alert(data.message);
-                bootstrap.Modal.getInstance(document.getElementById('customerDetailModal')).hide();
-                loadDashboard();
-            } catch (err) {
-                alert('ডিলিট ত্রুটি: ' + err.message);
-            }
-        }
-
-        function updateCounters(list) {
-            let online = 0, offline = 0, expired = 0;
-            list.forEach(c => {
-                if (c.liveStatus === 'active') online++;
-                else if (c.liveStatus === 'offline') offline++;
-                if (c.liveStatus === 'expired' || c.liveStatus === 'suspended') expired++;
-            });
-            document.getElementById('onlineUsers').innerText = online;
-            document.getElementById('offlineUsers').innerText = offline;
-            document.getElementById('totalUsers').innerText = list.length;
-            document.getElementById('expiredUsers').innerText = expired;
-        }
-
-        async function triggerAction(username, action, extra = {}) {
-            if (!confirm(`(${username}) এর জন্য এটি সম্পন্ন করবেন?`)) return;
-            try {
-                const res = await fetch('/api/admin/customers/action', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, action, ...extra })
-                });
-                const data = await res.json();
-                alert(data.message);
-                loadDashboard();
-            } catch (e) {
-                alert('ত্রুটি: ' + e.message);
-            }
-        }
-
-        function toggleStatus(username, currentStatus) {
-            const nextStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
-            triggerAction(username, 'status', { status: nextStatus });
-        }
-
-        async function handleAddCustomer(e) {
-            e.preventDefault();
-            const payload = {
-                name: document.getElementById('custName').value,
-                username: document.getElementById('custUsername').value,
-                password: document.getElementById('custPassword').value,
-                phone: document.getElementById('custPhone').value,
-                address: document.getElementById('custAddress').value,
-                profile: document.getElementById('custProfile').value,
-                bill: document.getElementById('custBill').value,
-                expireDate: document.getElementById('custExpire').value
-            };
-
-            try {
-                const res = await fetch('/api/admin/customers/add', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert('কাস্টমার যোগ হয়েছে!');
-                    bootstrap.Modal.getInstance(document.getElementById('addCustomerModal')).hide();
-                    document.getElementById('addCustForm').reset();
-                    loadDashboard();
-                } else {
-                    alert(data.message);
-                }
-            } catch (err) {
-                alert('ত্রুটি: ' + err.message);
-            }
-        }
-
-        async function loadPools() {
-            try {
-                const res = await fetch('/api/admin/pools');
-                const data = await res.json();
-                const pools = data.pools || [];
-                let html = '';
-                pools.forEach(p => {
-                    html += `<tr><td><strong>${p.name}</strong></td><td><code>${p.ranges}</code></td><td>${p['next-pool'] || 'none'}</td></tr>`;
-                });
-                document.getElementById('poolTableBody').innerHTML = html || '<tr><td colspan="3" class="text-center py-3">কোনো পুল নেই</td></tr>';
-            } catch (e) {
-                document.getElementById('poolTableBody').innerHTML = '<tr><td colspan="3" class="text-center text-danger">লোড ব্যর্থ</td></tr>';
-            }
-        }
-
-        async function handleAddPool(e) {
-            e.preventDefault();
-            const name = document.getElementById('poolName').value.trim();
-            const ranges = document.getElementById('poolRanges').value.trim();
-            try {
-                const res = await fetch('/api/admin/pools/add', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, ranges })
-                });
-                const data = await res.json();
-                alert(data.message);
-                bootstrap.Modal.getInstance(document.getElementById('addPoolModal')).hide();
-                loadPools();
-            } catch (e) {
-                alert('ত্রুটি: ' + e.message);
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', loadDashboard);
-    </script>
+    window.onload = () => {
+        loadGatewaySettings();
+        loadDashboard();
+    };
+</script>
 </body>
 </html>
