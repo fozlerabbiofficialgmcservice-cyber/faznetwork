@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAZ NETWORK - ISP Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #08151c; color: #f1f5f9; font-family: 'Segoe UI', sans-serif; }
+        .card { background: #0f232f; border: 1px solid #1e3a4b; border-radius: 12px; }
+        .badge-active { background: #10b981; color: #fff; }
+        .badge-offline { background: #64748b; color: #fff; }
+        .badge-expired { background: #f59e0b; color: #000; }
+        .badge-suspended { background: #ef4444; color: #fff; }
+        .table { color: #f1f5f9; vertical-align: middle; }
+        .table-dark { background: #0f232f; }
+        .mac-text { font-family: monospace; color: #38bdf8; font-size: 13px; }
+    </style>
+</head>
+<body class="p-4">
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary">
+        <div>
+            <h2 class="fw-bold mb-0 text-success">⚡ FAZ NETWORK</h2>
+            <small class="text-secondary">PPPoE & ISP Core Management Panel</small>
+        </div>
+        <div>
+            <button class="btn btn-outline-light me-2" onclick="loadDashboard()">🔄 রিফ্রেশ</button>
+            <button class="btn btn-info me-2 text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#poolModal">🌐 IP Pool সমূহ</button>
+            <button class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addCustomerModal">+ নতুন কাস্টমার</button>
+        </div>
+    </div>
+
+    <!-- টোটাল কাউন্টার কার্ড -->
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm"><h6 class="text-secondary">মোট গ্রাহক</h6><h2 id="total-cust" class="fw-bold">0</h2></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm"><h6 class="text-success">অনলাইন (সচল)</h6><h2 id="active-cust" class="text-success fw-bold">0</h2></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm"><h6 class="text-warning">মেয়াদ উত্তীর্ণ (Expired)</h6><h2 id="exp-cust" class="text-warning fw-bold">0</h2></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm"><h6 class="text-danger">ব্লকড / স্থগিত</h6><h2 id="susp-cust" class="text-danger fw-bold">0</h2></div>
+        </div>
+    </div>
+
+    <!-- কাস্টমার টেবিল -->
+    <div class="card p-3 shadow-lg">
+        <h5 class="fw-bold mb-3">কাস্টমার তালিকা ও রিয়েল-টাইম স্ট্যাটাস</h5>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover">
+                <thead>
+                    <tr class="text-secondary">
+                        <th>কাস্টমার আইডি</th>
+                        <th>টাইপ</th>
+                        <th>প্যাকেজ</th>
+                        <th>MAC বাইন্ডিং</th>
+                        <th>আইপি / আপটাইম</th>
+                        <th>মেয়াদ (Expire Date)</th>
+                        <th>বিল</th>
+                        <th>স্ট্যাটাস</th>
+                        <th>অ্যাকশন</th>
+                    </tr>
+                </thead>
+                <tbody id="customer-rows"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: নতুন কাস্টমার যোগ -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary"><h5 class="modal-title">নতুন কাস্টমার তৈরি করুন</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <form id="add-cust-form">
+                    <div class="mb-2"><label class="form-label">গ্রাহকের নাম</label><input type="text" id="cust-name" class="form-control bg-secondary text-white" required></div>
+                    <div class="mb-2"><label class="form-label">User ID (ইউজারনেম)</label><input type="text" id="cust-user" class="form-control bg-secondary text-white" required></div>
+                    <div class="mb-2"><label class="form-label">পাসওয়ার্ড</label><input type="text" id="cust-pass" value="1234" class="form-control bg-secondary text-white" required></div>
+                    <div class="mb-2">
+                        <label class="form-label">কানেকশন টাইপ</label>
+                        <select id="cust-type" class="form-select bg-secondary text-white">
+                            <option value="PPPoE">PPPoE</option>
+                            <option value="Static IP">Static IP</option>
+                        </select>
+                    </div>
+                    <div class="mb-2"><label class="form-label">মোবাইল নম্বর</label><input type="text" id="cust-phone" class="form-control bg-secondary text-white" placeholder="017xxxxxxxx"></div>
+                    <div class="mb-2">
+                        <label class="form-label">প্যাকেজ প্রোফাইল</label>
+                        <select id="cust-profile" class="form-select bg-secondary text-white">
+                            <option value="FZN 30 Mbps">FZN 30 Mbps</option>
+                            <option value="FZN 50 Mbps">FZN 50 Mbps</option>
+                        </select>
+                    </div>
+                    <div class="mb-2"><label class="form-label">মাসিক বিল (টাকা)</label><input type="number" id="cust-bill" value="500" class="form-control bg-secondary text-white" required></div>
+                    <button type="submit" class="btn btn-success w-100 mt-3 fw-bold">তৈরি করুন</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: পেমেন্ট হিস্টোরি -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary"><h5 class="modal-title">রিচার্জ ও পেমেন্ট হিস্টোরি</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <table class="table table-dark table-bordered">
+                    <thead><tr><th>তারিখ ও সময়</th><th>টাকা</th><th>পদ্ধতি</th><th>TrxID / নোট</th></tr></thead>
+                    <tbody id="history-rows"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: IP Pool তালিকা -->
+<div class="modal fade" id="poolModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary"><h5 class="modal-title">রাউটার IP Pool সমূহ</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <table class="table table-dark table-bordered mb-4">
+                    <thead><tr><th>Pool Name</th><th>IP Ranges</th></tr></thead>
+                    <tbody id="pool-rows"></tbody>
+                </table>
+                <h6 class="fw-bold">নতুন IP Pool যোগ করুন:</h6>
+                <div class="row g-2">
+                    <div class="col-5"><input type="text" id="new-pool-name" placeholder="Pool Name (ex: 200 Mbps)" class="form-control bg-secondary text-white"></div>
+                    <div class="col-5"><input type="text" id="new-pool-range" placeholder="Range (ex: 10.83.0.2-10.83.0.254)" class="form-control bg-secondary text-white"></div>
+                    <div class="col-2"><button class="btn btn-info w-100 fw-bold" onclick="addNewPool()">যোগ করুন</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let globalCustomers = {};
+
+    async function loadDashboard() {
+        const res = await fetch('/api/admin/customers');
+        const data = await res.json();
+        if (!data.success) return;
+
+        let active = 0, exp = 0, susp = 0;
+        const tbody = document.getElementById('customer-rows');
+        tbody.innerHTML = '';
+        globalCustomers = {};
+
+        data.customers.forEach(c => {
+            globalCustomers[c.username] = c;
+            if (c.liveStatus === 'active') active++;
+            if (c.liveStatus === 'expired') exp++;
+            if (c.liveStatus === 'suspended') susp++;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>
+                        <a href="javascript:showHistory('${c.username}')" class="text-info fw-bold text-decoration-none">${c.name}</a>
+                        <br><small class="text-secondary">${c.username}</small>
+                    </td>
+                    <td><span class="badge bg-secondary">${c.connectionType}</span></td>
+                    <td>${c.profile}</td>
+                    <td><span class="mac-text">${c.callerId || '<span class="text-secondary">লক হয়নি</span>'}</span></td>
+                    <td><small>${c.ipAddress}</small><br><small class="text-secondary">${c.uptime}</small></td>
+                    <td><b>${c.expireDate}</b></td>
+                    <td>৳ ${c.bill}</td>
+                    <td><span class="badge badge-${c.liveStatus} p-2">${c.liveStatus.toUpperCase()}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-success me-1" onclick="renewUser('${c.username}')">রিনিউ (+30d)</button>
+                        <button class="btn btn-sm btn-danger" onclick="suspendUser('${c.username}')">ব্লক</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('total-cust').innerText = data.customers.length;
+        document.getElementById('active-cust').innerText = active;
+        document.getElementById('exp-cust').innerText = exp;
+        document.getElementById('susp-cust').innerText = susp;
+    }
+
+    async function renewUser(username) {
+        if (!confirm(`ইউজার [${username}]-কে ৩০ দিনের জন্য রিনিউ করবেন?`)) return;
+        await fetch('/api/admin/customers/action', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username, action: 'renew', days: 30 })
+        });
+        loadDashboard();
+    }
+
+    async function suspendUser(username) {
+        if (!confirm(`ইউজার [${username}]-কে সাসপেন্ড/ব্লক করবেন?`)) return;
+        await fetch('/api/admin/customers/action', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username, action: 'suspend' })
+        });
+        loadDashboard();
+    }
+
+    function showHistory(username) {
+        const cust = globalCustomers[username];
+        if (!cust) return;
+        const tbody = document.getElementById('history-rows');
+        tbody.innerHTML = '';
+        if (cust.history && cust.history.length > 0) {
+            cust.history.forEach(h => {
+                tbody.innerHTML += `<tr><td>${new Date(h.date).toLocaleString('en-GB')}</td><td>৳ ${h.amount}</td><td>${h.type}</td><td>${h.trxId}</td></tr>`;
+            });
+        } else {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">কোনো রেকর্ড পাওয়া যায়নি।</td></tr>`;
+        }
+        new bootstrap.Modal(document.getElementById('historyModal')).show();
+    }
+
+    async function loadPools() {
+        const res = await fetch('/api/admin/pools');
+        const data = await res.json();
+        if (!data.success) return;
+        const tbody = document.getElementById('pool-rows');
+        tbody.innerHTML = '';
+        data.pools.forEach(p => {
+            tbody.innerHTML += `<tr><td><b>${p.name}</b></td><td>${p.ranges}</td></tr>`;
+        });
+    }
+
+    async function addNewPool() {
+        const name = document.getElementById('new-pool-name').value.trim();
+        const ranges = document.getElementById('new-pool-range').value.trim();
+        if (!name || !ranges) return alert('নাম ও রেঞ্জ দিন');
+        await fetch('/api/admin/pools/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, ranges })
+        });
+        document.getElementById('new-pool-name').value = '';
+        document.getElementById('new-pool-range').value = '';
+        loadPools();
+    }
+
+    document.getElementById('add-cust-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = {
+            name: document.getElementById('cust-name').value,
+            username: document.getElementById('cust-user').value,
+            password: document.getElementById('cust-pass').value,
+            connectionType: document.getElementById('cust-type').value,
+            phone: document.getElementById('cust-phone').value,
+            profile: document.getElementById('cust-profile').value,
+            bill: document.getElementById('cust-bill').value
+        };
+        await fetch('/api/admin/customers/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        bootstrap.Modal.getInstance(document.getElementById('addCustomerModal')).hide();
+        loadDashboard();
+    };
+
+    document.getElementById('poolModal').addEventListener('show.bs.modal', loadPools);
+    window.onload = loadDashboard;
+</script>
+</body>
+</html>
