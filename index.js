@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 10000;
 
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     if (req.method === 'OPTIONS') return res.sendStatus(200);
     next();
@@ -28,13 +28,37 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-// মাইক্রোটিক কনফিগ
+// রেট লিমিটার
+const requestTracker = {};
+function rateLimiter(req, res, next) {
+    try {
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+        const now = Date.now();
+        if (!requestTracker[ip]) {
+            requestTracker[ip] = { count: 1, resetTime: now + 60000 };
+        } else {
+            if (now > requestTracker[ip].resetTime) {
+                requestTracker[ip] = { count: 1, resetTime: now + 60000 };
+            } else {
+                requestTracker[ip].count++;
+                if (requestTracker[ip].count > 20) {
+                    return res.status(429).json({ success: false, message: 'অতিরিক্ত অনুরোধ করা হয়েছে।' });
+                }
+            }
+        }
+        next();
+    } catch (e) {
+        next();
+    }
+}
+
+// MikroTik Config
 const MIKROTIK_HOST = process.env.MIKROTIK_HOST || '103.54.37.182';
 const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT, 10) || 1126;
 const MIKROTIK_USER = process.env.MIKROTIK_USER || 'smsbot';
 const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 
-// FAZ SMS Gateway
+// SMS Gateway
 const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'http://10.71.0.7:8080/send-sms';
 const SMS_GATEWAY_TOKEN = process.env.SMS_GATEWAY_TOKEN || 'Bearer faz_secure_token_2026';
 
@@ -190,7 +214,7 @@ function executeSingleCommand(cmdWords) {
             }
         });
 
-        client.on('error', (err) => {
+        client.on('error', () => {
             if (!finished) {
                 finished = true;
                 clearTimeout(timer);
@@ -234,20 +258,158 @@ function addDaysToDate(baseDateStr, daysToAdd) {
     return base.toISOString().split('T')[0];
 }
 
-// ----------------- ROUTES -----------------
+// ----------------- হটস্পট সংক্রান্ত হ্যান্ডলার -----------------
+async function ensureUser(username, comment = '') {
+    const cmd = ['/user-manager/user/add', `=name=${username}`, `=password=${username}`, `=group=Hotspot`];
+    if (comment) cmd.push(`=comment=${comment}`);
+    await executeSingleCommand(cmd);
+}
 
-app.get('/', (req, res) => {
-    if (fs.existsSync(path.join(__dirname, 'admin.html'))) {
-        return res.sendFile(path.join(__dirname, 'admin.html'));
+async function attachProfile(username, profileName) {
+    const cmd = ['/user-manager/user-profile/add', `=user=${username}`, `=profile=${profileName}`];
+    return await executeSingleCommand(cmd);
+}
+
+async function updateUserComment(username, comment) {
+    const cmd = ['/user-manager/user/set', `=numbers=${username}`, `=comment=${comment}`];
+    await executeSingleCommand(cmd);
+}
+
+app.post('/api/verify-trx', rateLimiter, async (req, res) => {
+    try {
+        const { username, trxId } = req.body;
+        if (!username || !trxId) return res.status(400).json({ success: false, message: 'ইউজার ও ট্রানজেকশন আইডি দিন।' });
+
+        const cleanTrx = trxId.trim().toUpperCase();
+        let cleanUser = username.trim().replace(/[^0-9]/g, '');
+        if (cleanUser.length >= 11) cleanUser = cleanUser.slice(-11);
+
+        const store = loadJSON(DB_FILE);
+        const transaction = store[cleanTrx];
+
+        if (!transaction) return res.status(404).json({ success: false, message: `ট্রানজেকশন আইডি (${cleanTrx}) পাওয়া যায়নি!` });
+        if (transaction.used) return res.status(400).json({ success: false, message: 'এই TrxID দিয়ে আগেই একটিভ করা হয়েছে।' });
+
+        const profile = PRICE_PROFILE_MAP[transaction.amount] || 'Profile-1Hour';
+        const senderInfo = transaction.phone ? ` | Payer: ${transaction.phone}` : '';
+        const method = transaction.gateway || 'Pay';
+        const commentText = `${method}: ${cleanTrx} | Tk: ${transaction.amount}${senderInfo} | Date: ${new Date().toLocaleDateString('en-GB')}`;
+
+        await ensureUser(cleanUser, commentText);
+        await attachProfile(cleanUser, profile);
+        await updateUserComment(cleanUser, commentText);
+
+        transaction.used = true;
+        transaction.activatedUser = cleanUser;
+        transaction.usedAt = Date.now();
+        saveJSON(DB_FILE, store);
+
+        return res.status(200).json({
+            success: true,
+            message: `সফল হয়েছে! প্যাকেজ: ${profile}`,
+            username: cleanUser,
+            password: cleanUser,
+            profile: profile
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
     }
-    return res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// কাস্টমার তালিকা API
+// ----------------- অটো রিচার্জ ও SMS ফরোয়ার্ড -----------------
+app.post('/forward', async (req, res) => {
+    try {
+        let sms_body = req.query.sms_body || req.body.sms_body || req.query['sms body'] || req.body['sms body'] || req.body.sms_message || req.body.message || '';
+        let sender = (req.query.sender || req.body.sender || req.body.from || '').trim().toLowerCase();
+
+        if (typeof req.body === 'string') sms_body = req.body;
+        const isBkashSender = sender.includes('bkash') || sender.includes('16247');
+        const isNagadSender = sender.includes('nagad') || sender.includes('16167');
+
+        const trxMatch = sms_body.match(/(?:TrxID|TxnID|TransID|TxId)\s*[:]?\s*([A-Za-z0-9]+)/i);
+        const trxId = trxMatch ? trxMatch[1].trim().toUpperCase() : null;
+
+        const amountMatch = sms_body.match(/(?:Tk|Amount\s*[:]?\s*Tk|Amount)\s*[:]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+        const amount = amountMatch ? Math.floor(parseFloat(amountMatch[1])).toString() : null;
+
+        const refMatch = sms_body.match(/(?:Ref|Reference)\s*[:]?\s*([A-Za-z0-9_-]+)/i);
+        const referenceUser = refMatch ? refMatch[1].trim() : null;
+
+        if (trxId && amount) {
+            const customers = loadJSON(CUSTOMERS_FILE);
+
+            // PPPoE অটো রিনিউয়াল
+            if (referenceUser && customers[referenceUser]) {
+                let cust = customers[referenceUser];
+                const newExp = addDaysToDate(cust.expireDate, 30);
+                cust.expireDate = newExp;
+                cust.status = 'active';
+
+                await executeSingleCommand([
+                    '/ppp/secret/set',
+                    `=numbers=${referenceUser}`,
+                    `=profile=${cust.profile === 'Expired_Profile' ? 'FZN 30 Mbps' : cust.profile}`,
+                    `=comment=Exp: ${newExp}`,
+                    `=disabled=no`
+                ]);
+                await executeSingleCommand(['/ppp/active/remove', `?name=${referenceUser}`]);
+
+                if (!Array.isArray(cust.history)) cust.history = [];
+                cust.history.unshift({
+                    date: new Date().toISOString(),
+                    amount: amount,
+                    type: isNagadSender ? 'Nagad Auto' : 'bKash Auto',
+                    trxId: trxId
+                });
+
+                customers[referenceUser] = cust;
+                saveJSON(CUSTOMERS_FILE, customers);
+
+                if (cust.phone) {
+                    await sendGatewaySMS(cust.phone, `Prio Grahok (User: ${referenceUser}), apnar ${amount} tk bill grohon kora hoyeche. Notun meyad: ${newExp} porjonto. Dhonnobad!`);
+                }
+                return res.status(200).json({ success: true, type: 'PPPoE', user: referenceUser, expireDate: newExp });
+            }
+
+            // হটস্পট স্টোরেজ
+            const store = loadJSON(DB_FILE);
+            store[trxId] = {
+                amount: amount,
+                gateway: isNagadSender ? 'Nagad' : 'bKash',
+                used: false,
+                receivedAt: Date.now()
+            };
+            saveJSON(DB_FILE, store);
+            return res.status(200).json({ success: true, type: 'Hotspot', trxId, amount });
+        }
+        return res.status(400).json({ success: false, message: 'Invalid SMS content.' });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ----------------- ADMIN ROUTES -----------------
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// PPPoE প্রোফাইল তালিকা ফেচ
+app.get('/api/admin/pppoe-profiles', async (req, res) => {
+    try {
+        const profiles = await executeSingleCommand(['/ppp/profile/print']);
+        const names = profiles.map(p => p.name).filter(Boolean);
+        res.json({ success: true, profiles: names });
+    } catch (e) {
+        res.json({ success: true, profiles: ['FZN 30 Mbps', 'FZN 50 Mbps'] });
+    }
+});
+
+// গ্রাহক তালিকা
 app.get('/api/admin/customers', async (req, res) => {
     try {
-        let customers = loadJSON(CUSTOMERS_FILE);
-        if (typeof customers !== 'object' || Array.isArray(customers)) customers = {};
+        let fileCustomers = loadJSON(CUSTOMERS_FILE);
+        if (typeof fileCustomers !== 'object' || Array.isArray(fileCustomers)) fileCustomers = {};
 
         const [activeUsers, secrets] = await Promise.all([
             executeSingleCommand(['/ppp/active/print']),
@@ -257,9 +419,9 @@ app.get('/api/admin/customers', async (req, res) => {
         const activeMap = {};
         if (Array.isArray(activeUsers)) {
             activeUsers.forEach(u => {
-                const name = u.name;
-                if (name) {
-                    activeMap[name] = {
+                const uName = (u.name || '').trim().toLowerCase();
+                if (uName) {
+                    activeMap[uName] = {
                         uptime: u.uptime || 'Online',
                         address: u.address || 'N/A',
                         callerId: u['caller-id'] || ''
@@ -268,10 +430,12 @@ app.get('/api/admin/customers', async (req, res) => {
             });
         }
 
+        const validSecretNames = new Set();
         if (Array.isArray(secrets)) {
             secrets.forEach(sec => {
                 const sName = sec.name;
                 if (!sName) return;
+                validSecretNames.add(sName);
 
                 let exp = null;
                 const comment = sec.comment || '';
@@ -282,12 +446,14 @@ app.get('/api/admin/customers', async (req, res) => {
                 const sCallerId = sec['caller-id'] || '';
                 const isDisabled = (sec.disabled === 'true' || sec.disabled === true);
 
-                if (!customers[sName]) {
-                    customers[sName] = {
+                if (!fileCustomers[sName]) {
+                    fileCustomers[sName] = {
                         name: sName,
                         username: sName,
+                        password: sec.password || '1234',
                         connectionType: 'PPPoE',
                         phone: '',
+                        address: '',
                         profile: sProfile,
                         bill: 500,
                         status: isDisabled ? 'suspended' : 'active',
@@ -295,72 +461,142 @@ app.get('/api/admin/customers', async (req, res) => {
                         callerId: sCallerId
                     };
                 } else {
-                    customers[sName].profile = sProfile;
-                    if (sCallerId) customers[sName].callerId = sCallerId;
-                    if (exp) customers[sName].expireDate = exp;
-                    if (isDisabled) customers[sName].status = 'suspended';
+                    fileCustomers[sName].profile = sProfile;
+                    if (sCallerId) fileCustomers[sName].callerId = sCallerId;
+                    if (exp) fileCustomers[sName].expireDate = exp;
+                    if (isDisabled) fileCustomers[sName].status = 'suspended';
                 }
             });
-            saveJSON(CUSTOMERS_FILE, customers);
         }
+
+        // ডিলিট হওয়া সিক্রেট ফিল্টার
+        for (const k of Object.keys(fileCustomers)) {
+            if (!validSecretNames.has(k)) {
+                delete fileCustomers[k];
+            }
+        }
+        saveJSON(CUSTOMERS_FILE, fileCustomers);
 
         const today = new Date().toISOString().split('T')[0];
 
-        const list = Object.keys(customers).map(key => {
-            const c = customers[key];
+        const list = Object.keys(fileCustomers).map(key => {
+            const c = fileCustomers[key];
+            const lowerUser = (c.username || '').trim().toLowerCase();
+            const isOnline = !!activeMap[lowerUser];
+
             let liveStatus = 'offline';
             if (c.status === 'suspended' || c.profile === 'Expired_Profile') {
                 liveStatus = 'suspended';
             } else if (c.expireDate && c.expireDate < today) {
                 liveStatus = 'expired';
-            } else if (activeMap[c.username]) {
+            } else if (isOnline) {
                 liveStatus = 'active';
             }
 
             return {
                 ...c,
                 liveStatus,
-                uptime: activeMap[c.username] ? activeMap[c.username].uptime : 'Offline',
-                ipAddress: activeMap[c.username] ? activeMap[c.username].address : (c.ipAddress || 'N/A'),
-                callerId: activeMap[c.username] ? (activeMap[c.username].callerId || c.callerId) : (c.callerId || 'N/A')
+                uptime: isOnline ? activeMap[lowerUser].uptime : 'Offline',
+                ipAddress: isOnline ? activeMap[lowerUser].address : (c.ipAddress || 'N/A'),
+                callerId: isOnline ? (activeMap[lowerUser].callerId || c.callerId) : (c.callerId || 'N/A')
             };
         });
 
         res.json({ success: true, customers: list });
     } catch (e) {
-        console.error('Customers API error:', e.message);
         res.json({ success: true, customers: [] });
     }
 });
 
-// আইপি পুল API
-app.get('/api/admin/pools', async (req, res) => {
+// কাস্টমার যোগ
+app.post('/api/admin/customers/add', async (req, res) => {
     try {
-        const pools = await executeSingleCommand(['/ip/pool/print']);
-        res.json({ success: true, pools: Array.isArray(pools) ? pools : [] });
-    } catch (e) {
-        res.json({ success: true, pools: [] });
-    }
-});
+        const { name, username, password, phone, address, profile, bill, expireDate } = req.body;
+        const customers = loadJSON(CUSTOMERS_FILE);
+        const exp = expireDate || addDaysToDate(null, 30);
 
-app.post('/api/admin/pools/add', async (req, res) => {
-    try {
-        const { name, ranges } = req.body;
-        if (!name || !ranges) return res.status(400).json({ success: false, message: 'Name and range required.' });
-        await executeSingleCommand(['/ip/pool/add', `=name=${name}`, `=ranges=${ranges}`]);
-        res.json({ success: true, message: 'IP Pool তৈরি সফল হয়েছে!' });
+        await executeSingleCommand([
+            '/ppp/secret/add',
+            `=name=${username}`,
+            `=password=${password}`,
+            `=service=pppoe`,
+            `=profile=${profile}`,
+            `=comment=Exp: ${exp}`
+        ]);
+
+        customers[username] = {
+            name: name || username,
+            username,
+            password,
+            phone: phone || '',
+            address: address || '',
+            profile,
+            bill: bill || 500,
+            status: 'active',
+            expireDate: exp
+        };
+
+        saveJSON(CUSTOMERS_FILE, customers);
+        res.json({ success: true, message: 'কাস্টমার সফলভাবে তৈরি হয়েছে!' });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
 });
 
-// কাস্টমার অ্যাকশন API
+// কাস্টমার এডিট ও আপডেট
+app.post('/api/admin/customers/update', async (req, res) => {
+    try {
+        const { username, name, phone, address, profile, bill, expireDate, password } = req.body;
+        const customers = loadJSON(CUSTOMERS_FILE);
+        if (!customers[username]) return res.status(404).json({ success: false, message: 'কাস্টমার পাওয়া যায়নি।' });
+
+        customers[username].name = name;
+        customers[username].phone = phone;
+        customers[username].address = address;
+        customers[username].profile = profile;
+        customers[username].bill = bill;
+        customers[username].expireDate = expireDate;
+        if (password) customers[username].password = password;
+
+        const cmd = [
+            '/ppp/secret/set',
+            `=numbers=${username}`,
+            `=profile=${profile}`,
+            `=comment=Exp: ${expireDate}`
+        ];
+        if (password) cmd.push(`=password=${password}`);
+        await executeSingleCommand(cmd);
+
+        saveJSON(CUSTOMERS_FILE, customers);
+        res.json({ success: true, message: 'কাস্টমার তথ্য আপডেট হয়েছে!' });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// কাস্টমার রিমুভ / ডিলিট
+app.post('/api/admin/customers/delete', async (req, res) => {
+    try {
+        const { username } = req.body;
+        const customers = loadJSON(CUSTOMERS_FILE);
+        delete customers[username];
+        saveJSON(CUSTOMERS_FILE, customers);
+
+        await executeSingleCommand(['/ppp/secret/remove', `?name=${username}`]);
+        await executeSingleCommand(['/ppp/active/remove', `?name=${username}`]);
+        res.json({ success: true, message: 'কাস্টমার সম্পূর্ণ মুছে ফেলা হয়েছে।' });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// কাস্টমার অ্যাকশন (রিনিউ, স্ট্যাটাস, নোটিশ)
 app.post('/api/admin/customers/action', async (req, res) => {
     try {
         const { username, action, days, status } = req.body;
         const customers = loadJSON(CUSTOMERS_FILE);
         const cust = customers[username];
-        if (!cust) return res.status(404).json({ success: false, message: 'Customer পাওয়া যায়নি।' });
+        if (!cust) return res.status(404).json({ success: false, message: 'গ্রাহক পাওয়া যায়নি।' });
 
         if (action === 'renew') {
             const addDays = parseInt(days, 10) || 30;
@@ -389,52 +625,39 @@ app.post('/api/admin/customers/action', async (req, res) => {
                 await executeSingleCommand(['/ppp/secret/set', `=numbers=${username}`, `=profile=${cust.profile === 'Expired_Profile' ? 'FZN 30 Mbps' : cust.profile}`, `=disabled=no`]);
             }
         } else if (action === 'send-notice') {
-            if (!cust.phone) return res.status(400).json({ success: false, message: 'Phone number নেই।' });
+            if (!cust.phone) return res.status(400).json({ success: false, message: 'ফোন নম্বর নেই।' });
             await sendGatewaySMS(cust.phone, `Prio Grahok (User: ${username}), apnar meyad shesh hoyeche. Shongjog chalu rakhte bill porishodh korun.`);
-            return res.json({ success: true, message: 'SMS notice পাঠানো হয়েছে!' });
+            return res.json({ success: true, message: 'এসএমএস নোটিশ পাঠানো হয়েছে!' });
         }
 
         saveJSON(CUSTOMERS_FILE, customers);
-        res.json({ success: true, message: 'Action সফল হয়েছে!' });
+        res.json({ success: true, message: 'অ্যাকশন সফল হয়েছে!' });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
 });
 
-// কাস্টমার যোগ API
-app.post('/api/admin/customers/add', async (req, res) => {
+// আইপি পুল
+app.get('/api/admin/pools', async (req, res) => {
     try {
-        const { name, username, password, phone, profile, bill, expireDate } = req.body;
-        const customers = loadJSON(CUSTOMERS_FILE);
-        const exp = expireDate || addDaysToDate(null, 30);
+        const pools = await executeSingleCommand(['/ip/pool/print']);
+        res.json({ success: true, pools: Array.isArray(pools) ? pools : [] });
+    } catch (e) {
+        res.json({ success: true, pools: [] });
+    }
+});
 
-        await executeSingleCommand([
-            '/ppp/secret/add',
-            `=name=${username}`,
-            `=password=${password}`,
-            `=service=pppoe`,
-            `=profile=${profile}`,
-            `=comment=Exp: ${exp}`
-        ]);
-
-        customers[username] = {
-            name: name || username,
-            username,
-            phone: phone || '',
-            profile,
-            bill: bill || 500,
-            status: 'active',
-            expireDate: exp
-        };
-
-        saveJSON(CUSTOMERS_FILE, customers);
-        res.json({ success: true, message: 'Customer যোগ করা হয়েছে!' });
+app.post('/api/admin/pools/add', async (req, res) => {
+    try {
+        const { name, ranges } = req.body;
+        if (!name || !ranges) return res.status(400).json({ success: false, message: 'নাম ও রেঞ্জ আবশ্যক।' });
+        await executeSingleCommand(['/ip/pool/add', `=name=${name}`, `=ranges=${ranges}`]);
+        res.json({ success: true, message: 'IP Pool তৈরি সফল হয়েছে!' });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
 });
 
-// সার্ভার লিসেনিং
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server listening on port ${PORT}`);
 });
