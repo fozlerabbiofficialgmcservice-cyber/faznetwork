@@ -3,93 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAZ NETWORK - Admin Dashboard</title>
+    <title>FAZ NETWORK - ISP Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        body {
-            background-color: #121927;
-            color: #f8fafc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .card {
-            background-color: #1a233a;
-            border: 1px solid #2d3748;
-            border-radius: 10px;
-        }
-        .table-dark {
-            background-color: #1a233a;
-        }
-        .table-dark th {
-            background-color: #242f49;
-            color: #94a3b8;
-            font-weight: 600;
-        }
-        .stat-card {
-            padding: 18px;
-            border-radius: 12px;
-            text-align: center;
-        }
-        .badge-active {
-            background-color: #10b981;
-            color: #fff;
-        }
-        .badge-inactive {
-            background-color: #ef4444;
-            color: #fff;
-        }
-        .loader-spinner {
-            display: inline-block;
-            width: 2rem;
-            height: 2rem;
-            vertical-align: text-bottom;
-            border: 0.25em solid currentColor;
-            border-right-color: transparent;
-            border-radius: 50%;
-            animation: spinner-border .75s linear infinite;
-        }
-        @keyframes spinner-border {
-            to { transform: rotate(360deg); }
-        }
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 10px; }
+        .table-dark { background-color: #1e293b; }
+        .table-dark th { background-color: #0f172a; color: #94a3b8; font-weight: 600; border-color: #334155; }
+        .table-dark td { border-color: #334155; }
+        .stat-card { padding: 16px; border-radius: 10px; }
+        .badge-active { background-color: #10b981; color: #fff; }
+        .badge-inactive { background-color: #ef4444; color: #fff; }
+        .form-control, .form-select { background-color: #0f172a; border-color: #334155; color: #fff; }
+        .form-control:focus, .form-select:focus { background-color: #0f172a; border-color: #3b82f6; color: #fff; box-shadow: none; }
     </style>
 </head>
 <body>
 
 <div class="container-fluid py-4">
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom border-secondary">
         <div>
-            <h3 class="fw-bold mb-0 text-white"><i class="bi bi-hdd-network text-success me-2"></i>FAZ NETWORK</h3>
-            <small class="text-secondary">ISP Subscriber Management Dashboard</small>
+            <h3 class="fw-bold mb-0 text-white"><i class="bi bi-router text-success me-2"></i>FAZ NETWORK</h3>
+            <small class="text-secondary">ISP Subscriber & Billing Management</small>
         </div>
-        <button class="btn btn-primary" onclick="loadDashboard()">
-            <i class="bi bi-arrow-clockwise me-1"></i> রিফ্রেশ
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-light btn-sm" onclick="loadDashboard()">
+                <i class="bi bi-arrow-clockwise me-1"></i> রিফ্রেশ
+            </button>
+        </div>
     </div>
 
     <!-- Stats Cards -->
     <div class="row g-3 mb-4">
         <div class="col-md-3 col-6">
-            <div class="card stat-card border-success">
+            <div class="card stat-card border-success text-center">
                 <small class="text-secondary d-block">অনলাইন ইউজার</small>
                 <h3 class="fw-bold text-success mb-0" id="onlineUsers">0</h3>
             </div>
         </div>
         <div class="col-md-3 col-6">
-            <div class="card stat-card border-warning">
+            <div class="card stat-card border-warning text-center">
                 <small class="text-secondary d-block">অফলাইন</small>
                 <h3 class="fw-bold text-warning mb-0" id="offlineUsers">0</h3>
             </div>
         </div>
         <div class="col-md-3 col-6">
-            <div class="card stat-card border-info">
+            <div class="card stat-card border-info text-center">
                 <small class="text-secondary d-block">মোট ইউজার</small>
                 <h3 class="fw-bold text-info mb-0" id="totalUsers">0</h3>
             </div>
         </div>
         <div class="col-md-3 col-6">
-            <div class="card stat-card border-danger">
+            <div class="card stat-card border-danger text-center">
                 <small class="text-secondary d-block">মেয়াদ উত্তীর্ণ / বাকি</small>
                 <h3 class="fw-bold text-danger mb-0" id="expiredUsers">0</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls: Search & Filters -->
+    <div class="card p-3 mb-3">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control" placeholder="ইউজারনেম, ফোন বা আইপি দিয়ে খুঁজুন..." oninput="filterData()">
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <select id="statusFilter" class="form-select" onchange="filterData()">
+                    <option value="all">সব স্ট্যাটাস</option>
+                    <option value="online">অনলাইন</option>
+                    <option value="offline">অফলাইন</option>
+                    <option value="expired">মেয়াদ উত্তীর্ণ</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-6">
+                <select id="packageFilter" class="form-select" onchange="filterData()">
+                    <option value="all">সব প্যাকেজ</option>
+                </select>
+            </div>
+            <div class="col-md-2 text-end">
+                <span class="badge bg-secondary py-2 px-3 w-100" id="totalFilteredCount">ইউজার: 0</span>
             </div>
         </div>
     </div>
@@ -112,114 +109,3 @@
                         </tr>
                     </thead>
                     <tbody id="customerTableBody">
-                        <tr>
-                            <td colspan="8" class="text-center py-5 text-warning" id="tableLoadingMsg">
-                                <span class="loader-spinner me-2"></span> ডাটা লোড হচ্ছে...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // Global variable define kora holo jate error na ashe
-    let rawCustomersList = [];
-
-    async function loadDashboard() {
-        const tableBody = document.getElementById('customerTableBody');
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="8" class="text-center py-5 text-warning">
-                    <span class="loader-spinner me-2"></span> ডাটা লোড হচ্ছে...
-                </td>
-            </tr>
-        `;
-
-        try {
-            // Backend API theke data fetch kora
-            const response = await fetch('/api/customers');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            rawCustomersList = Array.isArray(data) ? data : (data.customers || []);
-
-            renderDashboard(rawCustomersList);
-        } catch (error) {
-            console.error('Error fetching dashboard data:', error);
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="8" class="text-center py-4 text-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i> ডাটা লোড করতে সমস্যা হয়েছে: ${error.message}
-                    </td>
-                </tr>
-            `;
-        }
-    }
-
-    function renderDashboard(customers) {
-        const tableBody = document.getElementById('customerTableBody');
-        
-        let onlineCount = 0;
-        let offlineCount = 0;
-        let expiredCount = 0;
-
-        if (!customers || customers.length === 0) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="8" class="text-center py-4 text-secondary">
-                        কোনো কাস্টমার ডাটা পাওয়া যায়নি।
-                    </td>
-                </tr>
-            `;
-            updateStats(0, 0, 0, 0);
-            return;
-        }
-
-        let rowsHtml = '';
-        customers.forEach(customer => {
-            const isOnline = customer.status === 'online' || customer.online === true;
-            if (isOnline) onlineCount++; else offlineCount++;
-            if (customer.expired) expiredCount++;
-
-            rowsHtml += `
-                <tr>
-                    <td class="fw-bold">${customer.username || '-'}</td>
-                    <td>${customer.phone || '-'}</td>
-                    <td><span class="badge bg-secondary">${customer.package || '-'}</span></td>
-                    <td><code>${customer.mac || '-'}</code></td>
-                    <td>${customer.ip || '-'}</td>
-                    <td>${customer.expireDate || '-'}</td>
-                    <td>৳ ${customer.bill || 0}</td>
-                    <td>
-                        <span class="badge ${isOnline ? 'badge-active' : 'badge-inactive'}">
-                            ${isOnline ? 'অনলাইন' : 'অফলাইন'}
-                        </span>
-                    </td>
-                </tr>
-            `;
-        });
-
-        tableBody.innerHTML = rowsHtml;
-        updateStats(onlineCount, offlineCount, customers.length, expiredCount);
-    }
-
-    function updateStats(online, offline, total, expired) {
-        document.getElementById('onlineUsers').innerText = online;
-        document.getElementById('offlineUsers').innerText = offline;
-        document.getElementById('totalUsers').innerText = total;
-        document.getElementById('expiredUsers').innerText = expired;
-    }
-
-    // Page load hole shathe shathe call hobe
-    document.addEventListener('DOMContentLoaded', () => {
-        loadDashboard();
-    });
-</script>
-</body>
-</html>
