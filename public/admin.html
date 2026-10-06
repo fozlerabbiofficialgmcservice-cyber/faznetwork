@@ -121,7 +121,6 @@
             padding: 24px;
         }
 
-        /* Form Card Custom Styling */
         .card-custom {
             border: none;
             border-radius: 10px;
@@ -165,6 +164,13 @@
             border-color: var(--accent-color);
             box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.15);
         }
+
+        .content-panel {
+            display: none;
+        }
+        .content-panel.active {
+            display: block;
+        }
         
         @media (max-width: 768px) {
             .sidebar { left: calc(-1 * var(--sidebar-width)); }
@@ -184,7 +190,7 @@
             </button>
         </div>
 
-        <!-- Language Switcher (Default: English USA) -->
+        <!-- Language Switcher -->
         <div class="lang-switcher">
             <i class="bi bi-translate"></i>
             <select id="langSelect">
@@ -196,7 +202,7 @@
         <ul class="sidebar-menu">
             <!-- Dashboard -->
             <li class="menu-item">
-                <a href="/dashboard">
+                <a href="javascript:void(0)" onclick="navigateTo('dashboardView')">
                     <i class="bi bi-speedometer2"></i> <span data-key="dashboard">Dashboard</span>
                 </a>
             </li>
@@ -208,17 +214,17 @@
                     <i class="bi bi-chevron-down ms-auto arrow-icon bi-chevron-up"></i>
                 </button>
                 <ul class="submenu show">
-                    <li><a href="/customers/all" data-key="all_customer">All Customer</a></li>
-                    <li><a href="/customers/add" class="active text-white" data-key="add_customer">Add Customer</a></li>
-                    <li><a href="/customers/online" data-key="online_customer">Online Customer</a></li>
-                    <li><a href="/customers/offline" data-key="offline_customer">Offline Customer</a></li>
-                    <li><a href="/customers/active" data-key="active_customer">Active Customer</a></li>
-                    <li><a href="/customers/left" data-key="left_customer">Left Customer</a></li>
-                    <li><a href="/customers/expire" data-key="expire_customer">Expire Customer</a></li>
-                    <li><a href="/customers/expire-today-yesterday" data-key="expire_today_yesterday">Expire Today & Yesterday</a></li>
-                    <li><a href="/customers/expire-7-days" data-key="expire_7_days">Expire in 7 Days</a></li>
-                    <li><a href="/customers/new" data-key="new_customer">New Customer</a></li>
-                    <li><a href="/customers/due-collection" data-key="due_collection">Due Collection</a></li>
+                    <li><a href="javascript:void(0)" id="linkAllCust" onclick="navigateTo('allCustomersView')" data-key="all_customer">All Customer</a></li>
+                    <li><a href="javascript:void(0)" id="linkAddCust" class="active text-white" onclick="navigateTo('addCustomerView')" data-key="add_customer">Add Customer</a></li>
+                    <li><a href="javascript:void(0)" data-key="online_customer">Online Customer</a></li>
+                    <li><a href="javascript:void(0)" data-key="offline_customer">Offline Customer</a></li>
+                    <li><a href="javascript:void(0)" data-key="active_customer">Active Customer</a></li>
+                    <li><a href="javascript:void(0)" data-key="left_customer">Left Customer</a></li>
+                    <li><a href="javascript:void(0)" data-key="expire_customer">Expire Customer</a></li>
+                    <li><a href="javascript:void(0)" data-key="expire_today_yesterday">Expire Today & Yesterday</a></li>
+                    <li><a href="javascript:void(0)" data-key="expire_7_days">Expire in 7 Days</a></li>
+                    <li><a href="javascript:void(0)" data-key="new_customer">New Customer</a></li>
+                    <li><a href="javascript:void(0)" data-key="due_collection">Due Collection</a></li>
                 </ul>
             </li>
 
@@ -229,9 +235,9 @@
                     <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/report/collection-due" data-key="monthly_collection_due">Monthly Collection & Due</a></li>
-                    <li><a href="/report/sales" data-key="monthly_sales">Monthly Sales</a></li>
-                    <li><a href="/report/invoice" data-key="invoice_report">Invoice Report</a></li>
+                    <li><a href="javascript:void(0)" data-key="monthly_collection_due">Monthly Collection & Due</a></li>
+                    <li><a href="javascript:void(0)" data-key="monthly_sales">Monthly Sales</a></li>
+                    <li><a href="javascript:void(0)" data-key="invoice_report">Invoice Report</a></li>
                 </ul>
             </li>
 
@@ -242,12 +248,12 @@
                     <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/payments/pending-invoice" data-key="pending_invoice">Pending Invoice</a></li>
-                    <li><a href="/payments/all" data-key="all_payments">All Payments</a></li>
-                    <li><a href="/payments/request" data-key="payment_request">Payment Request</a></li>
-                    <li><a href="/payments/bkash" data-key="bkash_payments">bKash Payments</a></li>
-                    <li><a href="/payments/nagad" data-key="nagad_payments">Nagad Payments</a></li>
-                    <li><a href="/payments/rocket" data-key="rocket_payments">Rocket Payments</a></li>
+                    <li><a href="javascript:void(0)" data-key="pending_invoice">Pending Invoice</a></li>
+                    <li><a href="javascript:void(0)" data-key="all_payments">All Payments</a></li>
+                    <li><a href="javascript:void(0)" data-key="payment_request">Payment Request</a></li>
+                    <li><a href="javascript:void(0)" data-key="bkash_payments">bKash Payments</a></li>
+                    <li><a href="javascript:void(0)" data-key="nagad_payments">Nagad Payments</a></li>
+                    <li><a href="javascript:void(0)" data-key="rocket_payments">Rocket Payments</a></li>
                 </ul>
             </li>
 
@@ -258,12 +264,12 @@
                     <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/hotspot/dashboard" data-key="hotspot_dashboard">Dashboard</a></li>
-                    <li><a href="/hotspot/all-user" data-key="all_user">All Users</a></li>
-                    <li><a href="/hotspot/active-user" data-key="active_user">Active Users</a></li>
-                    <li><a href="/hotspot/online-user" data-key="online_user">Online Users</a></li>
-                    <li><a href="/hotspot/profile" data-key="hotspot_profile">Profile</a></li>
-                    <li><a href="/hotspot/server-profile" data-key="server_profile">Server Profile</a></li>
+                    <li><a href="javascript:void(0)" data-key="hotspot_dashboard">Dashboard</a></li>
+                    <li><a href="javascript:void(0)" data-key="all_user">All Users</a></li>
+                    <li><a href="javascript:void(0)" data-key="active_user">Active Users</a></li>
+                    <li><a href="javascript:void(0)" data-key="online_user">Online Users</a></li>
+                    <li><a href="javascript:void(0)" data-key="hotspot_profile">Profile</a></li>
+                    <li><a href="javascript:void(0)" data-key="server_profile">Server Profile</a></li>
                 </ul>
             </li>
 
@@ -274,21 +280,11 @@
                     <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/core/pppoe" data-key="pppoe">PPPoE</a></li>
-                    <li><a href="/core/devices" data-key="devices">Devices</a></li>
-                    <li><a href="/core/plan-packages" data-key="plan_package">Plan & Packages</a></li>
-                    <li><a href="/core/ip-pools" data-key="ip_pools">IP Pools</a></li>
-                    <li><a href="/core/olt" data-key="olt_management">OLT Management</a></li>
-                    <li>
-                        <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
-                            <span data-key="monitor">Monitor</span> <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
-                        </button>
-                        <ul class="submenu">
-                            <li><a href="/core/monitor/usage" data-key="usage">Usage</a></li>
-                            <li><a href="/core/monitor/online" data-key="online">Online</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="/core/diagram" data-key="network_diagram">Network Diagram</a></li>
+                    <li><a href="javascript:void(0)" data-key="pppoe">PPPoE</a></li>
+                    <li><a href="javascript:void(0)" data-key="devices">Devices</a></li>
+                    <li><a href="javascript:void(0)" data-key="plan_package">Plan & Packages</a></li>
+                    <li><a href="javascript:void(0)" data-key="ip_pools">IP Pools</a></li>
+                    <li><a href="javascript:void(0)" data-key="olt_management">OLT Management</a></li>
                 </ul>
             </li>
 
@@ -299,91 +295,9 @@
                     <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
                 </button>
                 <ul class="submenu">
-                    <li><a href="/settings/website" data-key="website_setting">Website Setting</a></li>
-                    <li><a href="/settings/sms" data-key="sms_setting">SMS Setting</a></li>
-                    <li><a href="/settings/backup" data-key="backup_restore">Backup & Restore</a></li>
-                </ul>
-            </li>
-
-            <!-- VPN Server -->
-            <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
-                    <i class="bi bi-shield-lock"></i> <span data-key="vpn_server">VPN Server</span>
-                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
-                </button>
-                <ul class="submenu">
-                    <li><a href="/vpn/list" data-key="vpn">VPN</a></li>
-                    <li><a href="/vpn/port-forwarding" data-key="vpn_port_forwarding">VPN Port Forwarding</a></li>
-                </ul>
-            </li>
-
-            <!-- Account & Support -->
-            <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
-                    <i class="bi bi-headset"></i> <span data-key="account_support">Account & Support</span>
-                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
-                </button>
-                <ul class="submenu">
-                    <li><a href="/support/dashboard" data-key="support_dashboard">Dashboard</a></li>
-                    <li><a href="/support/manage" data-key="support_manage">Manage</a></li>
-                    <li>
-                        <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
-                            <span data-key="support">Support</span> <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
-                        </button>
-                        <ul class="submenu">
-                            <li><a href="/support/tickets" data-key="support_tickets">Support Tickets</a></li>
-                            <li><a href="/support/software" data-key="software_support_tickets">Software Support Tickets</a></li>
-                            <li><a href="/support/website" data-key="website_support_tickets">Website Support Tickets</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </li>
-
-            <!-- Expenses -->
-            <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
-                    <i class="bi bi-wallet2"></i> <span data-key="expenses">Expenses</span>
-                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
-                </button>
-                <ul class="submenu">
-                    <li><a href="/expenses/add" data-key="add_expenses">Add Expenses</a></li>
-                    <li><a href="/expenses/all" data-key="all_expenses">All Expenses</a></li>
-                    <li><a href="/expenses/report" data-key="expenses_report">Expenses Report</a></li>
-                </ul>
-            </li>
-
-            <!-- Human Resource -->
-            <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
-                    <i class="bi bi-person-badge"></i> <span data-key="human_resource">Human Resource</span>
-                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
-                </button>
-                <ul class="submenu">
-                    <li><a href="/hr/department" data-key="department">Department</a></li>
-                    <li><a href="/hr/employees" data-key="all_employee">All Employees</a></li>
-                    <li><a href="/hr/add-employee" data-key="added_employee">Added Employees</a></li>
-                </ul>
-            </li>
-
-            <!-- Live Tracking -->
-            <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
-                    <i class="bi bi-geo-alt"></i> <span data-key="live_tracking">Live Tracking</span>
-                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
-                </button>
-                <ul class="submenu">
-                    <li><a href="/tracking/google-map" data-key="google_map">Google Map</a></li>
-                </ul>
-            </li>
-
-            <!-- User & Reseller -->
-            <li class="menu-item">
-                <button class="dropdown-toggle" onclick="toggleSubmenu(event, this)">
-                    <i class="bi bi-person-plus"></i> <span data-key="user_reseller">User & Reseller</span>
-                    <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
-                </button>
-                <ul class="submenu">
-                    <li><a href="/user-reseller/sub-staff" data-key="sub_staff">Sub-Staff</a></li>
+                    <li><a href="javascript:void(0)" data-key="website_setting">Website Setting</a></li>
+                    <li><a href="javascript:void(0)" data-key="sms_setting">SMS Setting</a></li>
+                    <li><a href="javascript:void(0)" data-key="backup_restore">Backup & Restore</a></li>
                 </ul>
             </li>
         </ul>
@@ -397,7 +311,7 @@
                 <button class="btn btn-outline-success d-md-none" onclick="toggleSidebar()">
                     <i class="bi bi-list"></i>
                 </button>
-                <span class="fs-5 fw-semibold text-secondary d-none d-md-block" data-key="customer_management">Customer Management</span>
+                <span class="fs-5 fw-semibold text-secondary d-none d-md-block" id="pageTitleText" data-key="customer_management">Customer Management</span>
                 <div class="ms-auto d-flex gap-2">
                     <button class="btn btn-outline-dark" id="mikrotikToggle">
                         <i class="bi bi-router"></i> MikroTik
@@ -406,8 +320,8 @@
             </div>
         </nav>
         
-        <!-- Add Customer Form Section -->
-        <div class="container-fluid p-0">
+        <!-- View 1: Add Customer Form Section -->
+        <div class="container-fluid p-0 content-panel active" id="addCustomerView">
             <div class="card card-custom">
                 <div class="card-custom-header">
                     <i class="bi bi-person-plus-fill text-success fs-5"></i>
@@ -477,31 +391,38 @@
                                 </div>
                             </div>
 
-                            <!-- Package Selection -->
+                            <!-- Package Selection (Dynamically Loaded from Router) -->
                             <div class="col-md-6">
                                 <label for="packageSelect" class="form-label" data-key="label_package">Package Selection *</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light"><i class="bi bi-speedometer"></i></span>
                                     <select class="form-select" id="packageSelect" required>
-                                        <option value="" disabled selected data-key="opt_select_package">Select Internet Plan</option>
-                                        <option value="pkg_10mbps">Standard - 10 Mbps</option>
-                                        <option value="pkg_20mbps">Premium - 20 Mbps</option>
-                                        <option value="pkg_30mbps">Ultra - 30 Mbps</option>
+                                        <option value="" disabled selected data-key="opt_select_package">Loading Packages...</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <!-- Billing Duration -->
+                            <!-- Billing Duration with Custom Option -->
                             <div class="col-md-6">
                                 <label for="billingDuration" class="form-label" data-key="label_billing_duration">Billing Duration *</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light"><i class="bi bi-calendar-event"></i></span>
-                                    <select class="form-select" id="billingDuration" required>
-                                        <option value="1_month" selected data-key="opt_1_month">1 Month (30 Days)</option>
+                                    <select class="form-select" id="billingDuration" required onchange="handleDurationChange(this.value)">
+                                        <option value="1_month" selected data-key="opt_1_month">1 Month (Monthly)</option>
                                         <option value="3_months" data-key="opt_3_months">3 Months</option>
                                         <option value="6_months" data-key="opt_6_months">6 Months</option>
-                                        <option value="1_year" data-key="opt_1_year">1 Year</option>
+                                        <option value="12_months" data-key="opt_1_year">1 Year</option>
+                                        <option value="custom" data-key="opt_custom_date">Custom Expiry Date</option>
                                     </select>
+                                </div>
+                            </div>
+
+                            <!-- Custom Date Selection (Hidden by Default) -->
+                            <div class="col-md-6" id="customDateContainer" style="display: none;">
+                                <label for="customExpiryDate" class="form-label" data-key="label_custom_date">Select Custom Expiry Date *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-calendar-check"></i></span>
+                                    <input type="date" class="form-control" id="customExpiryDate">
                                 </div>
                             </div>
 
@@ -526,7 +447,7 @@
                             <!-- Submit Buttons -->
                             <div class="col-12 mt-4 pt-2 border-top d-flex justify-content-end gap-2">
                                 <button type="reset" class="btn btn-light border px-4" data-key="btn_reset">Reset</button>
-                                <button type="submit" class="btn btn-theme px-4" data-key="btn_save_customer">
+                                <button type="submit" class="btn btn-theme px-4" id="submitBtn" data-key="btn_save_customer">
                                     <i class="bi bi-check2-circle me-1"></i> Save Customer
                                 </button>
                             </div>
@@ -535,6 +456,43 @@
                 </div>
             </div>
         </div>
+
+        <!-- View 2: All Customers List Section -->
+        <div class="container-fluid p-0 content-panel" id="allCustomersView">
+            <div class="card card-custom">
+                <div class="card-custom-header justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-people-fill text-success fs-5"></i>
+                        <span class="fs-5" data-key="all_customer_title">PPPoE Customers List</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-success" onclick="fetchCustomers()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body p-3">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Package</th>
+                                    <th>Expiry Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">লোড হচ্ছে...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -579,40 +537,15 @@
                 'ip_pools': 'IP Pools',
                 'devices': 'Devices',
                 'olt_management': 'OLT Management',
-                'monitor': 'Monitor',
-                'usage': 'Usage',
-                'online': 'Online',
-                'network_diagram': 'Network Diagram',
                 'general_setting': 'General Setting',
                 'website_setting': 'Website Setting',
                 'sms_setting': 'SMS Setting',
                 'backup_restore': 'Backup & Restore',
-                'vpn_server': 'VPN Server',
-                'vpn': 'VPN',
-                'vpn_port_forwarding': 'VPN Port Forwarding',
-                'account_support': 'Account & Support',
-                'support_dashboard': 'Dashboard',
-                'support_manage': 'Manage',
-                'support': 'Support',
-                'support_tickets': 'Support Tickets',
-                'software_support_tickets': 'Software Support Tickets',
-                'website_support_tickets': 'Website Support Tickets',
-                'expenses': 'Expenses',
-                'add_expenses': 'Add Expenses',
-                'all_expenses': 'All Expenses',
-                'expenses_report': 'Expenses Report',
-                'human_resource': 'Human Resource',
-                'department': 'Department',
-                'all_employee': 'All Employees',
-                'added_employee': 'Added Employees',
-                'live_tracking': 'Live Tracking',
-                'google_map': 'Google Map',
-                'user_reseller': 'User & Reseller',
-                'sub_staff': 'Sub-Staff',
                 
-                // Add Customer Form
+                // Form Keys
                 'customer_management': 'Customer Management',
                 'add_new_customer': 'Add New Customer',
+                'all_customer_title': 'PPPoE Customers List',
                 'label_fullname': 'Full Name *',
                 'label_phone': 'Phone Number *',
                 'label_device': 'Device (Router / NAS) *',
@@ -621,14 +554,16 @@
                 'label_password': 'Password *',
                 'label_package': 'Package Selection *',
                 'label_billing_duration': 'Billing Duration *',
+                'label_custom_date': 'Select Custom Expiry Date *',
                 'label_nid_passport': 'NID / Passport Information',
                 'label_address': 'Full Address *',
                 'opt_select_device': 'Select MikroTik / Router',
                 'opt_select_package': 'Select Internet Plan',
-                'opt_1_month': '1 Month (30 Days)',
+                'opt_1_month': '1 Month (Monthly)',
                 'opt_3_months': '3 Months',
                 'opt_6_months': '6 Months',
                 'opt_1_year': '1 Year',
+                'opt_custom_date': 'Custom Expiry Date',
                 'btn_reset': 'Reset',
                 'btn_save_customer': 'Save Customer',
                 'ph_fullname': 'e.g. John Doe',
@@ -677,40 +612,15 @@
                 'plan_package': 'প্ল্যান অ্যান্ড প্যাকেজ',
                 'ip_pools': 'আইপি পুলস',
                 'olt_management': 'ও এল টি ম্যানেজমেন্ট',
-                'monitor': 'মনিটর',
-                'usage': 'ইউজেস',
-                'online': 'অনলাইন',
-                'network_diagram': 'নেটওয়ার্ক ডায়াগ্রাম',
                 'general_setting': 'জেনারেল সেটিং',
                 'website_setting': 'ওয়েবসাইট সেটিং',
                 'sms_setting': 'এসএমএস সেটিং',
                 'backup_restore': 'ব্যাকআপ অ্যান্ড রিস্টোর',
-                'vpn_server': 'ভিপিএন সার্ভার',
-                'vpn': 'ভিপিএন',
-                'vpn_port_forwarding': 'ভিপিএন পোর্ট ফরওয়ার্ডিং',
-                'account_support': 'অ্যাকাউন্ট অ্যান্ড সাপোর্ট',
-                'support_dashboard': 'ড্যাশবোর্ড',
-                'support_manage': 'ম্যানেজ',
-                'support': 'সাপোর্ট',
-                'support_tickets': 'সাপোর্ট টিকিটস',
-                'software_support_tickets': 'সফটওয়্যার সাপোর্ট টিকিটস',
-                'website_support_tickets': 'ওয়েবসাইট সাপোর্ট টিকিটস',
-                'expenses': 'এক্সপেন্সেস',
-                'add_expenses': 'অ্যাড এক্সপেন্সেস',
-                'all_expenses': 'অল এক্সপেন্সেস',
-                'expenses_report': 'এক্সপেন্সেস রিপোর্ট',
-                'human_resource': 'হিউম্যান রিসোর্স',
-                'department': 'ডিপার্টমেন্ট',
-                'all_employee': 'অল এমপ্লয়ি',
-                'added_employee': 'অ্যাডড এমপ্লয়ি',
-                'live_tracking': 'লাইভ ট্র্যাকিং',
-                'google_map': 'গুগল ম্যাপ',
-                'user_reseller': 'ইউজার অ্যান্ড রিসেলার',
-                'sub_staff': 'সাব-স্টাফ',
                 
-                // Add Customer Form
+                // Form Keys
                 'customer_management': 'কাস্টমার ম্যানেজমেন্ট',
                 'add_new_customer': 'নতুন কাস্টমার যুক্ত করুন',
+                'all_customer_title': 'পিপিপিওই কাস্টমার তালিকা',
                 'label_fullname': 'পূর্ণ নাম *',
                 'label_phone': 'ফোন নম্বর *',
                 'label_device': 'ডিভাইস (রাউটার / ন্যাস) *',
@@ -719,14 +629,16 @@
                 'label_password': 'পাসওয়ার্ড *',
                 'label_package': 'প্যাকেজ নির্বাচন *',
                 'label_billing_duration': 'বিলিং মেয়াদ *',
+                'label_custom_date': 'ম্যানুয়াল এক্সপায়ারি তারিখ *',
                 'label_nid_passport': 'এনআইডি / পাসপোর্ট তথ্য',
                 'label_address': 'সম্পূর্ণ ঠিকানা *',
                 'opt_select_device': 'মাইক্রোটিক / রাউটার বেছে নিন',
                 'opt_select_package': 'ইন্টারনেট প্ল্যান নির্বাচন করুন',
-                'opt_1_month': '১ মাস (৩০ দিন)',
+                'opt_1_month': '১ মাস (মান্থলি)',
                 'opt_3_months': '৩ মাস',
                 'opt_6_months': '৬ মাস',
                 'opt_1_year': '১ বছর',
+                'opt_custom_date': 'ম্যানুয়াল তারিখ (Custom)',
                 'btn_reset': 'রিসেট',
                 'btn_save_customer': 'সংরক্ষণ করুন',
                 'ph_fullname': 'যেমন: মোঃ ফজল রাব্বি',
@@ -734,7 +646,7 @@
                 'ph_username': 'pppoe_user',
                 'ph_password': '••••••••',
                 'ph_nid_passport': 'এনআইডি বা পাসপোর্ট নম্বর লিখুন',
-                'ph_address': 'বাড়ি, রোড, এলাকা, জেলা'
+                'ph_address': 'বাড়ি, রোড, এলাকা, জেলা'
             }
         };
 
@@ -762,10 +674,47 @@
             }
         }
 
+        // SPA Navigation Handler
+        function navigateTo(viewId) {
+            document.querySelectorAll('.content-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+
+            const target = document.getElementById(viewId);
+            if (target) target.classList.add('active');
+
+            const linkAll = document.getElementById('linkAllCust');
+            const linkAdd = document.getElementById('linkAddCust');
+            if (viewId === 'allCustomersView') {
+                linkAll.classList.add('active', 'text-white');
+                linkAdd.classList.remove('active', 'text-white');
+                fetchCustomers();
+            } else if (viewId === 'addCustomerView') {
+                linkAdd.classList.add('active', 'text-white');
+                linkAll.classList.remove('active', 'text-white');
+                loadPackages();
+            }
+
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('show');
+            }
+        }
+
+        function handleDurationChange(val) {
+            const container = document.getElementById('customDateContainer');
+            const dateInput = document.getElementById('customExpiryDate');
+            if (val === 'custom') {
+                container.style.display = 'block';
+                dateInput.setAttribute('required', 'required');
+            } else {
+                container.style.display = 'none';
+                dateInput.removeAttribute('required');
+            }
+        }
+
         function updateLanguage(lang) {
             document.documentElement.lang = lang;
             
-            // Translate text content
             document.querySelectorAll('[data-key]').forEach(el => {
                 const key = el.getAttribute('data-key');
                 if (translations[lang] && translations[lang][key]) {
@@ -773,7 +722,6 @@
                 }
             });
 
-            // Translate placeholders
             document.querySelectorAll('[data-placeholder-key]').forEach(el => {
                 const key = el.getAttribute('data-placeholder-key');
                 if (translations[lang] && translations[lang][key]) {
@@ -793,37 +741,120 @@
             updateLanguage(this.value);
         });
 
-        // Form submission handler
-        document.getElementById('addCustomerForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Customer form submitted successfully! (Backend integration pending)');
-        });
-async function loadPackages() {
-    try {
-        const response = await fetch('/api/packages');
-        const data = await response.json();
-        const packageSelect = document.getElementById('packageSelect'); // আপনার ফর্মের প্যাকেজ সিলেক্ট আইডি
-        
-        if (packageSelect && data.success && data.packages) {
-            packageSelect.innerHTML = '<option value="" disabled selected>প্যাকেজ নির্বাচন করুন</option>';
-            data.packages.forEach(pkg => {
-                const opt = document.createElement('option');
-                opt.value = pkg;
-                opt.textContent = pkg;
-                packageSelect.appendChild(opt);
-            });
+        // 1. Load MikroTik PPPoE Profiles Dynamically
+        async function loadPackages() {
+            const packageSelect = document.getElementById('packageSelect');
+            try {
+                const response = await fetch('/api/packages');
+                const data = await response.json();
+                
+                if (packageSelect && data.success && data.packages) {
+                    const currentLang = localStorage.getItem('faz_preferred_lang') || 'en';
+                    const defaultMsg = currentLang === 'bn' ? 'ইন্টারনেট প্ল্যান নির্বাচন করুন' : 'Select Internet Plan';
+                    
+                    packageSelect.innerHTML = `<option value="" disabled selected>${defaultMsg}</option>`;
+                    data.packages.forEach(pkg => {
+                        const opt = document.createElement('option');
+                        opt.value = pkg;
+                        opt.textContent = pkg;
+                        packageSelect.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error('প্যাকেজ লোড করতে ত্রুটি:', err);
+                packageSelect.innerHTML = '<option value="" disabled selected>Error loading packages</option>';
+            }
         }
-    } catch (err) {
-        console.error('প্যাকেজ লোড করতে ত্রুটি:', err);
-    }
-}
 
-// পেজ লোড হলে স্বয়ংক্রিয়ভাবে প্যাকেজ লোড হবে
-window.addEventListener('DOMContentLoaded', loadPackages);
+        // 2. Fetch and Display All PPPoE Customers
+        async function fetchCustomers() {
+            const tableBody = document.getElementById('customersTableBody');
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-success me-2"></div>লোড হচ্ছে...</td></tr>';
+            
+            try {
+                const response = await fetch('/api/customers');
+                const data = await response.json();
 
+                if (!Array.isArray(data) || data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">কোনো কাস্টমার পাওয়া যায়নি।</td></tr>';
+                    return;
+                }
 
+                tableBody.innerHTML = '';
+                data.forEach(user => {
+                    const statusBadge = user.status === 'Active' 
+                        ? '<span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>'
+                        : '<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Disabled</span>';
+                    
+                    const row = `
+                        <tr>
+                            <td class="fw-semibold text-dark"><i class="bi bi-person-circle me-1 text-secondary"></i>${user.username}</td>
+                            <td>${user.name || '-'}</td>
+                            <td>${user.phone || '-'}</td>
+                            <td><span class="badge bg-info-subtle text-info-emphasis border">${user.package || 'Default'}</span></td>
+                            <td><small class="text-muted"><i class="bi bi-calendar-check me-1"></i>${user.expiryDate || 'N/A'}</small></td>
+                            <td>${statusBadge}</td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            } catch (err) {
+                console.error('কাস্টমার লোড ত্রুটি:', err);
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">তথ্য লোড করতে সমস্যা হয়েছে। সার্ভার স্ট্যাটাস চেক করুন।</td></tr>';
+            }
+        }
 
-        
+        // 3. Form Submission (Send to Router & Local DB)
+        document.getElementById('addCustomerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+            const payload = {
+                fullName: document.getElementById('fullName').value.trim(),
+                phoneNumber: document.getElementById('phoneNumber').value.trim(),
+                device: document.getElementById('device').value,
+                connectionType: document.getElementById('connectionType').value,
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value.trim(),
+                package: document.getElementById('packageSelect').value,
+                billingDuration: document.getElementById('billingDuration').value,
+                customExpiryDate: document.getElementById('customExpiryDate').value,
+                nidPassport: document.getElementById('nidPassport').value.trim(),
+                fullAddress: document.getElementById('fullAddress').value.trim()
+            };
+
+            try {
+                const res = await fetch('/api/customers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    alert('কাস্টমার সফলভাবে মাইক্রোটিকে যুক্ত হয়েছে! মেয়াদ: ' + (result.expiryDate || ''));
+                    document.getElementById('addCustomerForm').reset();
+                    handleDurationChange('1_month');
+                    navigateTo('allCustomersView');
+                } else {
+                    alert('ব্যর্থ হয়েছে: ' + (result.message || 'Unknown Error'));
+                }
+            } catch (err) {
+                alert('সার্ভার রিকোয়েস্ট ব্যর্থ হয়েছে: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+
+        // Initialize on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPackages();
+        });
     </script>
 </body>
 </html>
