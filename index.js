@@ -4,18 +4,18 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 
-process.on('uncaughtException', function (err) {
-    console.error('[UNCAUGHT EXCEPTION SAFEGUARD]:', err.message);
+process.on('uncaughtException', (err) => {
+    console.error('[UNCAUGHT EXCEPTION]:', err.message);
 });
 
-process.on('unhandledRejection', function (reason) {
-    console.error('[UNHANDLED REJECTION SAFEGUARD]:', reason);
+process.on('unhandledRejection', (reason) => {
+    console.error('[UNHANDLED REJECTION]:', reason);
 });
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-app.use(function (req, res, next) {
+app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -28,29 +28,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-// রেট লিমিটার
-const requestTracker = {};
-function rateLimiter(req, res, next) {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-    const now = Date.now();
-    if (!requestTracker[ip]) {
-        requestTracker[ip] = { count: 1, resetTime: now + 60000 };
-    } else {
-        if (now > requestTracker[ip].resetTime) {
-            requestTracker[ip] = { count: 1, resetTime: now + 60000 };
-        } else {
-            requestTracker[ip].count++;
-            if (requestTracker[ip].count > 10) {
-                return res.status(429).json({
-                    success: false,
-                    message: 'অতিরিক্ত চেষ্টা করা হয়েছে। অনুগ্রহ করে ১ মিনিট পর আবার চেষ্টা করুন।'
-                });
-            }
-        }
-    }
-    next();
-}
-
 // মাইক্রোটিক কনফিগ
 const MIKROTIK_HOST = process.env.MIKROTIK_HOST || '103.54.37.182';
 const MIKROTIK_PORT = parseInt(process.env.MIKROTIK_PORT, 10) || 1126;
@@ -61,7 +38,7 @@ const MIKROTIK_PASS = process.env.MIKROTIK_PASSWORD || '66778';
 const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'http://10.71.0.7:8080/send-sms';
 const SMS_GATEWAY_TOKEN = process.env.SMS_GATEWAY_TOKEN || 'Bearer faz_secure_token_2026';
 
-// ফাইল স্টোরেজ
+// ফাইল পাথ
 const DB_FILE = path.join(__dirname, 'transactions.json');
 const CUSTOMERS_FILE = path.join(__dirname, 'customers.json');
 
@@ -91,11 +68,11 @@ function saveJSON(filePath, data) {
     try {
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
     } catch (e) {
-        console.error('Error saving ' + filePath + ':', e.message);
+        console.error('Save error:', e.message);
     }
 }
 
-// =================== MikroTik Binary Socket API ===================
+// MikroTik Binary API
 function encodeLength(len) {
     if (len < 0x80) return Buffer.from([len]);
     if (len < 0x4000) return Buffer.from([(len >> 8) | 0x80, len & 0xFF]);
@@ -123,7 +100,7 @@ function executeSingleCommand(cmdWords) {
                 client.destroy();
                 resolve(results);
             }
-        }, 8000);
+        }, 5000);
 
         client.connect(MIKROTIK_PORT, MIKROTIK_HOST, () => {
             const loginReq = Buffer.concat([
@@ -154,9 +131,7 @@ function executeSingleCommand(cmdWords) {
                         currentItem = {};
                     } else if (line.startsWith('=')) {
                         const parts = line.slice(1).split('=');
-                        const key = parts[0];
-                        const val = parts.slice(1).join('=');
-                        currentItem[key] = val;
+                        currentItem[parts[0]] = parts.slice(1).join('=');
                     } else if (line.includes('!done') || line.includes('!trap')) {
                         if (Object.keys(currentItem).length > 0) results.push(currentItem);
                         if (!finished) {
@@ -170,8 +145,7 @@ function executeSingleCommand(cmdWords) {
             }
         });
 
-        client.on('error', (err) => {
-            console.error('[ROUTER SOCKET ERROR]:', err.message);
+        client.on('error', () => {
             if (!finished) {
                 finished = true;
                 clearTimeout(timer);
@@ -190,7 +164,6 @@ function executeSingleCommand(cmdWords) {
     });
 }
 
-// SMS Gateway Helper
 async function sendGatewaySMS(toPhone, message) {
     if (!toPhone || toPhone.length < 11) return;
     try {
@@ -201,13 +174,11 @@ async function sendGatewaySMS(toPhone, message) {
             },
             timeout: 5000
         });
-        console.log('[SMS SENT] To: ' + toPhone);
     } catch (err) {
-        console.error('[SMS GATEWAY ERROR]:', err.message);
+        console.error('SMS Error:', err.message);
     }
 }
 
-// Carry forward date
 function addDaysToDate(baseDateStr, daysToAdd) {
     let base = new Date();
     if (baseDateStr) {
@@ -218,41 +189,58 @@ function addDaysToDate(baseDateStr, daysToAdd) {
     return base.toISOString().split('T')[0];
 }
 
-// হটস্পট ফাংশনসমূহ
-async function ensureUser(username, comment = '') {
-    const cmd = ['/user-manager/user/add', '=name=' + username, '=password=' + username, '=group=Hotspot'];
-    if (comment) cmd.push('=comment=' + comment);
-    await executeSingleCommand(cmd);
-}
-
-async function attachProfile(username, profileName) {
-    const cmd = ['/user-manager/user-profile/add', '=user=' + username, '=profile=' + profileName];
-    return await executeSingleCommand(cmd);
-}
-
-async function updateUserComment(username, comment) {
-    const cmd = ['/user-manager/user/set', '=numbers=' + username, '=comment=' + comment];
-    await executeSingleCommand(cmd);
-}
-
-// ========================= API ROUTES =========================
+// ----------------- ROUTES -----------------
 
 app.get('/', (req, res) => {
-    return res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
-// হটস্পট ভেরিফিকেশন API
-app.post('/api/verify-trx', rateLimiter, async (req, res) => {
+// কাস্টমার তালিকা (মাইক্রোটিক + লোকাল ক্যাশ)
+app.get('/api/admin/customers', async (req, res) => {
     try {
-        const { username, trxId } = req.body;
-        if (!username || !trxId) return res.status(400).json({ success: false, message: 'ইউজার আইডি ও TrxID দিন।' });
+        let customers = loadJSON(CUSTOMERS_FILE);
+        if (typeof customers !== 'object' || Array.isArray(customers)) customers = {};
 
-        const cleanTrx = trxId.trim().toUpperCase();
-        let cleanUser = username.trim().replace(/[^0-9]/g, '');
-        if (cleanUser.length >= 11) cleanUser = cleanUser.slice(-11);
+        const [activeUsers, secrets] = await Promise.all([
+            executeSingleCommand(['/ppp/active/print']),
+            executeSingleCommand(['/ppp/secret/print'])
+        ]);
 
-        const store = loadJSON(DB_FILE);
-        const transaction = store[cleanTrx];
+        const activeMap = {};
+        if (Array.isArray(activeUsers)) {
+            activeUsers.forEach(u => {
+                const name = u.name || u['=name'];
+                if (name) {
+                    activeMap[name] = {
+                        uptime: u.uptime || u['=uptime'] || 'Online',
+                        address: u.address || u['=address'] || 'N/A',
+                        callerId: u['caller-id'] || u['=caller-id'] || ''
+                    };
+                }
+            });
+        }
 
-        if (!transaction) return res.status(404).json({ success: false, message: 'ট্রানজেকশন আইডি (' + cleanTrx + ') পাওয়া যায়নি!' });
-        if (transaction.used) return res.status(
+        if (Array.isArray(secrets)) {
+            secrets.forEach(sec => {
+                const sName = sec.name || sec['=name'];
+                if (!sName) return;
+
+                let exp = null;
+                const comment = sec.comment || sec['=comment'] || '';
+                const m = comment.match(/Exp:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/i);
+                if (m) exp = m[1];
+
+                const sProfile = sec.profile || sec['=profile'] || 'Default';
+                const sCallerId = sec['caller-id'] || sec['=caller-id'] || '';
+                const isDisabled = (sec.disabled === 'true' || sec['=disabled'] === 'true');
+
+                if (!customers[sName]) {
+                    customers[sName] = {
+                        name: sName,
+                        username: sName,
+                        connectionType: 'PPPoE',
+                        phone: '',
+                        profile: sProfile,
+                        bill: 500,
+                        status: isDisabled ? 'suspended' : 'active',
+                        expireDate: exp || '2026-11-05',
